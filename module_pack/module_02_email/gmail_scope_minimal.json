@@ -1,0 +1,32 @@
+{
+  "_description": "Email Provider Config — 本檔案原名 gmail_scope_minimal.json，現整合 Resend + Gmail 雙方案設定。建議發信用 Resend、讀信用 Gmail API。",
+
+  "resend": {
+    "api_key": "",
+    "from_email": "noreply@your-domain.resend.app",
+    "from_name": "",
+    "reply_to": "",
+    "daily_limit": 100,
+    "monthly_limit": 3000,
+    "mcp_server": "github.com/resend/mcp-send-email",
+    "claude_code_integration": "resend.com/claude-code"
+  },
+
+  "gmail": {
+    "_usage": "讀信方案 — 用於 email_triage（讀取收件匣）及 email_reply_draft 的 Gmail Draft 備選方案",
+    "scopes_enabled": [
+      "gmail.readonly",
+      "gmail.labels",
+      "gmail.compose"
+    ],
+    "scopes_disabled_reason": {
+      "gmail.send": "Confirm-first principle: human review before sending",
+      "gmail.modify": "No auto-archive or auto-delete in v1",
+      "gmail.settings.basic": "No auto-filter rules in v1"
+    }
+  },
+
+  "auto_send": false,
+  "auto_archive": false,
+  "auto_delete": false
+}

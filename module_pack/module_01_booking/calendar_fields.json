@@ -1,0 +1,15 @@
+{
+  "business_name": "",
+  "calendar_id": "primary",
+  "available_days": ["Mon", "Tue", "Wed", "Thu", "Fri"],
+  "available_hours": {
+    "start": "09:00",
+    "end": "18:00"
+  },
+  "default_duration_minutes": 60,
+  "booking_buffer_minutes": 15,
+  "event_title_format": "{business_name} - {client_name} 預約",
+  "timezone": "Asia/Taipei",
+  "notification_target": "telegram",
+  "confirmation_language": "zh-TW"
+}
