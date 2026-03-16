@@ -62,11 +62,13 @@ if (-not (Test-Path $configFile)) {
     @'
 {
   "gateway": {
-    "mode": "local"
+    "mode": "local",
+    "bind": "custom",
+    "customBindHost": "0.0.0.0"
   }
 }
 '@ | Set-Content -Path $configFile -Encoding UTF8
-    Write-Ok "建立設定檔：.openclaw\openclaw.json（mode=local）"
+    Write-Ok "建立設定檔：.openclaw\openclaw.json（mode=local, bind=0.0.0.0）"
 } else {
     Write-Info "設定檔已存在：.openclaw\openclaw.json（略過）"
 }
@@ -130,7 +132,111 @@ Write-Ok "初始化完成！"
 # 檢查 auth-profiles.json 是否仍為預設值
 $currentAuth = Get-Content -Path $authFile -Raw
 if ($currentAuth -match "YOUR_API_KEY_HERE") {
-    Write-Info "下一步：編輯 auth-profiles.json 填入 API Key，然後執行 docker compose up -d"
+    Write-Warn "auth-profiles.json 仍為預設值，請稍後手動填入 API Key。"
+}
+
+# 5. 啟動 Docker Compose 服務
+Write-Host ""
+Write-Info "正在啟動 Docker Compose 服務..."
+try {
+    docker compose up -d
+    if ($LASTEXITCODE -ne 0) {
+        throw "docker compose up -d 失敗"
+    }
+    Write-Ok "Docker Compose 服務已啟動"
+} catch {
+    Write-Host "[ERROR] 無法啟動 Docker Compose 服務：$_" -ForegroundColor Red
+    exit 1
+}
+
+# 6. 等待 Gateway 啟動並讀取自動產生的 Token
+Write-Host ""
+Write-Info "等待 Gateway 啟動..."
+$maxWait = 30
+$waited = 0
+while ($waited -lt $maxWait) {
+    try {
+        $health = Invoke-RestMethod -Uri "http://127.0.0.1:18789/healthz" -TimeoutSec 2 -ErrorAction Stop
+        if ($health.ok -eq $true) { break }
+    } catch { }
+    Start-Sleep -Seconds 2
+    $waited += 2
+}
+
+if ($waited -ge $maxWait) {
+    Write-Host "[ERROR] Gateway 未在 ${maxWait} 秒內就緒，請手動檢查容器狀態。" -ForegroundColor Red
+    exit 1
+}
+Write-Ok "Gateway 已就緒"
+
+# 讀取 openclaw.json 中自動產生的 Token
+Write-Host ""
+Write-Info "正在讀取 Dashboard Token..."
+try {
+    $config = Get-Content -Path $configFile -Raw | ConvertFrom-Json
+    $token = $config.gateway.auth.token
+    if ([string]::IsNullOrWhiteSpace($token)) {
+        throw "設定檔中未找到 token"
+    }
+    Write-Ok "Dashboard 連線資訊："
+    Write-Host ""
+    Write-Host "  URL  : http://127.0.0.1:18789/" -ForegroundColor Cyan
+    Write-Host "  Token: $token" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Info "請在瀏覽器開啟上方 URL，並使用 Token 登入。"
+} catch {
+    Write-Host "[ERROR] 無法讀取 Token：$_" -ForegroundColor Red
+    Write-Warn "您可手動查看 .openclaw\openclaw.json 中的 gateway.auth.token 欄位。"
+}
+
+# 7. 裝置配對（Device Pairing）
+#    bind=0.0.0.0 時，從主機連入的流量經 Docker bridge（非 loopback），
+#    Gateway 會要求 device pairing 審批。
+Write-Host ""
+Write-Info "裝置配對流程（Device Pairing）"
+Write-Info "由於 Gateway 綁定 0.0.0.0，瀏覽器首次連線需要配對審批。"
+Write-Host ""
+$doPair = Read-Host "是否要現在進行裝置配對？請先用瀏覽器開啟 http://127.0.0.1:18789/ 再輸入 Y (Y/n)"
+if ($doPair -ne 'n' -and $doPair -ne 'N') {
+    Write-Info "等待瀏覽器連線產生配對請求..."
+    $maxPairWait = 60
+    $pairWaited = 0
+    $requestId = $null
+
+    while ($pairWaited -lt $maxPairWait) {
+        $listOutput = docker compose exec openclaw-gateway openclaw devices list 2>&1 | Out-String
+        # 從輸出中提取 Pending 區塊的 Request ID（UUID 格式）
+        if ($listOutput -match "Pending \((\d+)\)") {
+            $pendingCount = [int]$Matches[1]
+            if ($pendingCount -gt 0 -and $listOutput -match "([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})") {
+                $requestId = $Matches[1]
+                break
+            }
+        }
+        Start-Sleep -Seconds 3
+        $pairWaited += 3
+        if ($pairWaited % 15 -eq 0) {
+            Write-Info "仍在等待瀏覽器連線... （已等待 ${pairWaited} 秒）"
+        }
+    }
+
+    if ($requestId) {
+        Write-Info "偵測到配對請求：$requestId"
+        docker compose exec openclaw-gateway openclaw devices approve $requestId 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            Write-Ok "裝置配對完成！請重新整理瀏覽器頁面。"
+        } else {
+            Write-Host "[ERROR] 配對審批失敗，請手動執行：" -ForegroundColor Red
+            Write-Host "  docker compose exec openclaw-gateway openclaw devices approve $requestId" -ForegroundColor Yellow
+        }
+    } else {
+        Write-Warn "等待逾時，未偵測到配對請求。"
+        Write-Warn "您可稍後手動執行以下指令完成配對："
+        Write-Host "  docker compose exec openclaw-gateway openclaw devices list" -ForegroundColor Yellow
+        Write-Host "  docker compose exec openclaw-gateway openclaw devices approve <Request ID>" -ForegroundColor Yellow
+    }
 } else {
-    Write-Info "下一步：執行 docker compose up -d 啟動服務"
+    Write-Info "略過裝置配對。您可稍後手動執行："
+    Write-Host "  docker compose exec openclaw-gateway openclaw devices list" -ForegroundColor Yellow
+    Write-Host "  docker compose exec openclaw-gateway openclaw devices approve <Request ID>" -ForegroundColor Yellow
 }
