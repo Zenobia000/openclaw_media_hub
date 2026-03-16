@@ -1,2 +1,7 @@
 .env
 .openclaw
+
+# Google OAuth credentials & tokens
+gcp-oauth.keys.json
+client_secret_*.json
+.google-calendar-mcp-token.json
