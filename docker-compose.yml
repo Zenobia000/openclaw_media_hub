@@ -1,0 +1,65 @@
+# OpenClaw Docker Compose
+
+services:
+  # ── OpenClaw 網關 ──────────────────────────────────────────────
+  openclaw-gateway:
+    image: ${OPENCLAW_IMAGE:-openclaw:local}
+    container_name: openclaw-gateway
+    restart: unless-stopped
+    user: "1000:1000"
+
+    ports:
+      - "127.0.0.1:18789:18789"
+
+    environment:
+      - NODE_ENV=production
+      - OPENCLAW_GATEWAY_BIND=${OPENCLAW_GATEWAY_BIND:-lan}
+      - OPENCLAW_GATEWAY_TOKEN=${OPENCLAW_GATEWAY_TOKEN:-}
+      - OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=${OPENCLAW_ALLOW_INSECURE_PRIVATE_WS:-}
+      - PLAYWRIGHT_BROWSERS_PATH=${PLAYWRIGHT_BROWSERS_PATH:-}
+
+    volumes:
+      - ${OPENCLAW_CONFIG_DIR:-~/.openclaw}:/home/node/.openclaw
+      - ${OPENCLAW_WORKSPACE_DIR:-~/.openclaw/workspace}:/home/node/.openclaw/workspace
+
+    command: ["openclaw", "gateway"]
+
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:18789/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+
+  # ── OpenClaw CLI（與網關共享網路命名空間）───────────────────────
+  openclaw-cli:
+    image: ${OPENCLAW_IMAGE:-openclaw:local}
+    container_name: openclaw-cli
+    # 透過共享網路命名空間連接到網關 127.0.0.1
+    network_mode: "service:openclaw-gateway"
+    profiles:
+      - cli
+
+    environment:
+      - NODE_ENV=production
+      - OPENCLAW_GATEWAY_BIND=${OPENCLAW_GATEWAY_BIND:-lan}
+      - OPENCLAW_GATEWAY_TOKEN=${OPENCLAW_GATEWAY_TOKEN:-}
+
+    volumes:
+      - ${OPENCLAW_CONFIG_DIR:-~/.openclaw}:/home/node/.openclaw
+      - ${OPENCLAW_WORKSPACE_DIR:-~/.openclaw/workspace}:/home/node/.openclaw/workspace
+
+    # 安全強化：降低 CLI 容器的權限
+    cap_drop:
+      - ALL
+      - NET_RAW
+      - NET_ADMIN
+    security_opt:
+      - no-new-privileges:true
