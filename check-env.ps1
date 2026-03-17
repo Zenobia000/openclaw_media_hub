@@ -53,14 +53,22 @@ Write-Host ""
 # ── 2. 檢查 VS Code ──────────────────────────────────────────
 Write-Info "檢查 VS Code..."
 try {
-    $codeVersion = code --version 2>&1 | Select-Object -First 1
-    if ($LASTEXITCODE -eq 0) {
-        Write-Ok "VS Code 已安裝 — 版本 $codeVersion"
+    # 1. 先檢查指令是否存在於系統中
+    if (-not (Get-Command "code" -ErrorAction SilentlyContinue)) {
+        throw "找不到 code 指令"
+    }
+
+    # 2. 執行指令並只取第一行，移除錯誤導向以避免干擾
+    $codeVersion = code --version | Select-Object -First 1
+
+    # 3. 檢查輸出是否包含版本號格式 (例如數字與點)
+    if ($codeVersion -match '\d+\.\d+\.\d+') {
+        Write-Host "[OK] VS Code 已安裝 — 版本 $codeVersion" -ForegroundColor Green
     } else {
-        throw "VS Code 未安裝"
+        throw "無法辨識版本資訊"
     }
 } catch {
-    Write-Fail "VS Code 未安裝。請參考 1.軟體安裝指引\2.VS Code軟體 進行安裝。"
+    Write-Host "[FAIL] VS Code 未安裝。請參考 1.軟體安裝指引\2.VS Code軟體 進行安裝。" -ForegroundColor Red
     $allPassed = $false
 }
 
