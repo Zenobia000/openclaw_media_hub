@@ -28,7 +28,7 @@ function Write-Warn  { param($Msg) Write-Host "[WARN]  $Msg" -ForegroundColor Ye
 # 0. 檢查 Docker 是否正在執行
 Write-Info "檢查 Docker 是否正在執行..."
 try {
-    $dockerInfo = docker info 2>&1
+    $null = cmd /c "docker info >nul 2>&1"
     if ($LASTEXITCODE -ne 0) {
         throw "Docker 未回應"
     }
