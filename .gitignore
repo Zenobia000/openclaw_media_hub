@@ -6,3 +6,9 @@
 gcp-oauth.keys.json
 client_secret_*.json
 .google-calendar-mcp-token.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
