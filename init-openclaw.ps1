@@ -8,6 +8,8 @@
 #   1. 建立 .openclaw 目錄結構
 #   2. 產生 openclaw.json (Gateway 設定)
 #   3. 產生 auth-profiles.json 範本
+#   4. 複製 .env.example → .env（若不存在）
+#   5. 啟動 Docker Compose 服務
 # ============================================================
 
 $ErrorActionPreference = "Stop"
@@ -135,7 +137,21 @@ if ($currentAuth -match "YOUR_API_KEY_HERE") {
     Write-Warn "auth-profiles.json 仍為預設值，請稍後手動填入 API Key。"
 }
 
-# 5. 啟動 Docker Compose 服務
+# 5. 複製 .env.example → .env（若不存在）
+$envExample = Join-Path $ScriptDir ".env.example"
+$envFile = Join-Path $ScriptDir ".env"
+if (-not (Test-Path $envFile)) {
+    if (Test-Path $envExample) {
+        Copy-Item -Path $envExample -Destination $envFile
+        Write-Ok "已從 .env.example 複製建立 .env"
+    } else {
+        Write-Warn ".env.example 不存在，請手動建立 .env 檔案。"
+    }
+} else {
+    Write-Info ".env 已存在（略過複製）"
+}
+
+# 6. 啟動 Docker Compose 服務
 Write-Host ""
 Write-Info "正在啟動 Docker Compose 服務..."
 try {
@@ -149,7 +165,7 @@ try {
     exit 1
 }
 
-# 6. 等待 Gateway 啟動並讀取自動產生的 Token
+# 7. 等待 Gateway 啟動並讀取自動產生的 Token
 Write-Host ""
 Write-Info "等待 Gateway 啟動..."
 $maxWait = 30
@@ -189,7 +205,7 @@ try {
     Write-Warn "您可手動查看 .openclaw\openclaw.json 中的 gateway.auth.token 欄位。"
 }
 
-# 7. 裝置配對（Device Pairing）
+# 8. 裝置配對（Device Pairing）
 #    bind=0.0.0.0 時，從主機連入的流量經 Docker bridge（非 loopback），
 #    Gateway 會要求 device pairing 審批。
 Write-Host ""
