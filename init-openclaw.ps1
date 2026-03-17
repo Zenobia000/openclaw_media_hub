@@ -105,8 +105,12 @@ $authFile = Join-Path $OpenClawDir "agents\main\agent\auth-profiles.json"
 if (-not (Test-Path $authFile)) {
     @'
 {
-  "anthropic": {
-    "apiKey": "YOUR_API_KEY_HERE"
+  "profiles": {
+    "anthropic:manual": {
+      "type": "token",
+      "provider": "anthropic",
+      "token": "YOUR_API_KEY_HERE"
+    }
   }
 }
 '@ | Set-Content -Path $authFile -Encoding UTF8
@@ -132,10 +136,14 @@ if ($addKey -ne 'n' -and $addKey -ne 'N') {
         Write-Warn "未輸入金鑰，auth-profiles.json 維持預設值。您可稍後手動編輯。"
     } else {
         $authContent = @{
-            anthropic = @{
-                apiKey = $apiKey.Trim()
+            profiles = @{
+                "anthropic:manual" = @{
+                    type     = "token"
+                    provider = "anthropic"
+                    token    = $apiKey.Trim()
+                }
             }
-        } | ConvertTo-Json -Depth 3
+        } | ConvertTo-Json -Depth 4
         $authContent | Set-Content -Path $authFile -Encoding UTF8
         Write-Ok "已將 API 金鑰寫入 auth-profiles.json"
     }
@@ -192,23 +200,29 @@ try {
 
 # 7. 等待 Gateway 啟動並讀取自動產生的 Token
 Write-Host ""
-Write-Info "等待 Gateway 啟動..."
+$spinChars = @('|', '/', '-', '\')
+$spinIdx = 0
 $maxWait = 30
 $waited = 0
+$gatewayReady = $false
+Write-Host -NoNewline "[INFO]  等待 Gateway 啟動... " -ForegroundColor Blue
 while ($waited -lt $maxWait) {
+    Write-Host -NoNewline "`b$($spinChars[$spinIdx % 4])" -ForegroundColor Cyan
+    $spinIdx++
     try {
         $health = Invoke-RestMethod -Uri "http://127.0.0.1:18789/healthz" -TimeoutSec 2 -ErrorAction Stop
-        if ($health.ok -eq $true) { break }
+        if ($health.ok -eq $true) { $gatewayReady = $true; break }
     } catch { }
-    Start-Sleep -Seconds 2
-    $waited += 2
+    Start-Sleep -Seconds 1
+    $waited += 1
 }
+Write-Host "`b " # 清除 spinner 字元
 
-if ($waited -ge $maxWait) {
+if (-not $gatewayReady) {
     Write-Host "[ERROR] Gateway 未在 ${maxWait} 秒內就緒，請手動檢查容器狀態。" -ForegroundColor Red
     exit 1
 }
-Write-Ok "Gateway 已就緒"
+Write-Ok "Gateway 已就緒（${waited} 秒）"
 
 # 讀取 openclaw.json 中自動產生的 Token
 Write-Host ""
