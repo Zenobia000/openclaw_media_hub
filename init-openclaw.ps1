@@ -8,9 +8,9 @@
 #   1. 建立 .openclaw 目錄結構
 #   1-1. 部署技能（從 module_pack 複製至 workspace\skills）
 #   2. 產生 openclaw.json (Gateway 設定)
-#   3. 產生 auth-profiles.json 範本
-#   4. 複製 .env.example → .env（若不存在）
-#   5. 啟動 Docker Compose 服務
+#   3. 複製 .env.example → .env（若不存在）
+#   4. 啟動 Docker Compose 服務
+#   5. 使用 openclaw configure 設定 API 金鑰
 # ============================================================
 
 $ErrorActionPreference = "Stop"
@@ -100,58 +100,7 @@ if (-not (Test-Path $configFile)) {
     Write-Info "設定檔已存在：.openclaw\openclaw.json（略過）"
 }
 
-# 3. 產生 auth-profiles.json（若不存在）
-$authFile = Join-Path $OpenClawDir "agents\main\agent\auth-profiles.json"
-if (-not (Test-Path $authFile)) {
-    @'
-{
-  "profiles": {
-    "anthropic:manual": {
-      "type": "token",
-      "provider": "anthropic",
-      "token": "YOUR_API_KEY_HERE"
-    }
-  }
-}
-'@ | Set-Content -Path $authFile -Encoding UTF8
-    Write-Ok "建立認證檔範本：.openclaw\agents\main\agent\auth-profiles.json"
-} else {
-    Write-Info "認證檔已存在：.openclaw\agents\main\agent\auth-profiles.json（略過）"
-}
-
-# 3-1. 詢問使用者是否要新增 Claude API 金鑰
-Write-Host ""
-$addKey = Read-Host "是否要現在設定 Claude API 金鑰？(Y/n)"
-if ($addKey -ne 'n' -and $addKey -ne 'N') {
-    Write-Host ""
-    Write-Info "請在另一個終端機視窗中執行以下指令來取得金鑰："
-    Write-Host ""
-    Write-Host "  claude setup-token" -ForegroundColor Cyan
-    Write-Host ""
-    Write-Info "取得金鑰後，請貼上至下方輸入框（金鑰通常以 sk-ant-oat01- 開頭）："
-    Write-Host ""
-    $apiKey = Read-Host "請貼上您的 Claude API 金鑰"
-
-    if ([string]::IsNullOrWhiteSpace($apiKey)) {
-        Write-Warn "未輸入金鑰，auth-profiles.json 維持預設值。您可稍後手動編輯。"
-    } else {
-        $authContent = @{
-            profiles = @{
-                "anthropic:manual" = @{
-                    type     = "token"
-                    provider = "anthropic"
-                    token    = $apiKey.Trim()
-                }
-            }
-        } | ConvertTo-Json -Depth 4
-        $authContent | Set-Content -Path $authFile -Encoding UTF8
-        Write-Ok "已將 API 金鑰寫入 auth-profiles.json"
-    }
-} else {
-    Write-Warn "略過金鑰設定。您可稍後編輯 auth-profiles.json 填入 API Key。"
-}
-
-# 4. 顯示目錄結構
+# 3. 顯示目錄結構
 Write-Host ""
 Write-Info "目錄結構："
 Get-ChildItem -Path $OpenClawDir -Recurse | ForEach-Object {
@@ -164,13 +113,8 @@ Get-ChildItem -Path $OpenClawDir -Recurse | ForEach-Object {
 
 Write-Host ""
 Write-Ok "初始化完成！"
-# 檢查 auth-profiles.json 是否仍為預設值
-$currentAuth = Get-Content -Path $authFile -Raw
-if ($currentAuth -match "YOUR_API_KEY_HERE") {
-    Write-Warn "auth-profiles.json 仍為預設值，請稍後手動填入 API Key。"
-}
 
-# 5. 複製 .env.example → .env（若不存在）
+# 4. 複製 .env.example → .env（若不存在）
 $envExample = Join-Path $ScriptDir ".env.example"
 $envFile = Join-Path $ScriptDir ".env"
 if (-not (Test-Path $envFile)) {
@@ -184,7 +128,7 @@ if (-not (Test-Path $envFile)) {
     Write-Info ".env 已存在（略過複製）"
 }
 
-# 6. 啟動 Docker Compose 服務
+# 5. 啟動 Docker Compose 服務
 Write-Host ""
 Write-Info "正在啟動 Docker Compose 服務..."
 try {
@@ -198,7 +142,7 @@ try {
     exit 1
 }
 
-# 7. 等待 Gateway 啟動並讀取自動產生的 Token
+# 6. 等待 Gateway 啟動並讀取自動產生的 Token
 Write-Host ""
 $spinChars = @('|', '/', '-', '\')
 $spinIdx = 0
@@ -242,6 +186,38 @@ try {
 } catch {
     Write-Host "[ERROR] 無法讀取 Token：$_" -ForegroundColor Red
     Write-Warn "您可手動查看 .openclaw\openclaw.json 中的 gateway.auth.token 欄位。"
+}
+
+# 7. 使用 openclaw 內建設定精靈配置 API 金鑰（auth-profiles.json）
+$authFile = Join-Path $OpenClawDir "agents\main\agent\auth-profiles.json"
+$needAuth = $true
+if (Test-Path $authFile) {
+    $currentAuth = Get-Content -Path $authFile -Raw
+    if ($currentAuth -notmatch "YOUR_API_KEY_HERE" -and $currentAuth -match '"token"\s*:\s*"sk-') {
+        Write-Info "auth-profiles.json 已設定 API 金鑰（略過）"
+        $needAuth = $false
+    }
+}
+
+if ($needAuth) {
+    Write-Host ""
+    $doConfig = Read-Host "是否要現在設定 Claude API 金鑰？(Y/n)"
+    if ($doConfig -ne 'n' -and $doConfig -ne 'N') {
+        Write-Host ""
+        Write-Info "即將啟動 openclaw 內建設定精靈..."
+        Write-Info "請依照精靈提示完成 Model / API 金鑰設定。"
+        Write-Host ""
+        docker compose exec openclaw-gateway openclaw configure --section model
+        if ($LASTEXITCODE -eq 0) {
+            Write-Ok "API 金鑰設定完成"
+        } else {
+            Write-Warn "設定精靈未正常完成。您可稍後手動執行："
+            Write-Host "  docker compose exec openclaw-gateway openclaw configure --section model" -ForegroundColor Yellow
+        }
+    } else {
+        Write-Warn "略過金鑰設定。您可稍後執行以下指令完成設定："
+        Write-Host "  docker compose exec openclaw-gateway openclaw configure --section model" -ForegroundColor Yellow
+    }
 }
 
 # 8. 裝置配對（Device Pairing）
