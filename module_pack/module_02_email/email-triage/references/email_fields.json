@@ -1,0 +1,56 @@
+{
+  "business_name": "",
+  "business_email": "",
+  "timezone": "Asia/Taipei",
+  "max_emails": 20,
+  "unread_only": true,
+  "time_range": "24h",
+  "body_truncate_chars": 500,
+  "categories": [
+    {
+      "name": "詢價",
+      "id": "inquiry",
+      "label": "AI/Inquiry",
+      "keywords": ["價格", "報價", "費用", "方案", "多少錢", "quote", "pricing", "cost"],
+      "default_priority": "high"
+    },
+    {
+      "name": "售後",
+      "id": "support",
+      "label": "AI/Support",
+      "keywords": ["問題", "故障", "退貨", "退款", "不滿意", "投訴", "issue", "refund", "complaint"],
+      "default_priority": "high"
+    },
+    {
+      "name": "預約",
+      "id": "booking",
+      "label": "AI/Booking",
+      "keywords": ["預約", "約時間", "排時間", "見面", "appointment", "schedule", "meeting"],
+      "default_priority": "medium"
+    },
+    {
+      "name": "垃圾",
+      "id": "spam",
+      "label": "AI/Spam",
+      "keywords": ["廣告", "推銷", "unsubscribe", "促銷", "特價", "限時"],
+      "default_priority": "low"
+    },
+    {
+      "name": "其他",
+      "id": "other",
+      "label": "AI/Other",
+      "keywords": [],
+      "default_priority": "medium"
+    }
+  ],
+  "priority_rules": {
+    "high_keywords": ["急", "緊急", "ASAP", "urgent", "immediately", "馬上"],
+    "low_keywords": ["電子報", "newsletter", "通知", "notification", "廣告", "promo"]
+  },
+  "gmail_scopes": [
+    "https://www.googleapis.com/auth/gmail.readonly",
+    "https://www.googleapis.com/auth/gmail.labels"
+  ],
+  "credentials_file": "credentials.json",
+  "token_file": "token.json"
+}

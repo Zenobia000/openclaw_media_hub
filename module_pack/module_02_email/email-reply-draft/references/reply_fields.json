@@ -1,0 +1,28 @@
+{
+  "business_name": "",
+  "sender_name": "",
+  "business_email": "",
+  "business_phone": "",
+  "business_website": "",
+  "tone": "semi-formal",
+  "send_method": "resend",
+  "resend": {
+    "api_key": "",
+    "from_email": "noreply@your-domain.resend.app",
+    "from_name": "",
+    "reply_to": ""
+  },
+  "gmail_scopes": [
+    "https://www.googleapis.com/auth/gmail.readonly",
+    "https://www.googleapis.com/auth/gmail.compose"
+  ],
+  "credentials_file": "credentials.json",
+  "token_file": "token.json",
+  "signature": {
+    "sender_name": "",
+    "business_name": "",
+    "business_phone": "",
+    "business_email": "",
+    "business_website": ""
+  }
+}

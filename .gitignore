@@ -7,6 +7,13 @@ gcp-oauth.keys.json
 client_secret_*.json
 .google-calendar-mcp-token.json
 
+# Email module OAuth credentials & tokens
+**/email-triage/token.json
+**/email-triage/credentials.json
+**/email-reply-draft/token.json
+**/email-reply-draft/credentials.json
+*.verifier
+
 # Python
 __pycache__/
 *.pyc
