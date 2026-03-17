@@ -72,10 +72,10 @@
 主題：{event_title}
 ---
 
-Google Calendar 連結：{calendar_link}
-
 如需改期或取消，請直接告訴我。期待與您見面！
 ```
+
+> **注意：** 不提供 Google Calendar 連結給客人（客人無權限查看）。連結僅供內部使用。
 
 ---
 
@@ -193,6 +193,5 @@ Google Calendar 連結：{calendar_link}
       時間：14:00 - 15:00
       主題：桑尼工作室 - 王小明 預約
       ---
-      Google Calendar 連結：https://calendar.google.com/event?eid=xxxxx
-      如需改期或取消，請直接告訴我。
+      如需改期或取消，請直接告訴我。期待與您見面！
 ```

@@ -31,7 +31,7 @@ metadata:
 | `calendar_id` | 目標 Google Calendar |
 | `available_days` / `available_hours` | 可預約範圍 |
 | `default_duration_minutes` | 未指定時長時的預設值 |
-| `booking_buffer_minutes` | 事件間最小間隔 |
+| `booking_buffer_minutes` | 客人遲到容許時間（分鐘）。例如預約 17:00、緩衝 10 分鐘，表示客人最晚須在 17:10 前到達。此緩衝不影響時段排程，時段仍背靠背排列（前一場結束 = 下一場開始），最後一個時段的開始時間可排到 `available_hours.end - duration`。 |
 | `event_title_format` | 事件標題模板 |
 | `timezone` | 時區 |
 | `confirmation_language` | 回覆語言 |
@@ -165,6 +165,14 @@ python3 {skill_dir}/scripts/gcal_setup.py \
 
 觸發關鍵字：預約、約時間、排時間、訂時間、安排、約一下、book、schedule、appointment、reserve。意圖明確時也觸發。僅查詢行事曆或隨意提及日期時不觸發。
 
+**模糊意圖處理：** 當使用者僅表達預約意圖但未提供具體日期或時間（例如「我想要預約」、「可以預約嗎」、「想約一下」），應先提供完整預約辦法再詢問日期，包含：
+- 服務時間（available_days + available_hours）
+- 每次預約時長（default_duration_minutes）
+- 遲到容許時間（booking_buffer_minutes）— 預約時間後幾分鐘內需到達
+- 簡要預約流程說明
+
+只有當使用者已提供明確日期或時間時，才直接進入 Step 2 提取參數。
+
 ### Step 2：提取參數
 
 | 參數 | 必填 | 預設值 |
@@ -191,8 +199,10 @@ python3 {skill_dir}/scripts/gcal_freebusy.py \
   --start-hour "{available_hours.start}" \
   --end-hour "{available_hours.end}" \
   --duration "{duration_minutes}" \
-  --buffer "{booking_buffer_minutes}"
+  --buffer "0"
 ```
+
+> **注意：** `--buffer 0` 因為 `booking_buffer_minutes` 現在代表客人遲到容許時間，不用於時段間隔。
 
 輸出：可用時段 JSON 陣列。
 
@@ -223,7 +233,7 @@ python3 {skill_dir}/scripts/gcal_create_event.py \
 
 ### Step 7：回覆確認
 
-使用 `references/confirmation_prompts.md` § 2.3 格式，包含 Calendar 連結。
+使用 `references/confirmation_prompts.md` § 2.3 格式。**不提供 Google Calendar 連結給客人**（客人無權限查看），連結僅供內部記錄。
 
 ### Step 8：寫入 CRM
 
@@ -249,7 +259,7 @@ python3 {skill_dir}/scripts/gcal_create_event.py \
 1. **僅建立** — 不刪除、不修改、不批量操作現有事件
 2. **單一行事曆** — 只操作 `calendar_id` 指定的日曆
 3. **營業時段內** — 拒絕 `available_days` 和 `available_hours` 範圍外的預約
-4. **強制緩衝** — 事件間隔 ≥ `booking_buffer_minutes`
+4. **遲到容許** — `booking_buffer_minutes` 為客人遲到容許時間，不影響時段排程；時段背靠背排列，最後一個時段可排至 `end_hour - duration`
 5. **需用戶確認** — 建立前必須取得明確同意
 
 ## 錯誤處理
