@@ -11,5 +11,7 @@
   "event_title_format": "{business_name} - {client_name} 預約",
   "timezone": "Asia/Taipei",
   "notification_target": "telegram",
-  "confirmation_language": "zh-TW"
+  "confirmation_language": "zh-TW",
+  "credentials_file": "credentials.json",
+  "token_file": "token.json"
 }

@@ -41,7 +41,65 @@ metadata:
 
 ### 初始化（首次設定）
 
-技能首次使用前需完成 OAuth2 授權。按照以下步驟執行：
+技能首次使用前需完成兩階段設定：**營業設定**（calendar_fields.json）與 **OAuth2 授權**。
+
+#### 初始化判斷邏輯（入口）
+
+每次技能啟動時，依序檢查：
+
+1. **`calendar_fields.json` 是否已填寫** — 檢查 `business_name` 是否為空字串或缺失
+   - 未填寫 → 進入「Step 0-A：互動式營業設定」
+   - 已填寫 → 跳到 Step 0-B
+2. **`{skill_dir}/{credentials_file}` 是否存在** → 不存在則進入 Step 0-B
+3. **`{skill_dir}/{token_file}` 是否存在** → 不存在則進入 Step 1（OAuth2 授權）
+4. 全部存在 → 直接進入預約工作流程
+
+#### Step 0-A：互動式營業設定
+
+逐一詢問用戶以下欄位，**一次只問一個問題**，每個問題附上說明與範例。用戶可跳過選填項（使用預設值）。
+
+詢問順序與格式：
+
+1. **business_name**（必填）
+   > 請問您的商家或工作室名稱是什麼？
+   > 例如：「桑尼工作室」、「王醫師牙科」
+
+2. **calendar_id**（選填，預設 `primary`）
+   > 要使用哪個 Google Calendar？輸入日曆 ID 或直接按 Enter 使用主日曆。
+   > 預設：`primary`
+
+3. **available_days**（選填，預設週一至週五）
+   > 您的服務日是哪幾天？
+   > 例如：「週一到週五」、「週一、三、五」
+   > 預設：Mon, Tue, Wed, Thu, Fri
+
+4. **available_hours**（選填，預設 09:00–18:00）
+   > 每天的服務時段是幾點到幾點？
+   > 例如：「10:00 到 20:00」、「早上九點到下午六點」
+   > 預設：09:00 - 18:00
+
+5. **default_duration_minutes**（選填，預設 60）
+   > 每次預約的預設時長是幾分鐘？
+   > 例如：30、60、90
+   > 預設：60 分鐘
+
+6. **booking_buffer_minutes**（選填，預設 15）
+   > 預約之間要保留幾分鐘的緩衝時間？
+   > 例如：10、15、30
+   > 預設：15 分鐘
+
+7. **timezone**（選填，預設 `Asia/Taipei`）
+   > 您的時區是？
+   > 預設：Asia/Taipei
+
+8. **confirmation_language**（選填，預設 `zh-TW`）
+   > 預約確認訊息要用什麼語言？
+   > 可選：zh-TW（繁體中文）、zh-CN（簡體中文）、en（English）、ja（日本語）
+   > 預設：zh-TW
+
+收集完成後，將結果寫入 `references/calendar_fields.json`（保留 `event_title_format`、`credentials_file`、`token_file`、`notification_target` 等欄位的預設值），顯示摘要讓用戶確認，確認後儲存。
+
+`event_title_format` 自動設為 `{business_name} - {client_name} 預約`（用實際 business_name 替換）。
 
 #### 前置條件
 
@@ -51,14 +109,14 @@ metadata:
 python3 -m pip install --break-system-packages google-api-python-client google-auth-oauthlib
 ```
 
-#### Step 0：確認 credentials 檔案
+#### Step 0-B：確認 credentials 檔案
 
 檢查 `{skill_dir}/{credentials_file}` 是否存在。若不存在，請用戶：
 1. 前往 [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
 2. 建立 OAuth 2.0 Client ID（Desktop App 類型）
 3. 啟用 Google Calendar API
 4. 下載 client secret JSON 檔案
-5. 將檔案放至 `{skill_dir}/` 並更新 `calendar_fields.json` 中的 `credentials_file` 欄位
+5. 將 JSON 內容直接貼上，由 agent 寫入 `{skill_dir}/{credentials_file}`
 
 #### Step 1：產生授權網址
 
@@ -97,11 +155,9 @@ python3 {skill_dir}/scripts/gcal_setup.py \
 
 輸出含行事曆名稱與時區，確認連線正常。
 
-#### 初始化判斷邏輯
+#### 初始化完成
 
-每次預約流程開始時，先檢查 `{skill_dir}/{token_file}` 是否存在：
-- **存在** → 直接進入預約流程（Step 1 起）
-- **不存在** → 引導用戶完成上述初始化步驟
+三項檢查（calendar_fields 已填、credentials 存在、token 存在）全部通過後，進入預約工作流程。
 
 ## 工作流程
 

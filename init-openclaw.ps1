@@ -6,6 +6,7 @@
 #
 # 此腳本會：
 #   1. 建立 .openclaw 目錄結構
+#   1-1. 部署技能（從 module_pack 複製至 workspace\skills）
 #   2. 產生 openclaw.json (Gateway 設定)
 #   3. 產生 auth-profiles.json 範本
 #   4. 複製 .env.example → .env（若不存在）
@@ -45,6 +46,7 @@ $dirs = @(
     $OpenClawDir
     Join-Path $OpenClawDir "agents\main\agent"
     Join-Path $OpenClawDir "workspace"
+    Join-Path $OpenClawDir "workspace\skills"
 )
 
 foreach ($dir in $dirs) {
@@ -56,6 +58,29 @@ foreach ($dir in $dirs) {
         $rel = $dir.Replace("$ScriptDir\", "")
         Write-Info "目錄已存在：$rel（略過）"
     }
+}
+
+# 1-1. 部署技能：掃描 module_pack 中含 SKILL.md 的目錄，複製至 workspace\skills
+$modulePackDir = Join-Path $ScriptDir "module_pack"
+$skillsTargetDir = Join-Path $OpenClawDir "workspace\skills"
+
+if (Test-Path $modulePackDir) {
+    Write-Info "掃描 module_pack 中的技能..."
+    $skillDirs = Get-ChildItem -Path $modulePackDir -Recurse -Filter "SKILL.md" | ForEach-Object { $_.Directory }
+
+    foreach ($skillDir in $skillDirs) {
+        $skillName = $skillDir.Name
+        $targetDir = Join-Path $skillsTargetDir $skillName
+
+        if (Test-Path $targetDir) {
+            Write-Info "技能已存在：$skillName（略過）"
+        } else {
+            Copy-Item -Path $skillDir.FullName -Destination $targetDir -Recurse
+            Write-Ok "部署技能：$skillName → .openclaw\workspace\skills\$skillName"
+        }
+    }
+} else {
+    Write-Warn "module_pack 目錄不存在，略過技能部署。"
 }
 
 # 2. 產生 openclaw.json（若不存在）
