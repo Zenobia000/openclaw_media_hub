@@ -9,7 +9,7 @@ description: "Read unread emails from Gmail inbox, generate AI summaries, classi
   NOT for: replying to emails (use email-reply-draft), sending new emails,
   modifying/deleting emails, managing email settings, or reading specific
   known emails by subject.
-  Requires: Gmail API credentials configured (gmail.readonly + gmail.labels)."
+  Requires: Gmail API credentials configured (gmail.modify + gmail.labels)."
 metadata:
   openclaw:
     emoji: "📧"
@@ -100,6 +100,8 @@ python3 -m pip install --break-system-packages google-api-python-client google-a
 5. 將 JSON 內容直接貼上，由 agent 寫入 `{skill_dir}/{credentials_file}`
 
 #### Step 1：產生授權網址
+
+> ⚠️ **注意**：授權時必須包含 `gmail.modify` scope（而非 `gmail.readonly`），否則加標籤步驟會因權限不足（403 insufficientPermissions）失敗。`email_fields.json` 預設的 `gmail_scopes` 已設為 `gmail.modify` + `gmail.labels`，直接使用即可。
 
 ```bash
 python3 {skill_dir}/scripts/gmail_setup.py \

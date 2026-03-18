@@ -48,7 +48,7 @@
     "low_keywords": ["電子報", "newsletter", "通知", "notification", "廣告", "promo"]
   },
   "gmail_scopes": [
-    "https://www.googleapis.com/auth/gmail.readonly",
+    "https://www.googleapis.com/auth/gmail.modify",
     "https://www.googleapis.com/auth/gmail.labels"
   ],
   "credentials_file": "credentials.json",
