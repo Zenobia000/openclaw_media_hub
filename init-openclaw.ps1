@@ -100,17 +100,6 @@ if (-not (Test-Path $configFile)) {
     Write-Info "設定檔已存在：.openclaw\openclaw.json（略過）"
 }
 
-# 3. 顯示目錄結構
-Write-Host ""
-Write-Info "目錄結構："
-Get-ChildItem -Path $OpenClawDir -Recurse | ForEach-Object {
-    $rel = $_.FullName.Replace("$OpenClawDir\", "")
-    $depth = ($rel.ToCharArray() | Where-Object { $_ -eq '\' }).Count
-    $indent = "  " * $depth
-    $icon = if ($_.PSIsContainer) { "[D]" } else { "[F]" }
-    Write-Host "  $indent$icon $($_.Name)"
-}
-
 Write-Host ""
 Write-Ok "初始化完成！"
 
@@ -168,26 +157,6 @@ if (-not $gatewayReady) {
 }
 Write-Ok "Gateway 已就緒（${waited} 秒）"
 
-# 讀取 openclaw.json 中自動產生的 Token
-Write-Host ""
-Write-Info "正在讀取 Dashboard Token..."
-try {
-    $config = Get-Content -Path $configFile -Raw | ConvertFrom-Json
-    $token = $config.gateway.auth.token
-    if ([string]::IsNullOrWhiteSpace($token)) {
-        throw "設定檔中未找到 token"
-    }
-    Write-Ok "Dashboard 連線資訊："
-    Write-Host ""
-    Write-Host "  URL  : http://127.0.0.1:18789/" -ForegroundColor Cyan
-    Write-Host "  Token: $token" -ForegroundColor Cyan
-    Write-Host ""
-    Write-Info "請在瀏覽器開啟上方 URL，並使用 Token 登入。"
-} catch {
-    Write-Host "[ERROR] 無法讀取 Token：$_" -ForegroundColor Red
-    Write-Warn "您可手動查看 .openclaw\openclaw.json 中的 gateway.auth.token 欄位。"
-}
-
 # 7. 使用 openclaw 內建設定精靈配置 API 金鑰（auth-profiles.json）
 $authFile = Join-Path $OpenClawDir "agents\main\agent\auth-profiles.json"
 $needAuth = $true
@@ -218,6 +187,65 @@ if ($needAuth) {
         Write-Warn "略過金鑰設定。您可稍後執行以下指令完成設定："
         Write-Host "  docker compose exec openclaw-gateway openclaw configure --section model" -ForegroundColor Yellow
     }
+}
+
+# 重新啟動 Docker 服務並等待
+Write-Host ""
+Write-Info "正在重新啟動 Docker Compose 服務以套用設定..."
+try {
+    docker compose restart
+    if ($LASTEXITCODE -ne 0) {
+        throw "docker compose restart 失敗"
+    }
+    Write-Ok "Docker Compose 服務已重新啟動"
+} catch {
+    Write-Host "[ERROR] 無法重新啟動 Docker Compose 服務：$_" -ForegroundColor Red
+    exit 1
+}
+
+Write-Host ""
+$spinChars = @('|', '/', '-', '\')
+$spinIdx = 0
+$maxWait = 30
+$waited = 0
+$gatewayReady = $false
+Write-Host -NoNewline "[INFO]  等待 Gateway 重新啟動... " -ForegroundColor Blue
+while ($waited -lt $maxWait) {
+    Write-Host -NoNewline "`b$($spinChars[$spinIdx % 4])" -ForegroundColor Cyan
+    $spinIdx++
+    try {
+        $health = Invoke-RestMethod -Uri "http://127.0.0.1:18789/healthz" -TimeoutSec 2 -ErrorAction Stop
+        if ($health.ok -eq $true) { $gatewayReady = $true; break }
+    } catch { }
+    Start-Sleep -Seconds 1
+    $waited += 1
+}
+Write-Host "`b " # 清除 spinner 字元
+
+if (-not $gatewayReady) {
+    Write-Host "[ERROR] Gateway 未在 ${maxWait} 秒內重新就緒，請手動檢查容器狀態。" -ForegroundColor Red
+    exit 1
+}
+Write-Ok "Gateway 已重新就緒（${waited} 秒）"
+
+# 讀取 openclaw.json 中自動產生的 Token
+Write-Host ""
+Write-Info "正在讀取 Dashboard Token..."
+try {
+    $config = Get-Content -Path $configFile -Raw | ConvertFrom-Json
+    $token = $config.gateway.auth.token
+    if ([string]::IsNullOrWhiteSpace($token)) {
+        throw "設定檔中未找到 token"
+    }
+    Write-Ok "Dashboard 連線資訊："
+    Write-Host ""
+    Write-Host "  URL  : http://127.0.0.1:18789/" -ForegroundColor Cyan
+    Write-Host "  Token: $token" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Info "請在瀏覽器開啟上方 URL，並使用 Token 登入。"
+} catch {
+    Write-Host "[ERROR] 無法讀取 Token：$_" -ForegroundColor Red
+    Write-Warn "您可手動查看 .openclaw\openclaw.json 中的 gateway.auth.token 欄位。"
 }
 
 # 8. 裝置配對（Device Pairing）
