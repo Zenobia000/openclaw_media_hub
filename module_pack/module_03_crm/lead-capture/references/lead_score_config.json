@@ -1,0 +1,106 @@
+{
+  "dimensions": {
+    "source": {
+      "weight": 0.25,
+      "max_score": 25,
+      "levels": {
+        "high": {
+          "score": 25,
+          "match": "推薦、轉介、既有客戶介紹"
+        },
+        "medium": {
+          "score": 15,
+          "match": "主動詢問、自行搜尋聯繫（Telegram、Email、表單）"
+        },
+        "low": {
+          "score": 5,
+          "match": "被動觸及、廣告、群組訊息、公開 channel"
+        }
+      },
+      "default": "medium",
+      "ai_hints": [
+        "提到「XXX 介紹的」「XXX 推薦」→ high",
+        "直接發訊息詢問服務 → medium",
+        "回覆廣告貼文、從公開群組來 → low"
+      ]
+    },
+    "needs_clarity": {
+      "weight": 0.35,
+      "max_score": 35,
+      "levels": {
+        "high": {
+          "score": 35,
+          "match": "有預算範圍 + 期望時程 + 決策權"
+        },
+        "medium": {
+          "score": 20,
+          "match": "知道想做什麼但細節未定"
+        },
+        "low": {
+          "score": 8,
+          "match": "純探索、比價、蒐集資訊"
+        }
+      },
+      "default": "medium",
+      "ai_hints": [
+        "出現「預算大概 X 萬」「希望 X 月前完成」「老闆要我評估」→ high",
+        "出現「想了解」「有興趣」「考慮中」→ medium",
+        "出現「隨便問問」「先看看」「還在研究」→ low"
+      ]
+    },
+    "interaction_frequency": {
+      "weight": 0.20,
+      "max_score": 20,
+      "levels": {
+        "high": {
+          "score": 20,
+          "match": "48 小時內主動發送 3 則以上訊息，或持續追問細節"
+        },
+        "medium": {
+          "score": 12,
+          "match": "發了 1-2 則訊息，有回覆 AI 的問題"
+        },
+        "low": {
+          "score": 4,
+          "match": "發了初始訊息後未再回覆，或只讀不回"
+        }
+      },
+      "default": "medium",
+      "ai_hints": [
+        "首次接觸時預設為 medium（12 分）",
+        "24 小時無回應 → 降為 low",
+        "第二次主動聯繫 → 升為 high"
+      ]
+    },
+    "client_scale": {
+      "weight": 0.20,
+      "max_score": 20,
+      "levels": {
+        "high": {
+          "score": 20,
+          "match": "企業客戶，提到公司名稱、部門、團隊人數 > 10 人"
+        },
+        "medium": {
+          "score": 12,
+          "match": "小型團隊（2-10 人）、工作室、小型組織"
+        },
+        "low": {
+          "score": 5,
+          "match": "個人使用、自由工作者、學生"
+        }
+      },
+      "default": "medium",
+      "ai_hints": [
+        "出現公司名稱、統編、「我們公司」「我們部門」→ high",
+        "出現「我們幾個人」「小團隊」「工作室」→ medium",
+        "出現「我自己」「個人用」「學生」→ low",
+        "無法判斷時預設 medium"
+      ]
+    }
+  },
+  "priority_thresholds": {
+    "high": {"min": 70, "max": 100, "label": "高", "color": "紅色"},
+    "medium": {"min": 40, "max": 69, "label": "中", "color": "黃色"},
+    "low": {"min": 0, "max": 39, "label": "低", "color": "灰色"}
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "business_name": "",
+  "timezone": "Asia/Taipei",
+  "backend_type": "",
+  "notification_target": "telegram",
+  "default_owner": "",
+  "confirmation_language": "zh-TW",
+  "notion": {
+    "database_name": "客戶管理 CRM",
+    "mcp_permissions": ["read_content", "insert_content", "update_content"]
+  },
+  "sheets": {
+    "spreadsheet_id": "",
+    "sheet_name": "CRM_Pipeline",
+    "credentials_file": "credentials.json",
+    "token_file": "token.json"
+  },
+  "fields": {
+    "statuses": ["新詢問", "跟進中", "已報價", "已成交", "已流失"],
+    "sources": ["Telegram", "Email", "表單", "推薦", "其他"],
+    "priorities": ["高", "中", "低"]
+  },
+  "followup_rules": {
+    "high": {"days": 1, "action": "立即通知負責人"},
+    "medium": {"days": 3, "action": "AI 先跟進"},
+    "low": {"days": 7, "action": "AI 輕觸跟進"}
+  },
+  "escalation_rules": {
+    "price_or_contract_inquiry": "immediate_human",
+    "complaint": "immediate_human",
+    "ai_followup_no_response_count": 2,
+    "cold_list_retry_days": 30,
+    "max_cold_retries": 3
+  }
+}
