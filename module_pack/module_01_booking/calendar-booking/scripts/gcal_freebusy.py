@@ -67,10 +67,18 @@ def query_busy_periods(creds, calendar_id: str, date_str: str, timezone: str,
 
 
 def find_available_slots(busy: list[tuple[int, int]], start_hour: str,
-                         end_hour: str, duration: int, buffer: int) -> list[dict]:
-    """根據忙碌時段計算可用預約區間。"""
+                         end_hour: str, duration: int, buffer: int,
+                         now_minutes: int | None = None) -> list[dict]:
+    """根據忙碌時段計算可用預約區間。
+
+    now_minutes: 若查詢日期為今天，傳入當前時間的分鐘數以過濾已過去的時段。
+    """
     day_start = to_minutes(start_hour)
     day_end = to_minutes(end_hour)
+
+    # 若為今天，從「現在」之後的下一個完整時段開始
+    if now_minutes is not None and now_minutes > day_start:
+        day_start = now_minutes
     busy.sort()
 
     slots = []
@@ -109,7 +117,16 @@ def main():
         args.start_hour, args.end_hour,
     )
 
-    slots = find_available_slots(busy, args.start_hour, args.end_hour, args.duration, args.buffer)
+    # 若查詢日期為今天，計算當前時間（分鐘數）以過濾已過去的時段
+    local_tz = ZoneInfo(args.timezone)
+    now_local = datetime.now(local_tz)
+    query_date = datetime.strptime(args.date, "%Y-%m-%d").date()
+    now_minutes = None
+    if query_date == now_local.date():
+        now_minutes = now_local.hour * 60 + now_local.minute
+
+    slots = find_available_slots(busy, args.start_hour, args.end_hour, args.duration, args.buffer,
+                                 now_minutes=now_minutes)
     print(json.dumps(slots, indent=2, ensure_ascii=False))
 
 
