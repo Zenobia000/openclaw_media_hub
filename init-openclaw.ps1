@@ -305,7 +305,42 @@ if ($doLine -ne 'n' -and $doLine -ne 'N') {
         Write-Warn "Token 或 Secret 為空，略過設定。您可稍後手動編輯 .openclaw\openclaw.json"
     }
 
-    # 8-3. 啟動 ngrok tunnel（LINE webhook 需要公開 HTTPS URL）
+    # 8-3. 重啟服務以套用 LINE 插件設定（必須在 Webhook 驗證之前完成）
+    Write-Host ""
+    Write-Info "正在重新啟動服務以套用 LINE 插件設定..."
+    try {
+        docker compose restart
+        if ($LASTEXITCODE -ne 0) { throw "docker compose restart 失敗" }
+        Write-Ok "服務已重新啟動"
+    } catch {
+        Write-Host "[ERROR] 無法重新啟動服務：$_" -ForegroundColor Red
+    }
+
+    # 等待 Gateway 就緒
+    $spinChars = @('|', '/', '-', '\')
+    $spinIdx = 0
+    $maxWait = 30
+    $waited = 0
+    $gatewayReady = $false
+    Write-Host -NoNewline "[INFO]  等待 Gateway 就緒... " -ForegroundColor Blue
+    while ($waited -lt $maxWait) {
+        Write-Host -NoNewline "`b$($spinChars[$spinIdx % 4])" -ForegroundColor Cyan
+        $spinIdx++
+        try {
+            $health = Invoke-RestMethod -Uri "http://127.0.0.1:18789/healthz" -TimeoutSec 2 -ErrorAction Stop
+            if ($health.ok -eq $true) { $gatewayReady = $true; break }
+        } catch { }
+        Start-Sleep -Seconds 1
+        $waited += 1
+    }
+    Write-Host "`b "
+    if ($gatewayReady) {
+        Write-Ok "Gateway 已就緒（${waited} 秒）"
+    } else {
+        Write-Warn "Gateway 未在 ${maxWait} 秒內就緒，LINE Webhook 驗證可能會失敗。"
+    }
+
+    # 8-4. 啟動 ngrok tunnel（LINE webhook 需要公開 HTTPS URL）
     Write-Host ""
     Write-Info "LINE Webhook 需要公開 HTTPS URL，正在啟動 ngrok tunnel..."
 
@@ -378,49 +413,20 @@ if ($doLine -ne 'n' -and $doLine -ne 'N') {
         }
     }
 
-    # 8-4. 重啟服務以套用 LINE 設定
-    Write-Host ""
-    Write-Info "正在重新啟動服務以套用 LINE 插件設定..."
-    try {
-        docker compose restart
-        if ($LASTEXITCODE -ne 0) { throw "docker compose restart 失敗" }
-        Write-Ok "服務已重新啟動"
-    } catch {
-        Write-Host "[ERROR] 無法重新啟動服務：$_" -ForegroundColor Red
-    }
-
-    # 等待 Gateway 就緒
-    $spinChars = @('|', '/', '-', '\')
-    $spinIdx = 0
-    $maxWait = 30
-    $waited = 0
-    $gatewayReady = $false
-    Write-Host -NoNewline "[INFO]  等待 Gateway 就緒... " -ForegroundColor Blue
-    while ($waited -lt $maxWait) {
-        Write-Host -NoNewline "`b$($spinChars[$spinIdx % 4])" -ForegroundColor Cyan
-        $spinIdx++
-        try {
-            $health = Invoke-RestMethod -Uri "http://127.0.0.1:18789/healthz" -TimeoutSec 2 -ErrorAction Stop
-            if ($health.ok -eq $true) { $gatewayReady = $true; break }
-        } catch { }
-        Start-Sleep -Seconds 1
-        $waited += 1
-    }
-    Write-Host "`b "
-    if ($gatewayReady) {
-        Write-Ok "Gateway 已就緒（${waited} 秒）"
-    } else {
-        Write-Warn "Gateway 未在 ${maxWait} 秒內就緒，LINE 配對可能需要稍後手動執行。"
-    }
-
     # 8-5. LINE 配對流程
     Write-Host ""
     Write-Info "LINE 配對流程："
     Write-Host "  1. 透過 LINE 傳送任意訊息給你的 Bot" -ForegroundColor Cyan
     Write-Host "  2. Bot 會回傳一組配對碼" -ForegroundColor Cyan
     Write-Host ""
-    $doLinePair = Read-Host "請先傳送 LINE 訊息給 Bot，取得配對碼後輸入配對碼（輸入 n 略過）"
-    if ($doLinePair -ne 'n' -and $doLinePair -ne 'N' -and -not [string]::IsNullOrWhiteSpace($doLinePair)) {
+    do {
+        $doLinePair = Read-Host "請先傳送 LINE 訊息給 Bot，取得配對碼後輸入配對碼（輸入 n 略過）"
+        if ([string]::IsNullOrWhiteSpace($doLinePair)) {
+            Write-Warn "請輸入配對碼或輸入 n 略過，不可空白。"
+        }
+    } while ([string]::IsNullOrWhiteSpace($doLinePair))
+
+    if ($doLinePair -ne 'n' -and $doLinePair -ne 'N') {
         Write-Info "正在執行 LINE 配對審批..."
         docker compose exec openclaw-gateway openclaw pairing approve line $doLinePair 2>&1
         if ($LASTEXITCODE -eq 0) {
