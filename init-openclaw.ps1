@@ -11,6 +11,7 @@
 #   3. 複製 .env.example → .env（若不存在）
 #   4. 啟動 Docker Compose 服務
 #   5. 使用 openclaw configure 設定 API 金鑰
+#   6. 安裝 LINE 插件 (@openclaw/line)
 # ============================================================
 
 $ErrorActionPreference = "Stop"
@@ -228,34 +229,239 @@ if (-not $gatewayReady) {
 }
 Write-Ok "Gateway 已重新就緒（${waited} 秒）"
 
-# 讀取 openclaw.json 中自動產生的 Token
+# 讀取 openclaw.json 中自動產生的 Token（稍後在裝置配對前顯示）
 Write-Host ""
 Write-Info "正在讀取 Dashboard Token..."
+$dashboardToken = $null
 try {
     $config = Get-Content -Path $configFile -Raw | ConvertFrom-Json
-    $token = $config.gateway.auth.token
-    if ([string]::IsNullOrWhiteSpace($token)) {
+    $dashboardToken = $config.gateway.auth.token
+    if ([string]::IsNullOrWhiteSpace($dashboardToken)) {
         throw "設定檔中未找到 token"
     }
-    Write-Ok "Dashboard 連線資訊："
-    Write-Host ""
-    Write-Host "  URL  : http://127.0.0.1:18789/" -ForegroundColor Cyan
-    Write-Host "  Token: $token" -ForegroundColor Cyan
-    Write-Host ""
-    Write-Info "請在瀏覽器開啟上方 URL，並使用 Token 登入。"
+    Write-Ok "Dashboard Token 已取得"
 } catch {
     Write-Host "[ERROR] 無法讀取 Token：$_" -ForegroundColor Red
     Write-Warn "您可手動查看 .openclaw\openclaw.json 中的 gateway.auth.token 欄位。"
 }
 
-# 8. 裝置配對（Device Pairing）
+# 8. 安裝與設定 LINE 插件
+Write-Host ""
+$doLine = Read-Host "是否要安裝 LINE 插件？(Y/n)"
+if ($doLine -ne 'n' -and $doLine -ne 'N') {
+
+    # 8-1. 安裝插件
+    Write-Info "正在安裝 LINE 插件 (@openclaw/line)..."
+    try {
+        docker compose exec openclaw-gateway openclaw plugins install @openclaw/line
+        if ($LASTEXITCODE -ne 0) {
+            throw "插件安裝失敗"
+        }
+        Write-Ok "LINE 插件安裝完成"
+    } catch {
+        Write-Warn "LINE 插件安裝失敗：$_"
+        Write-Warn "您可稍後手動執行："
+        Write-Host "  docker compose exec openclaw-gateway openclaw plugins install @openclaw/line" -ForegroundColor Yellow
+    }
+
+    # 8-2. 設定 LINE Channel Access Token / Secret
+    Write-Host ""
+    Write-Info "設定 LINE Channel 資訊..."
+    Write-Info "請從 LINE Developers Console 取得以下資訊："
+    Write-Host "  https://developers.line.biz/console/" -ForegroundColor Cyan
+    Write-Host ""
+    $lineToken  = Read-Host "請輸入 Channel Access Token"
+    $lineSecret = Read-Host "請輸入 Channel Secret"
+
+    if (-not [string]::IsNullOrWhiteSpace($lineToken) -and -not [string]::IsNullOrWhiteSpace($lineSecret)) {
+        try {
+            $config = Get-Content -Path $configFile -Raw | ConvertFrom-Json
+
+            # 確保 channels 物件存在
+            if (-not $config.PSObject.Properties['channels']) {
+                $config | Add-Member -MemberType NoteProperty -Name 'channels' -Value ([PSCustomObject]@{})
+            }
+
+            # 寫入 line 設定
+            $lineConfig = [PSCustomObject]@{
+                enabled            = $true
+                channelAccessToken = $lineToken
+                channelSecret      = $lineSecret
+                dmPolicy           = "pairing"
+            }
+
+            if ($config.channels.PSObject.Properties['line']) {
+                $config.channels.line = $lineConfig
+            } else {
+                $config.channels | Add-Member -MemberType NoteProperty -Name 'line' -Value $lineConfig
+            }
+
+            $config | ConvertTo-Json -Depth 10 | Set-Content -Path $configFile -Encoding UTF8
+            Write-Ok "LINE 設定已寫入 .openclaw\openclaw.json"
+        } catch {
+            Write-Host "[ERROR] 無法寫入 LINE 設定：$_" -ForegroundColor Red
+        }
+    } else {
+        Write-Warn "Token 或 Secret 為空，略過設定。您可稍後手動編輯 .openclaw\openclaw.json"
+    }
+
+    # 8-3. 啟動 ngrok tunnel（LINE webhook 需要公開 HTTPS URL）
+    Write-Host ""
+    Write-Info "LINE Webhook 需要公開 HTTPS URL，正在啟動 ngrok tunnel..."
+
+    # 檢查 ngrok 是否已安裝
+    $ngrokCmd = Get-Command ngrok -ErrorAction SilentlyContinue
+    if (-not $ngrokCmd) {
+        Write-Host "[ERROR] 未偵測到 ngrok。請先安裝 ngrok：" -ForegroundColor Red
+        Write-Host "  https://ngrok.com/download" -ForegroundColor Yellow
+        Write-Host "  安裝後執行 'ngrok config add-authtoken <你的token>' 完成設定" -ForegroundColor Yellow
+        Write-Host ""
+        Write-Warn "略過 ngrok 啟動。LINE Webhook 將無法運作，配對流程需待 ngrok 設定完成後再執行。"
+    } else {
+        # 檢查是否已有 ngrok 在監聽 18789
+        $ngrokUrl = $null
+        try {
+            $ngrokApi = Invoke-RestMethod -Uri "http://127.0.0.1:4040/api/tunnels" -TimeoutSec 3 -ErrorAction Stop
+            $existing = $ngrokApi.tunnels | Where-Object { $_.config.addr -match "18789" -and $_.proto -eq "https" } | Select-Object -First 1
+            if ($existing) {
+                $ngrokUrl = $existing.public_url
+                Write-Info "偵測到已存在的 ngrok tunnel：$ngrokUrl"
+            }
+        } catch { }
+
+        if (-not $ngrokUrl) {
+            Write-Info "正在背景啟動 ngrok http 18789 ..."
+            Start-Process ngrok -ArgumentList "http", "18789" -WindowStyle Minimized
+            # 等待 ngrok 就緒
+            $ngrokReady = $false
+            for ($i = 0; $i -lt 10; $i++) {
+                Start-Sleep -Seconds 2
+                try {
+                    $ngrokApi = Invoke-RestMethod -Uri "http://127.0.0.1:4040/api/tunnels" -TimeoutSec 3 -ErrorAction Stop
+                    $tunnel = $ngrokApi.tunnels | Where-Object { $_.proto -eq "https" } | Select-Object -First 1
+                    if ($tunnel) {
+                        $ngrokUrl = $tunnel.public_url
+                        $ngrokReady = $true
+                        break
+                    }
+                } catch { }
+            }
+
+            if ($ngrokReady) {
+                Write-Ok "ngrok tunnel 已啟動"
+            } else {
+                Write-Host "[ERROR] ngrok 未在 20 秒內就緒，請手動執行 'ngrok http 18789' 並重試。" -ForegroundColor Red
+            }
+        }
+
+        if ($ngrokUrl) {
+            $webhookUrl = "$ngrokUrl/line/webhook"
+            Write-Host ""
+            Write-Host "============================================================" -ForegroundColor Green
+            Write-Host "  LINE Webhook URL（請複製）" -ForegroundColor Green
+            Write-Host "============================================================" -ForegroundColor Green
+            Write-Host ""
+            Write-Host "  $webhookUrl" -ForegroundColor Yellow
+            Write-Host ""
+            Write-Host "============================================================" -ForegroundColor Green
+            Write-Host ""
+            Write-Info "請至 LINE Developers Console 設定 Webhook URL："
+            Write-Host ""
+            Write-Host "  1. 開啟 https://developers.line.biz/console/" -ForegroundColor Cyan
+            Write-Host "  2. 選擇你的 Provider → 選擇你的 Channel" -ForegroundColor Cyan
+            Write-Host "  3. 進入 Messaging API settings" -ForegroundColor Cyan
+            Write-Host "  4. 找到 Webhook URL，貼上上方網址" -ForegroundColor Cyan
+            Write-Host "  5. 開啟 Use webhook 開關" -ForegroundColor Cyan
+            Write-Host "  6. 點擊 Verify 確認連線成功" -ForegroundColor Cyan
+            Write-Host ""
+            Read-Host "完成上述設定後，按 Enter 繼續"
+        }
+    }
+
+    # 8-4. 重啟服務以套用 LINE 設定
+    Write-Host ""
+    Write-Info "正在重新啟動服務以套用 LINE 插件設定..."
+    try {
+        docker compose restart
+        if ($LASTEXITCODE -ne 0) { throw "docker compose restart 失敗" }
+        Write-Ok "服務已重新啟動"
+    } catch {
+        Write-Host "[ERROR] 無法重新啟動服務：$_" -ForegroundColor Red
+    }
+
+    # 等待 Gateway 就緒
+    $spinChars = @('|', '/', '-', '\')
+    $spinIdx = 0
+    $maxWait = 30
+    $waited = 0
+    $gatewayReady = $false
+    Write-Host -NoNewline "[INFO]  等待 Gateway 就緒... " -ForegroundColor Blue
+    while ($waited -lt $maxWait) {
+        Write-Host -NoNewline "`b$($spinChars[$spinIdx % 4])" -ForegroundColor Cyan
+        $spinIdx++
+        try {
+            $health = Invoke-RestMethod -Uri "http://127.0.0.1:18789/healthz" -TimeoutSec 2 -ErrorAction Stop
+            if ($health.ok -eq $true) { $gatewayReady = $true; break }
+        } catch { }
+        Start-Sleep -Seconds 1
+        $waited += 1
+    }
+    Write-Host "`b "
+    if ($gatewayReady) {
+        Write-Ok "Gateway 已就緒（${waited} 秒）"
+    } else {
+        Write-Warn "Gateway 未在 ${maxWait} 秒內就緒，LINE 配對可能需要稍後手動執行。"
+    }
+
+    # 8-5. LINE 配對流程
+    Write-Host ""
+    Write-Info "LINE 配對流程："
+    Write-Host "  1. 透過 LINE 傳送任意訊息給你的 Bot" -ForegroundColor Cyan
+    Write-Host "  2. Bot 會回傳一組配對碼" -ForegroundColor Cyan
+    Write-Host ""
+    $doLinePair = Read-Host "請先傳送 LINE 訊息給 Bot，取得配對碼後輸入配對碼（輸入 n 略過）"
+    if ($doLinePair -ne 'n' -and $doLinePair -ne 'N' -and -not [string]::IsNullOrWhiteSpace($doLinePair)) {
+        Write-Info "正在執行 LINE 配對審批..."
+        docker compose exec openclaw-gateway openclaw pairing approve line $doLinePair 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            Write-Ok "LINE 配對完成！"
+        } else {
+            Write-Host "[ERROR] LINE 配對失敗，請手動執行：" -ForegroundColor Red
+            Write-Host "  docker compose exec openclaw-gateway openclaw pairing approve line <配對碼>" -ForegroundColor Yellow
+        }
+    } else {
+        Write-Info "略過 LINE 配對。您可稍後手動執行："
+        Write-Host "  docker compose exec openclaw-gateway openclaw pairing approve line <配對碼>" -ForegroundColor Yellow
+    }
+
+} else {
+    Write-Info "略過 LINE 插件安裝。您可稍後手動執行："
+    Write-Host "  docker compose exec openclaw-gateway openclaw plugins install @openclaw/line" -ForegroundColor Yellow
+}
+
+# 9. 裝置配對（Device Pairing）
 #    bind=0.0.0.0 時，從主機連入的流量經 Docker bridge（非 loopback），
 #    Gateway 會要求 device pairing 審批。
 Write-Host ""
+Write-Host "============================================================" -ForegroundColor Cyan
+Write-Host "  Dashboard 連線資訊" -ForegroundColor Cyan
+Write-Host "============================================================" -ForegroundColor Cyan
+if ($dashboardToken) {
+    Write-Host ""
+    Write-Host "  URL  : http://127.0.0.1:18789/" -ForegroundColor Cyan
+    Write-Host "  Token: $dashboardToken" -ForegroundColor Cyan
+    Write-Host ""
+} else {
+    Write-Warn "  Token 未取得，請手動查看 .openclaw\openclaw.json 中的 gateway.auth.token 欄位。"
+    Write-Host ""
+}
+Write-Host "============================================================" -ForegroundColor Cyan
+Write-Host ""
 Write-Info "裝置配對流程（Device Pairing）"
 Write-Info "由於 Gateway 綁定 0.0.0.0，瀏覽器首次連線需要配對審批。"
+Write-Info "請在瀏覽器開啟上方 URL，並使用 Token 登入。"
 Write-Host ""
-$doPair = Read-Host "是否要現在進行裝置配對？請先用瀏覽器開啟 http://127.0.0.1:18789/ 再輸入 Y (Y/n)"
+$doPair = Read-Host "是否要現在進行裝置配對？(Y/n)"
 if ($doPair -ne 'n' -and $doPair -ne 'N') {
     Write-Info "等待瀏覽器連線產生配對請求..."
     $maxPairWait = 60
