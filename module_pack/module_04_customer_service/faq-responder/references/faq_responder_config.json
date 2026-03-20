@@ -1,0 +1,27 @@
+{
+  "business_name": "",
+  "timezone": "Asia/Taipei",
+  "working_hours": {
+    "start": "09:00",
+    "end": "18:00"
+  },
+  "working_days": ["Mon", "Tue", "Wed", "Thu", "Fri"],
+  "confirmation_language": "zh-TW",
+  "crm_skill_dir": "../../module_03_crm/lead-capture",
+  "default_handler": "",
+  "escalation_handlers": {
+    "default": "",
+    "complaint": "",
+    "technical": ""
+  },
+  "faq_files": [
+    "faq_general.md",
+    "faq_service.md",
+    "faq_process.md"
+  ],
+  "reply_settings": {
+    "max_length": 200,
+    "follow_up_prompt": true,
+    "tone": "professional"
+  }
+}

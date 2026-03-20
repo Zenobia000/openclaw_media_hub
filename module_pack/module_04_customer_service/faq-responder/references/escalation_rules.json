@@ -1,0 +1,52 @@
+{
+  "escalation_levels": {
+    "high": {
+      "keywords": [
+        "價格", "費用", "報價", "多少錢", "收費", "預算",
+        "合約", "簽約", "合同", "條款", "協議",
+        "退款", "退費", "取消", "退貨",
+        "投訴", "不滿", "差勁", "爛", "騙"
+      ],
+      "categories": [
+        "pricing_inquiry",
+        "contract_discussion",
+        "refund_request",
+        "complaint"
+      ]
+    },
+    "medium": {
+      "keywords": [
+        "故障", "壞了", "不能用", "出錯", "bug",
+        "律師", "法律", "賠償", "責任",
+        "個資", "隱私", "刪除我的資料"
+      ],
+      "categories": [
+        "technical_failure",
+        "legal_question",
+        "personal_data_request"
+      ]
+    }
+  },
+  "context_rules": {
+    "description": "關鍵字只是輔助，AI 應理解上下文語意。例如「你們的定價策略是什麼」也應升級，即使沒有出現「多少錢」。",
+    "escalate_on_uncertainty": true,
+    "escalate_on_emotional_language": true,
+    "never_self_answer": [
+      "pricing_inquiry",
+      "contract_discussion",
+      "refund_request",
+      "complaint"
+    ]
+  },
+  "notification_format": {
+    "sections": [
+      "escalation_reason",
+      "suggested_priority",
+      "timestamp",
+      "customer_info",
+      "conversation_summary",
+      "recent_messages",
+      "suggested_action"
+    ]
+  }
+}
