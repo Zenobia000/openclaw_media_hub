@@ -573,29 +573,38 @@ if (-not (Wait-Gateway -Label "等待 Gateway 啟動")) {
 }
 
 # 7. 設定 API 金鑰（迴圈，可設定多組）
-$authFile = Join-Path $OpenClawDir "agents\main\agent\auth-profiles.json"
-$configuredCount = 0
-
 do {
+    # 顯示目前已設定的 API 金鑰摘要
+    Write-Host ""
+    try {
+        $config = Get-Content -Path $ConfigFile -Raw | ConvertFrom-Json
+        if ($config.auth -and $config.auth.profiles) {
+            $providers = @($config.auth.profiles.PSObject.Properties)
+            if ($providers.Count -gt 0) {
+                Write-Ok "目前已設定 $($providers.Count) 組 API 金鑰："
+                foreach ($p in $providers) {
+                    $providerName = $p.Value.provider
+                    $mode         = $p.Value.mode
+                    Write-Host "  • $($p.Name) （Provider: $providerName, 模式: $mode）" -ForegroundColor Cyan
+                }
+            } else {
+                Write-Info "目前尚未設定任何 API 金鑰。"
+            }
+        } else {
+            Write-Info "目前尚未設定任何 API 金鑰。"
+        }
+    } catch { }
+
     Write-Host ""
     if (-not (Confirm-YesNo "是否要設定 AI 模型的 API 金鑰？（如 Anthropic Claude、OpenAI 等）")) {
-        if ($configuredCount -eq 0) {
-            Write-Warn "略過金鑰設定。您可稍後執行："
-            Write-Host "  docker compose exec openclaw-gateway openclaw configure --section model" -ForegroundColor Yellow
-        }
         break
     }
 
     Write-Host ""
     Write-Info "即將啟動 openclaw 內建設定精靈，請依照提示選擇 Provider 並完成設定。"
     Write-Host ""
-    if (Invoke-Gateway configure, --section, model) {
-        $configuredCount++
-        Write-Ok "API 金鑰設定完成（已設定 $configuredCount 組）"
-    } else {
-        Write-Warn "設定精靈未正常完成。您可稍後手動執行："
-        Write-Host "  docker compose exec openclaw-gateway openclaw configure --section model" -ForegroundColor Yellow
-    }
+    # 不使用 Invoke-Gateway，因為其 2>&1 會捕獲輸出導致互動式精靈無法正常顯示
+    docker compose exec openclaw-gateway openclaw configure --section model
 } while ($true)
 
 # 7b. 語音轉文字功能（需要 OpenAI API 金鑰）
