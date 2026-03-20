@@ -55,9 +55,9 @@ function Read-NonEmpty {
 # ── 執行 Gateway CLI 指令 ────────────────────────────────────
 
 function Invoke-Gateway {
-    param([string[]]$Args)
-    docker compose exec openclaw-gateway openclaw @Args 2>&1
-    return $LASTEXITCODE -eq 0
+    param([string[]]$GwArgs)
+    $null = docker compose exec openclaw-gateway openclaw @GwArgs 2>&1
+    return ($LASTEXITCODE -eq 0)
 }
 
 # ── 等待 Gateway 就緒（含 spinner）───────────────────────────
@@ -774,6 +774,7 @@ Install-Plugin `
             enabled     = $true
             token       = $c.token
             groupPolicy = "allowlist"
+            dmPolicy    = "pairing"
             streaming   = "off"
         }
     }
