@@ -134,8 +134,8 @@ function Safe-SetCursorPosition {
     $maxX = [Math]::Max(0, [Console]::BufferWidth - 1)
     $maxY = [Math]::Max(0, [Console]::BufferHeight - 1)
     [Console]::SetCursorPosition(
-        [Math]::Clamp($X, 0, $maxX),
-        [Math]::Clamp($Y, 0, $maxY)
+        [Math]::Min([Math]::Max($X, 0), $maxX),
+        [Math]::Min([Math]::Max($Y, 0), $maxY)
     )
 }
 
