@@ -42,9 +42,15 @@ write_err()   { echo -e "${C_RED}[ERROR] $1${C_RESET}"; }
 # ── Y/n confirmation prompt ────────────────────────────────
 confirm_yesno() {
     local prompt="$1"
+    local default="${2:-y}"  # default: y=yes, n=no
     local answer
-    read -r -p "$prompt (Y/n) " answer
-    [[ "$answer" != "n" && "$answer" != "N" ]]
+    if [[ "$default" == "n" ]]; then
+        read -r -p "$prompt (y/N) " answer
+        [[ "$answer" == "y" || "$answer" == "Y" ]]
+    else
+        read -r -p "$prompt (Y/n) " answer
+        [[ "$answer" != "n" && "$answer" != "N" ]]
+    fi
 }
 
 # ── Non-empty input prompt (supports 'n' to skip) ──────────
@@ -734,29 +740,39 @@ if ! wait_gateway "等待 Gateway 啟動"; then
 fi
 
 # 7. Configure API keys (loop)
+api_configured=false
 while true; do
     echo ""
     # Show currently configured API keys
+    has_keys=false
     if [[ -f "$CONFIG_FILE" ]]; then
         local_profiles=$(jq -r '.auth.profiles // empty' "$CONFIG_FILE" 2>/dev/null) || true
         if [[ -n "$local_profiles" && "$local_profiles" != "null" && "$local_profiles" != "{}" ]]; then
             local_count=$(echo "$local_profiles" | jq 'length' 2>/dev/null) || local_count=0
             if [[ "$local_count" -gt 0 ]]; then
+                has_keys=true
                 write_ok "目前已設定 ${local_count} 組 API 金鑰："
                 echo "$local_profiles" | jq -r 'to_entries[] | "  • \(.key) （Provider: \(.value.provider), 模式: \(.value.mode)）"' 2>/dev/null | while IFS= read -r line; do
                     echo -e "  ${C_CYAN}${line}${C_RESET}"
                 done
-            else
-                write_info "目前尚未設定任何 API 金鑰。"
             fi
-        else
-            write_info "目前尚未設定任何 API 金鑰。"
         fi
+    fi
+    if [[ "$has_keys" == "false" ]]; then
+        write_info "目前尚未設定任何 API 金鑰。"
     fi
 
     echo ""
-    if ! confirm_yesno "是否要設定 AI 模型的 API 金鑰？（如 Anthropic Claude、OpenAI 等）"; then
-        break
+    if $api_configured || $has_keys; then
+        # Already configured at least once — default to no
+        if ! confirm_yesno "是否要設定另一組 API 金鑰？" "n"; then
+            break
+        fi
+    else
+        # First time — default to yes
+        if ! confirm_yesno "是否要設定 AI 模型的 API 金鑰？（如 Anthropic Claude、OpenAI 等）"; then
+            break
+        fi
     fi
 
     echo ""
@@ -764,6 +780,7 @@ while true; do
     echo ""
     # Run interactively (no output capture)
     docker compose exec openclaw-gateway openclaw configure --section model || true
+    api_configured=true
 done
 
 # 7b. Speech-to-text (OpenAI Whisper)
