@@ -430,6 +430,82 @@ function Start-NgrokTunnel {
     Write-Host "  3. 貼上 Webhook URL，開啟 Use webhook，點擊 Verify" -ForegroundColor Cyan
     Write-Host ""
     Read-Host "完成上述設定後，按 Enter 繼續"
+
+    # ── Webhook 驗證結果檢查迴圈 ──
+    $verified = $false
+    while (-not $verified) {
+        Write-Host ""
+        Write-Info "正在檢查 Webhook 驗證結果..."
+
+        $latestReq = $null
+        try {
+            $inspectData = Invoke-RestMethod -Uri "http://127.0.0.1:4040/api/requests/http" -TimeoutSec 5 -ErrorAction Stop
+            $latestReq = $inspectData.requests |
+                Where-Object { $_.request.uri -match "/line/webhook" } |
+                Select-Object -First 1
+        } catch { }
+
+        if (-not $latestReq) {
+            Write-Warn "未偵測到 Webhook 驗證請求。"
+            Write-Info "如果您已在 LINE Console 完成驗證且顯示成功，可直接繼續。"
+            if (-not (Confirm-YesNo "是否重新檢查？")) { $verified = $true }
+            continue
+        }
+
+        # 解析 HTTP 狀態碼（支援 "401 Unauthorized" 或純數字）
+        $statusRaw = "$($latestReq.response.status)"
+        if ($statusRaw -match '(\d{3})') { $statusCode = [int]$Matches[1] } else { $statusCode = 0 }
+
+        if ($statusCode -eq 200) {
+            Write-Ok "LINE Webhook 驗證成功！"
+            $verified = $true
+
+        } elseif ($statusCode -eq 401) {
+            Write-Err "LINE Webhook 驗證失敗：$statusRaw"
+            Write-Host ""
+            Write-Warn "這通常表示 Channel Access Token 或 Channel Secret 設定不正確。"
+            Write-Warn "請確認您在 LINE Developers Console 複製的是正確的值。"
+            Write-Host ""
+            Write-Host "  1. 重新輸入 LINE 憑證並重試驗證" -ForegroundColor Cyan
+            Write-Host "  2. 略過驗證，繼續後續流程" -ForegroundColor Cyan
+            Write-Host ""
+            $choice = Read-Host "請選擇 (1/2)"
+
+            if ($choice -eq '1') {
+                $newToken  = Read-Host "請重新輸入 Channel Access Token"
+                $newSecret = Read-Host "請重新輸入 Channel Secret"
+
+                if ([string]::IsNullOrWhiteSpace($newToken) -or [string]::IsNullOrWhiteSpace($newSecret)) {
+                    Write-Warn "憑證不可為空，請重試。"
+                    continue
+                }
+
+                $settings = [PSCustomObject]@{
+                    enabled            = $true
+                    channelAccessToken = $newToken
+                    channelSecret      = $newSecret
+                    dmPolicy           = "pairing"
+                }
+                Set-ChannelConfig -Channel "line" -Settings $settings
+                if (-not (Restart-AndWait -Reason "套用新的 LINE 憑證")) {
+                    Write-Err "Gateway 未就緒，請手動檢查容器狀態。"
+                    $verified = $true
+                    continue
+                }
+                Write-Host ""
+                Write-Info "請再次至 LINE Developers Console 點擊 Verify 按鈕"
+                Read-Host "驗證後按 Enter 繼續"
+            } else {
+                Write-Info "略過 Webhook 驗證。"
+                $verified = $true
+            }
+
+        } else {
+            Write-Err "LINE Webhook 驗證失敗：HTTP $statusCode"
+            Write-Warn "請檢查 Gateway 服務是否正常運作。"
+            if (-not (Confirm-YesNo "是否重試？")) { $verified = $true }
+        }
+    }
 }
 
 # ════════════════════════════════════════════════════════════════
