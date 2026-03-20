@@ -9,7 +9,7 @@
 #   3. 產生 openclaw.json（Gateway 設定）
 #   4. 複製 .env.example → .env
 #   5. 啟動 Docker Compose
-#   6. 設定 API 金鑰
+#   6. 設定 API 金鑰（可多組，迴圈詢問）
 #   7. 安裝插件（LINE / Discord）
 #   8. 裝置配對
 # ============================================================
@@ -571,34 +571,31 @@ if (-not (Wait-Gateway -Label "等待 Gateway 啟動")) {
     exit 1
 }
 
-# 7. 設定 API 金鑰
+# 7. 設定 API 金鑰（迴圈，可設定多組）
 $authFile = Join-Path $OpenClawDir "agents\main\agent\auth-profiles.json"
-$needAuth = $true
-if (Test-Path $authFile) {
-    $currentAuth = Get-Content -Path $authFile -Raw
-    if ($currentAuth -notmatch "YOUR_API_KEY_HERE" -and $currentAuth -match '"token"\s*:\s*"sk-') {
-        Write-Info "auth-profiles.json 已設定 API 金鑰（略過）"
-        $needAuth = $false
-    }
-}
+$configuredCount = 0
 
-if ($needAuth) {
+do {
     Write-Host ""
-    if (Confirm-YesNo "是否要現在設定 Claude API 金鑰？") {
-        Write-Host ""
-        Write-Info "即將啟動 openclaw 內建設定精靈，請依照提示完成設定。"
-        Write-Host ""
-        if (Invoke-Gateway configure, --section, model) {
-            Write-Ok "API 金鑰設定完成"
-        } else {
-            Write-Warn "設定精靈未正常完成。您可稍後手動執行："
+    if (-not (Confirm-YesNo "是否要設定 AI 模型的 API 金鑰？（如 Anthropic Claude、OpenAI 等）")) {
+        if ($configuredCount -eq 0) {
+            Write-Warn "略過金鑰設定。您可稍後執行："
             Write-Host "  docker compose exec openclaw-gateway openclaw configure --section model" -ForegroundColor Yellow
         }
+        break
+    }
+
+    Write-Host ""
+    Write-Info "即將啟動 openclaw 內建設定精靈，請依照提示選擇 Provider 並完成設定。"
+    Write-Host ""
+    if (Invoke-Gateway configure, --section, model) {
+        $configuredCount++
+        Write-Ok "API 金鑰設定完成（已設定 $configuredCount 組）"
     } else {
-        Write-Warn "略過金鑰設定。您可稍後執行："
+        Write-Warn "設定精靈未正常完成。您可稍後手動執行："
         Write-Host "  docker compose exec openclaw-gateway openclaw configure --section model" -ForegroundColor Yellow
     }
-}
+} while ($true)
 
 # 重啟以套用設定
 if (-not (Restart-AndWait -Reason "套用設定")) {
