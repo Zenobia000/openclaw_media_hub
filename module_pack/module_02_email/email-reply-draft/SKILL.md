@@ -1,17 +1,10 @@
 ---
 name: email-reply-draft
-description: "Draft professional email replies based on email-triage classification
-  results, send via Resend (preferred) or save as Gmail Draft (fallback).
-  User confirms before any email is sent — never auto-sends.
-  Use when: user wants to reply to an email, mentions keywords like 幫我回這封信,
-  回覆, 幫我回, 草擬回覆, reply to this email, draft a reply, reply,
-  回覆第N封, 幫我回所有詢價信, reply to all inquiries,
-  or when intent is clearly to compose a reply to a received email.
-  NOT for: reading/triaging emails (use email-triage), sending new emails
-  (not replies), forwarding emails, managing email settings, or modifying
-  existing drafts.
-  Requires: Gmail API credentials (gmail.readonly + gmail.compose) for Draft
-  mode; Resend MCP Server for Resend mode."
+description: "根據 email-triage 分類結果草擬專業的電子郵件回覆，透過 Resend 發送（建議）或儲存為 Gmail 草稿（備用）。
+  在發送任何電子郵件之前需經由使用者確認 — 絕不自動發送。
+  使用時機：使用者想要回覆電子郵件，或提到如「幫我回這封信」、「回覆」、「幫我回」、「草擬回覆」、「reply to this email」、「draft a reply」、「reply」、「回覆第N封」、「幫我回所有詢價信」、「reply to all inquiries」等關鍵字，或是意圖明確為撰寫收到的電子郵件的回覆時。
+  不適用於：閱讀/分類電子郵件（請使用 email-triage）、發送新電子郵件（非回覆）、轉寄電子郵件、管理電子郵件設定，或修改現有草稿。
+  需求：草稿模式需要 Gmail API 憑證（gmail.readonly + gmail.compose）；Resend 模式需要設定 Resend MCP Server。"
 metadata:
   openclaw:
     emoji: "✉️"

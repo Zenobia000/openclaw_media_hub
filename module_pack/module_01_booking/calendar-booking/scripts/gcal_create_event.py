@@ -18,25 +18,31 @@ import json
 from gcal_auth import load_credentials
 
 
+def _build_event_body(title: str, start: str, end: str, timezone: str,
+                      description: str = "", attendees: list[str] | None = None) -> dict:
+    """組裝事件 body dict。"""
+    body = {
+        "summary": title,
+        "start": {"dateTime": start, "timeZone": timezone},
+        "end": {"dateTime": end, "timeZone": timezone},
+    }
+    if description:
+        body["description"] = description
+    if attendees:
+        body["attendees"] = [{"email": e.strip()} for e in attendees if e.strip()]
+    return body
+
+
 def create_event(creds, calendar_id: str, title: str, start: str, end: str,
                  timezone: str, description: str = "",
                  attendees: list[str] | None = None) -> dict:
     """建立日曆事件，回傳事件詳情。"""
     from googleapiclient.discovery import build
 
-    event_body = {
-        "summary": title,
-        "start": {"dateTime": start, "timeZone": timezone},
-        "end": {"dateTime": end, "timeZone": timezone},
-    }
-    if description:
-        event_body["description"] = description
-    if attendees:
-        event_body["attendees"] = [{"email": e.strip()} for e in attendees if e.strip()]
-
+    body = _build_event_body(title, start, end, timezone, description, attendees)
     event = build("calendar", "v3", credentials=creds).events().insert(
         calendarId=calendar_id,
-        body=event_body,
+        body=body,
         sendUpdates="all" if attendees else "none",
     ).execute()
 
@@ -48,6 +54,11 @@ def create_event(creds, calendar_id: str, title: str, start: str, end: str,
         "start": event.get("start", {}).get("dateTime", ""),
         "end": event.get("end", {}).get("dateTime", ""),
     }
+
+
+def _parse_attendees(raw: str) -> list[str]:
+    """解析逗號分隔的 email 字串。"""
+    return [e.strip() for e in raw.split(",") if e.strip()] if raw else []
 
 
 def main():
@@ -64,18 +75,11 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="僅輸出事件內容，不實際建立")
     args = parser.parse_args()
 
-    attendees = [e.strip() for e in args.attendees.split(",") if e.strip()] if args.attendees else []
+    attendees = _parse_attendees(args.attendees)
 
     if args.dry_run:
-        body = {
-            "summary": args.title,
-            "start": {"dateTime": args.start, "timeZone": args.timezone},
-            "end": {"dateTime": args.end, "timeZone": args.timezone},
-        }
-        if args.description:
-            body["description"] = args.description
-        if attendees:
-            body["attendees"] = [{"email": e} for e in attendees]
+        body = _build_event_body(args.title, args.start, args.end, args.timezone,
+                                 args.description, attendees)
         print(json.dumps({"dry_run": True, "event_body": body}, indent=2, ensure_ascii=False))
     else:
         result = create_event(

@@ -1,15 +1,9 @@
 ---
 name: email-triage
-description: "Read unread emails from Gmail inbox, generate AI summaries, classify
-  into categories (inquiry/support/booking/spam/other), assign priority levels
-  (high/medium/low), and output a structured triage list.
-  Use when: user wants to check email, mentions keywords like 看信, 收信, 信箱,
-  有沒有新信, 整理信箱, 信件摘要, check email, inbox, email summary, triage,
-  or when intent is clearly to review incoming emails.
-  NOT for: replying to emails (use email-reply-draft), sending new emails,
-  modifying/deleting emails, managing email settings, or reading specific
-  known emails by subject.
-  Requires: Gmail API credentials configured (gmail.modify + gmail.labels)."
+description: "讀取 Gmail 收件匣中的未讀電子郵件，產生 AI 摘要，將其分類（詢價/支援/預約/垃圾郵件/其他），分配優先等級（高/中/低），並輸出結構化的分類清單。
+  使用時機：使用者想要檢查電子郵件，或提到如「看信」、「收信」、「信箱」、「有沒有新信」、「整理信箱」、「信件摘要」、「check email」、「inbox」、「email summary」、「triage」等關鍵字，或是意圖明確為檢視收到的電子郵件時。
+  不適用於：回覆電子郵件（請使用 email-reply-draft）、發送新電子郵件、修改/刪除電子郵件、管理電子郵件設定，或閱讀特定已知主旨的電子郵件。
+  需求：需要設定 Gmail API 憑證（gmail.modify + gmail.labels）。"
 metadata:
   openclaw:
     emoji: "📧"

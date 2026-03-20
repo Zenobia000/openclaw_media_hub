@@ -1,13 +1,13 @@
 ---
 name: calendar-booking
-description: "Parse natural language date/time from user messages, query Google Calendar
-  for available slots, create calendar events, and send booking confirmations.
-  Use when: user wants to book/schedule an appointment, mentions keywords like
-  預約, 約時間, 排時間, 訂時間, 安排, book, schedule, appointment, reserve,
-  or when intent is clearly to arrange a meeting/service time.
-  NOT for: querying existing calendar events, modifying/cancelling bookings,
-  recurring schedules, or general date questions without booking intent.
-  Requires: Google Calendar API credentials configured."
+description: "解析使用者訊息中的自然語言日期時間，查詢 Google Calendar 空檔，
+  建立日曆事件並傳送預約確認。
+  適用時機：使用者想預約或安排時間，提及關鍵字如
+  預約、約時間、排時間、訂時間、安排、約一下、book、schedule、appointment、reserve，
+  或意圖明確為安排會面／服務時間。
+  不適用：查詢既有行事曆事件、修改／取消預約、週期性排程、
+  或無預約意圖的一般日期問題。
+  前置需求：已設定 Google Calendar API 認證。"
 metadata:
   openclaw:
     emoji: "📅"

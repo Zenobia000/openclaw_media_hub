@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-"""Google Calendar 認證模組。
+"""Google Calendar 共用認證模組。
 
-統一處理 OAuth2 Desktop App 與 Service Account 兩種認證方式，
-供 gcal_freebusy.py 與 gcal_create_event.py 共用。
+自動偵測 OAuth2 Desktop App / Service Account，供所有 gcal 腳本共用。
 """
 
 import json
@@ -13,17 +12,16 @@ SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
 
 def load_credentials(credentials_path: str, token_path: str | None = None):
-    """載入 Google API 認證，自動偵測 OAuth2 Desktop 或 Service Account。"""
+    """載入認證，依 JSON 內容自動判斷類型。"""
     with open(credentials_path, "r") as f:
         cred_data = json.load(f)
 
-    if "installed" in cred_data or "web" in cred_data:
-        return _load_oauth2(credentials_path, token_path)
-    return _load_service_account(credentials_path)
+    is_oauth2 = "installed" in cred_data or "web" in cred_data
+    return _load_oauth2(credentials_path, token_path) if is_oauth2 else _load_service_account(credentials_path)
 
 
 def _load_oauth2(credentials_path: str, token_path: str | None):
-    """載入 OAuth2 Desktop App 認證，首次需瀏覽器授權。"""
+    """載入 OAuth2 認證，自動刷新過期 token。"""
     try:
         from google.oauth2.credentials import Credentials
         from google.auth.transport.requests import Request
@@ -66,12 +64,13 @@ def _run_auth_flow(credentials_path: str):
     # 備援：手動貼網址
     flow.redirect_uri = "http://localhost:1"
     auth_url, _ = flow.authorization_url(prompt="consent", access_type="offline")
-    print(f"\n{'='*60}", file=sys.stderr)
+    separator = "=" * 60
+    print(f"\n{separator}", file=sys.stderr)
     print("請在瀏覽器開啟以下網址進行 Google 授權：", file=sys.stderr)
     print(f"\n{auth_url}\n", file=sys.stderr)
     print("授權後瀏覽器會跳轉到無法載入的頁面，", file=sys.stderr)
     print("請複製該頁面完整網址（http://localhost:1 開頭）貼到這裡：", file=sys.stderr)
-    print(f"{'='*60}\n", file=sys.stderr)
+    print(f"{separator}\n", file=sys.stderr)
     redirect_response = input("貼上完整網址: ").strip()
     flow.fetch_token(authorization_response=redirect_response)
     return flow.credentials
@@ -89,6 +88,6 @@ def _load_service_account(credentials_path: str):
 
 
 def _exit(message: str):
-    """輸出錯誤訊息並結束程式。"""
+    """輸出錯誤並結束。"""
     print(f"錯誤：{message}", file=sys.stderr)
     sys.exit(1)
