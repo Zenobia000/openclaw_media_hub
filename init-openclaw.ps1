@@ -56,7 +56,10 @@ function Read-NonEmpty {
 
 function Invoke-Gateway {
     param([string[]]$GwArgs)
+    $prev = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
     $null = docker compose exec openclaw-gateway openclaw @GwArgs 2>&1
+    $ErrorActionPreference = $prev
     return ($LASTEXITCODE -eq 0)
 }
 
@@ -699,7 +702,7 @@ if (Confirm-YesNo "是否要啟用語音轉文字功能？（需要已設定 Ope
                 [PSCustomObject]@{
                     provider = "openai"
                     model    = "whisper-1"
-                    profile  = "openai:manual"
+                    profile  = "openai:default"
                 }
             )
             echoTranscript = $true

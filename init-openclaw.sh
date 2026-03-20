@@ -845,7 +845,7 @@ if confirm_yesno "是否要啟用語音轉文字功能？（需要 OpenAI API �
         fi
     fi
 
-    audio_config='{"enabled":true,"language":"zh","models":[{"provider":"openai","model":"whisper-1","profile":"openai:manual"}],"echoTranscript":true}'
+    audio_config='{"enabled":true,"language":"zh","models":[{"provider":"openai","model":"whisper-1","profile":"openai:default"}],"echoTranscript":true}'
     jq --argjson audio "$audio_config" \
         'if .tools == null then .tools = {} else . end |
          if .tools.media == null then .tools.media = {} else . end |
