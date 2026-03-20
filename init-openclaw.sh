@@ -108,40 +108,49 @@ restart_and_wait() {
 # ── Parse SKILL.md frontmatter ──────────────────────────────
 get_skill_meta() {
     local path="$1"
-    local content
-    content=$(cat "$path")
 
     SKILL_EMOJI="📦"
     SKILL_DESC="(無描述)"
 
     # Extract YAML frontmatter between --- markers
-    local yaml
-    yaml=$(echo "$content" | sed -n '/^---$/,/^---$/p' | sed '1d;$d')
-    if [[ -z "$yaml" ]]; then
-        return
-    fi
+    local frontmatter=""
+    local in_frontmatter=false
+    local found_start=false
+    while IFS= read -r line; do
+        if [[ "$line" == "---" ]]; then
+            if $found_start; then break; else found_start=true; in_frontmatter=true; continue; fi
+        fi
+        if $in_frontmatter; then frontmatter+="$line"$'\n'; fi
+    done < "$path"
 
-    # Extract emoji
+    if [[ -z "$frontmatter" ]]; then return; fi
+
+    # Extract emoji (supports nested e.g. metadata.openclaw.emoji)
     local emoji_val
-    emoji_val=$(echo "$yaml" | grep -m1 '^emoji:' | sed 's/^emoji:\s*//' | sed "s/[\"']//g" | xargs)
+    emoji_val=$(echo "$frontmatter" | sed -n 's/^[[:space:]]*emoji:[[:space:]]*\(.*\)/\1/p' | head -1 | sed "s/[\"']//g" | tr -d '[:space:]')
     if [[ -n "$emoji_val" ]]; then
         SKILL_EMOJI="$emoji_val"
     fi
 
-    # Extract description - try block scalar first, then inline
-    local desc_val
-    desc_val=$(echo "$yaml" | grep -m1 '^description:' | sed 's/^description:\s*//')
+    # Extract description: first line of content after "description:"
+    # Handles: quoted multi-line, block scalar (|/>), single-line quoted/unquoted
+    local desc_line
+    desc_line=$(echo "$frontmatter" | grep -m1 '^description:' | sed 's/^description:[[:space:]]*//')
 
-    if [[ "$desc_val" == "|" || "$desc_val" == ">" ]]; then
-        # Block scalar: read first indented line after
-        desc_val=$(echo "$yaml" | sed -n '/^description:/,/^[^ ]/p' | sed '1d' | head -1 | xargs)
+    if [[ "$desc_line" == "|" || "$desc_line" == ">" ]]; then
+        # Block scalar: take first indented line
+        desc_line=$(echo "$frontmatter" | sed -n '/^description:[[:space:]]*[|>]/,/^[^[:space:]]/{
+            /^description:/d
+            /^[^[:space:]]/d
+            p
+        }' | head -1 | sed 's/^[[:space:]]*//')
     else
-        # Remove surrounding quotes
-        desc_val=$(echo "$desc_val" | sed "s/^[\"']//;s/[\"']$//" | xargs)
+        # Remove surrounding/leading quotes; handle unclosed multiline quotes
+        desc_line=$(echo "$desc_line" | sed "s/^[\"']//;s/[\"']$//")
     fi
 
-    if [[ -n "$desc_val" ]]; then
-        SKILL_DESC="$desc_val"
+    if [[ -n "$desc_line" ]]; then
+        SKILL_DESC="$desc_line"
     fi
 }
 

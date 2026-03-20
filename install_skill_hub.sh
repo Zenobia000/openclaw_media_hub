@@ -72,31 +72,30 @@ while IFS= read -r skill_md; do
     done < "$skill_md"
 
     # Parse emoji (supports both top-level and nested e.g. metadata.openclaw.emoji)
-    parsed_emoji="$(echo "$frontmatter" | sed -n 's/^[[:space:]]*emoji:[[:space:]]*\(.*\)/\1/p' | head -1 | sed "s/^[\"']//;s/[\"']$//" | xargs)"
+    parsed_emoji="$(echo "$frontmatter" | sed -n 's/^[[:space:]]*emoji:[[:space:]]*\(.*\)/\1/p' | head -1 | sed "s/[\"']//g" | tr -d '[:space:]')"
     if [[ -n "$parsed_emoji" ]]; then
         emoji="$parsed_emoji"
     fi
 
-    # Parse description — block scalar (| or >)
-    parsed_desc="$(echo "$frontmatter" | sed -n '/^description:[[:space:]]*[|>]/,/^[^[:space:]]/{
-        /^description:/d
-        /^[^[:space:]]/d
-        p
-    }' | head -1 | sed 's/^[[:space:]]*//')"
+    # Parse description: first line of content after "description:"
+    # Handles: quoted multi-line, block scalar (|/>), single-line quoted/unquoted
+    local desc_line
+    desc_line="$(echo "$frontmatter" | grep -m1 '^description:' | sed 's/^description:[[:space:]]*//')"
 
-    if [[ -z "$parsed_desc" ]]; then
-        # Parse description — quoted or unquoted single line
-        parsed_desc="$(echo "$frontmatter" | sed -n 's/^description:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)"
-    fi
-    if [[ -z "$parsed_desc" ]]; then
-        parsed_desc="$(echo "$frontmatter" | sed -n "s/^description:[[:space:]]*'\([^']*\)'.*/\1/p" | head -1)"
-    fi
-    if [[ -z "$parsed_desc" ]]; then
-        parsed_desc="$(echo "$frontmatter" | sed -n 's/^description:[[:space:]]*\([^|>].\+\)/\1/p' | head -1 | xargs)"
+    if [[ "$desc_line" == "|" || "$desc_line" == ">" ]]; then
+        # Block scalar: take first indented line
+        desc_line="$(echo "$frontmatter" | sed -n '/^description:[[:space:]]*[|>]/,/^[^[:space:]]/{
+            /^description:/d
+            /^[^[:space:]]/d
+            p
+        }' | head -1 | sed 's/^[[:space:]]*//')"
+    else
+        # Remove surrounding/leading quotes; handle unclosed multiline quotes
+        desc_line="$(echo "$desc_line" | sed "s/^[\"']//;s/[\"']$//")"
     fi
 
-    if [[ -n "$parsed_desc" ]]; then
-        description="$parsed_desc"
+    if [[ -n "$desc_line" ]]; then
+        description="$desc_line"
     fi
 
     # Check if already installed
