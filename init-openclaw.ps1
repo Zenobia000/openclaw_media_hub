@@ -484,7 +484,7 @@ function Start-NgrokTunnel {
                     enabled            = $true
                     channelAccessToken = $newToken
                     channelSecret      = $newSecret
-                    dmPolicy           = "pairing"
+                    dmPolicy           = "open"
                 }
                 Set-ChannelConfig -Channel "line" -Settings $settings
                 if (-not (Restart-AndWait -Reason "套用新的 LINE 憑證")) {
@@ -756,7 +756,7 @@ Install-Plugin `
             enabled            = $true
             channelAccessToken = $c.channelAccessToken
             channelSecret      = $c.channelSecret
-            dmPolicy           = "pairing"
+            dmPolicy           = "open"
         }
     }
 
@@ -774,7 +774,7 @@ Install-Plugin `
             enabled     = $true
             token       = $c.token
             groupPolicy = "allowlist"
-            dmPolicy    = "pairing"
+            dmPolicy    = "open"
             streaming   = "off"
         }
     }
