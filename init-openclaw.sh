@@ -356,10 +356,37 @@ start_ngrok_tunnel() {
     fi
 
     if [[ -z "$ngrok_url" ]]; then
+        # Check authtoken before attempting start
+        local ngrok_config
+        ngrok_config=$(ngrok config check 2>&1) || true
+        if echo "$ngrok_config" | grep -qi "error\|not found\|no auth"; then
+            # Try a quick dry-run to detect auth issues
+            local test_output
+            test_output=$(ngrok http 18789 --log=stdout 2>&1 &)
+            local test_pid=$!
+            sleep 2
+            kill "$test_pid" 2>/dev/null || true
+            wait "$test_pid" 2>/dev/null || true
+        fi
+
         write_info "正在背景啟動 ngrok http 18789..."
-        ngrok http 18789 &>/dev/null &
+        ngrok http 18789 --log /tmp/ngrok_openclaw.log --log-level info &
+        local ngrok_pid=$!
         for (( i=0; i<10; i++ )); do
             sleep 2
+            # Check if ngrok process is still alive
+            if ! kill -0 "$ngrok_pid" 2>/dev/null; then
+                write_err "ngrok 啟動失敗。"
+                if [[ -f /tmp/ngrok_openclaw.log ]]; then
+                    local err_msg
+                    err_msg=$(grep -i "err\|fail\|auth" /tmp/ngrok_openclaw.log | tail -3)
+                    if [[ -n "$err_msg" ]]; then
+                        echo -e "  ${C_RED}${err_msg}${C_RESET}"
+                    fi
+                fi
+                echo -e "  ${C_YELLOW}請確認已設定 authtoken：ngrok config add-authtoken <your-token>${C_RESET}"
+                return
+            fi
             api_resp=$(curl -s -m 3 "http://127.0.0.1:4040/api/tunnels" 2>/dev/null) || true
             if [[ -n "$api_resp" ]]; then
                 ngrok_url=$(echo "$api_resp" | jq -r '.tunnels[] | select(.proto == "https") | .public_url' 2>/dev/null | head -1) || true
