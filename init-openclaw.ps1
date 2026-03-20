@@ -12,6 +12,7 @@
 #   4. 啟動 Docker Compose 服務
 #   5. 使用 openclaw configure 設定 API 金鑰
 #   6. 安裝 LINE 插件 (@openclaw/line)
+#   7. 安裝 Discord 插件 (@openclaw/discord)
 # ============================================================
 
 $ErrorActionPreference = "Stop"
@@ -744,6 +745,132 @@ if ($doLine -ne 'n' -and $doLine -ne 'N') {
 } else {
     Write-Info "略過 LINE 插件安裝。您可稍後手動執行："
     Write-Host "  docker compose exec openclaw-gateway openclaw plugins install @openclaw/line" -ForegroundColor Yellow
+}
+
+# 8b. 安裝與設定 Discord 插件
+Write-Host ""
+$doDiscord = Read-Host "是否要安裝 Discord 插件？(Y/n)"
+if ($doDiscord -ne 'n' -and $doDiscord -ne 'N') {
+
+    # 8b-1. 安裝插件
+    Write-Info "正在安裝 Discord 插件 (@openclaw/discord)..."
+    try {
+        docker compose exec openclaw-gateway openclaw plugins install @openclaw/discord
+        if ($LASTEXITCODE -ne 0) {
+            throw "插件安裝失敗"
+        }
+        Write-Ok "Discord 插件安裝完成"
+    } catch {
+        Write-Warn "Discord 插件安裝失敗：$_"
+        Write-Warn "您可稍後手動執行："
+        Write-Host "  docker compose exec openclaw-gateway openclaw plugins install @openclaw/discord" -ForegroundColor Yellow
+    }
+
+    # 8b-2. 設定 Discord Bot Token
+    Write-Host ""
+    Write-Info "設定 Discord Bot 資訊..."
+    Write-Info "請從 Discord Developer Portal 取得 Bot Token："
+    Write-Host "  https://discord.com/developers/applications" -ForegroundColor Cyan
+    Write-Host ""
+    $discordToken = Read-Host "請輸入 Discord Bot Token"
+
+    if (-not [string]::IsNullOrWhiteSpace($discordToken)) {
+        try {
+            $config = Get-Content -Path $configFile -Raw | ConvertFrom-Json
+
+            # 確保 channels 物件存在
+            if (-not $config.PSObject.Properties['channels']) {
+                $config | Add-Member -MemberType NoteProperty -Name 'channels' -Value ([PSCustomObject]@{})
+            }
+
+            # 寫入 discord 設定
+            $discordConfig = [PSCustomObject]@{
+                enabled     = $true
+                token       = $discordToken
+                groupPolicy = "allowlist"
+                streaming   = "off"
+            }
+
+            if ($config.channels.PSObject.Properties['discord']) {
+                $config.channels.discord = $discordConfig
+            } else {
+                $config.channels | Add-Member -MemberType NoteProperty -Name 'discord' -Value $discordConfig
+            }
+
+            $config | ConvertTo-Json -Depth 10 | Set-Content -Path $configFile -Encoding UTF8
+            Write-Ok "Discord 設定已寫入 .openclaw\openclaw.json"
+        } catch {
+            Write-Host "[ERROR] 無法寫入 Discord 設定：$_" -ForegroundColor Red
+        }
+    } else {
+        Write-Warn "Token 為空，略過設定。您可稍後手動編輯 .openclaw\openclaw.json"
+    }
+
+    # 8b-3. 重啟服務以套用 Discord 插件設定
+    Write-Host ""
+    Write-Info "正在重新啟動服務以套用 Discord 插件設定..."
+    try {
+        docker compose restart
+        if ($LASTEXITCODE -ne 0) { throw "docker compose restart 失敗" }
+        Write-Ok "服務已重新啟動"
+    } catch {
+        Write-Host "[ERROR] 無法重新啟動服務：$_" -ForegroundColor Red
+    }
+
+    # 等待 Gateway 就緒
+    $spinChars = @('|', '/', '-', '\')
+    $spinIdx = 0
+    $maxWait = 30
+    $waited = 0
+    $gatewayReady = $false
+    Write-Host -NoNewline "[INFO]  等待 Gateway 就緒... " -ForegroundColor Blue
+    while ($waited -lt $maxWait) {
+        Write-Host -NoNewline "`b$($spinChars[$spinIdx % 4])" -ForegroundColor Cyan
+        $spinIdx++
+        try {
+            $health = Invoke-RestMethod -Uri "http://127.0.0.1:18789/healthz" -TimeoutSec 2 -ErrorAction Stop
+            if ($health.ok -eq $true) { $gatewayReady = $true; break }
+        } catch { }
+        Start-Sleep -Seconds 1
+        $waited += 1
+    }
+    Write-Host "`b "
+    if ($gatewayReady) {
+        Write-Ok "Gateway 已就緒（${waited} 秒）"
+    } else {
+        Write-Warn "Gateway 未在 ${maxWait} 秒內就緒，Discord 配對可能會失敗。"
+    }
+
+    # 8b-4. Discord 配對流程
+    Write-Host ""
+    Write-Info "Discord 配對流程："
+    Write-Host "  1. 在 Discord 中對你的 Bot 傳送任意訊息（私訊）" -ForegroundColor Cyan
+    Write-Host "  2. Bot 會回傳一組配對碼" -ForegroundColor Cyan
+    Write-Host ""
+    do {
+        $doDiscordPair = Read-Host "請先傳送 Discord 訊息給 Bot，取得配對碼後輸入配對碼（輸入 n 略過）"
+        if ([string]::IsNullOrWhiteSpace($doDiscordPair)) {
+            Write-Warn "請輸入配對碼或輸入 n 略過，不可空白。"
+        }
+    } while ([string]::IsNullOrWhiteSpace($doDiscordPair))
+
+    if ($doDiscordPair -ne 'n' -and $doDiscordPair -ne 'N') {
+        Write-Info "正在執行 Discord 配對審批..."
+        docker compose exec openclaw-gateway openclaw pairing approve discord $doDiscordPair 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            Write-Ok "Discord 配對完成！"
+        } else {
+            Write-Host "[ERROR] Discord 配對失敗，請手動執行：" -ForegroundColor Red
+            Write-Host "  docker compose exec openclaw-gateway openclaw pairing approve discord <配對碼>" -ForegroundColor Yellow
+        }
+    } else {
+        Write-Info "略過 Discord 配對。您可稍後手動執行："
+        Write-Host "  docker compose exec openclaw-gateway openclaw pairing approve discord <配對碼>" -ForegroundColor Yellow
+    }
+
+} else {
+    Write-Info "略過 Discord 插件安裝。您可稍後手動執行："
+    Write-Host "  docker compose exec openclaw-gateway openclaw plugins install @openclaw/discord" -ForegroundColor Yellow
 }
 
 # 9. 裝置配對（Device Pairing）
