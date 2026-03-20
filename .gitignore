@@ -1,5 +1,5 @@
 .env
-.openclaw
+.openclaw*
 .mcp.json
 
 # Google OAuth credentials & tokens

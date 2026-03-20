@@ -746,10 +746,10 @@ Install-Plugin `
     -Name "LINE" `
     -Package "@openclaw/line" `
     -Channel "line" `
-    -CredentialPrompts @{
+    -CredentialPrompts ([ordered]@{
         channelAccessToken = "請輸入 Channel Access Token"
         channelSecret      = "請輸入 Channel Secret"
-    } `
+    }) `
     -BuildConfig {
         param($c)
         [PSCustomObject]@{
@@ -765,9 +765,9 @@ Install-Plugin `
     -Name "Discord" `
     -Package "@openclaw/discord" `
     -Channel "discord" `
-    -CredentialPrompts @{
+    -CredentialPrompts ([ordered]@{
         token = "請輸入 Discord Bot Token"
-    } `
+    }) `
     -BuildConfig {
         param($c)
         [PSCustomObject]@{
