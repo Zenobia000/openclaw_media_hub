@@ -1,35 +1,45 @@
 {
   "business_name": "",
+  "business_email": "",
   "timezone": "Asia/Taipei",
-  "backend_type": "",
-  "notification_target": "telegram",
-  "default_owner": "",
   "confirmation_language": "zh-TW",
+  "backend_type": "",
+  "default_owner": "",
+  "notification_target": "telegram",
   "notion": {
     "database_name": "客戶管理 CRM",
-    "mcp_permissions": ["read_content", "insert_content", "update_content"]
+    "database_id": "",
+    "token": "",
+    "script": "scripts/notion_create.py"
   },
   "sheets": {
     "spreadsheet_id": "",
-    "sheet_name": "CRM_Pipeline",
+    "sheet_name": "Leads",
     "credentials_file": "credentials.json",
     "token_file": "token.json"
   },
   "fields": {
-    "statuses": ["新詢問", "跟進中", "已報價", "已成交", "已流失"],
-    "sources": ["Telegram", "Email", "表單", "推薦", "其他"],
-    "priorities": ["高", "中", "低"]
+    "status_options": ["新詢問", "聯繫中", "提案中", "成交", "失單"],
+    "source_options": ["直接洽詢", "網站", "介紹", "其他"],
+    "priority_options": ["高", "中", "低"]
   },
   "followup_rules": {
-    "high": {"days": 1, "action": "立即通知負責人"},
-    "medium": {"days": 3, "action": "AI 先跟進"},
-    "low": {"days": 7, "action": "AI 輕觸跟進"}
+    "高": {
+      "days": 1,
+      "action": "立即通知"
+    },
+    "中": {
+      "days": 3,
+      "action": "AI 跟進"
+    },
+    "低": {
+      "days": 7,
+      "action": "輕觸跟進"
+    }
   },
   "escalation_rules": {
-    "price_or_contract_inquiry": "immediate_human",
-    "complaint": "immediate_human",
-    "ai_followup_no_response_count": 2,
-    "cold_list_retry_days": 30,
-    "max_cold_retries": 3
+    "budget_threshold": 0,
+    "complaint_keywords": ["不滿", "投訴", "問題"],
+    "coldlist_keywords": ["不感興趣", "暫時不需要"]
   }
 }
