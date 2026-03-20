@@ -154,7 +154,7 @@ get_skill_meta() {
     fi
 }
 
-# ── Interactive skill selector (text-based) ─────────────────
+# ── Interactive skill selector (TUI with arrow keys) ─────────
 show_skill_selector() {
     # Uses parallel arrays: SKILL_NAMES, SKILL_EMOJIS, SKILL_DESCS,
     #   SKILL_SOURCES, SKILL_INSTALLED
@@ -167,88 +167,121 @@ show_skill_selector() {
     done
 
     SELECTED_INDICES=()
-    local cancelled=false
+    local cursor=0
+
+    # total lines = 1(title) + 1(│) + count(items) + 1(│) + 1(hint) = count+4
+    local total_lines=$(( count + 4 ))
+
+    # Hide cursor
+    printf '\033[?25l'
+
+    # Print initial blank lines to reserve space
+    for (( i=0; i<total_lines; i++ )); do printf '\n'; done
+    # Move cursor up to start position
+    printf "\033[${total_lines}A"
 
     while true; do
-        echo ""
-        echo -e "${C_CYAN}◆  OpenClaw 初始安裝技能工具${C_RESET}"
-        echo "│"
+        # Move to start of our drawing area
+        printf '\033[0G'
 
-        for (( i=0; i<count; i++ )); do
-            local check="[ ]"
-            if [[ "${selected[$i]}" == "1" ]]; then
-                check="[x]"
-            fi
-            local tag=""
-            if [[ "${SKILL_INSTALLED[$i]}" == "1" ]]; then
-                tag=" (已安裝)"
-            fi
-            local desc="${SKILL_DESCS[$i]}"
-            if [[ ${#desc} -gt 50 ]]; then
-                desc="${desc:0:47}..."
-            fi
-            echo -e "│  ${check} $((i+1)). ${SKILL_EMOJIS[$i]} ${SKILL_NAMES[$i]} — ${desc}${tag}"
-        done
-
-        echo "│"
+        # Count selected
         local sel_count=0
         for (( i=0; i<count; i++ )); do
-            if [[ "${selected[$i]}" == "1" ]]; then
-                (( sel_count++ )) || true
-            fi
+            [[ "${selected[$i]}" == "1" ]] && (( sel_count++ )) || true
         done
-        local status
-        if [[ $sel_count -gt 0 ]]; then
-            status="(已選 ${sel_count} 個)"
-        else
-            status="(未選擇任何技能)"
-        fi
-        echo -e "│  ${C_GRAY}輸入編號切換選取 | a=全選 | n=全不選 | Enter/q=確認  ${status}${C_RESET}"
-        echo ""
 
-        local input
-        read -r -p "選擇> " input
+        # Draw title
+        printf '\033[2K'
+        printf "${C_CYAN}◆  OpenClaw 初始安裝技能工具${C_RESET}\n"
+        printf '\033[2K'
+        printf "│\n"
 
-        if [[ -z "$input" || "$input" == "q" || "$input" == "Q" ]]; then
-            # Confirm selection
-            break
-        elif [[ "$input" == "a" || "$input" == "A" ]]; then
-            for (( i=0; i<count; i++ )); do
-                selected[$i]="1"
-            done
-        elif [[ "$input" == "n" || "$input" == "N" ]]; then
-            for (( i=0; i<count; i++ )); do
-                selected[$i]="0"
-            done
-        elif [[ "$input" =~ ^[0-9]+$ ]]; then
-            local idx=$(( input - 1 ))
-            if (( idx >= 0 && idx < count )); then
-                if [[ "${selected[$idx]}" == "1" ]]; then
-                    selected[$idx]="0"
-                else
-                    selected[$idx]="1"
-                fi
-            else
-                write_warn "無效的編號：${input}"
+        # Draw skill list
+        for (( i=0; i<count; i++ )); do
+            printf '\033[2K'
+            local check="◻"
+            [[ "${selected[$i]}" == "1" ]] && check="◼"
+            local tag=""
+            [[ "${SKILL_INSTALLED[$i]}" == "1" ]] && tag=" (已安裝)"
+            local desc="${SKILL_DESCS[$i]}"
+            [[ ${#desc} -gt 50 ]] && desc="${desc:0:47}..."
+            local color="${C_RESET}"
+            if [[ $i -eq $cursor ]]; then
+                color="${C_CYAN}"
+            elif [[ "${SKILL_INSTALLED[$i]}" == "1" ]]; then
+                color="${C_GRAY}"
             fi
-        else
-            write_warn "無效的輸入：${input}"
-        fi
+            local pointer=" "
+            [[ $i -eq $cursor ]] && pointer=">"
+            printf "${color}│  ${pointer} ${check} ${SKILL_EMOJIS[$i]} ${SKILL_NAMES[$i]} — ${desc}${tag}${C_RESET}\n"
+        done
+
+        # Draw footer
+        printf '\033[2K'
+        printf "│\n"
+        printf '\033[2K'
+        local status
+        [[ $sel_count -gt 0 ]] && status="(已選 ${sel_count} 個)" || status="(未選擇任何技能)"
+        printf "${C_GRAY}│  ↑/↓ 移動 • Space: 選取 • a: 全選 • n: 全不選 • Enter: 確認  ${status}${C_RESET}\n"
+
+        # Move cursor back up to top of drawing area for next redraw
+        printf "\033[${total_lines}A"
+
+        # Read keypress
+        local key
+        IFS= read -rsn1 key
+
+        case "$key" in
+            $'\x1b')
+                # Escape sequence (arrow keys)
+                local seq
+                IFS= read -rsn2 -t 0.1 seq
+                case "$seq" in
+                    '[A') # Up
+                        (( cursor > 0 )) && (( cursor-- ))
+                        ;;
+                    '[B') # Down
+                        (( cursor < count - 1 )) && (( cursor++ ))
+                        ;;
+                esac
+                ;;
+            ' ') # Space: toggle current
+                if [[ "${selected[$cursor]}" == "1" ]]; then
+                    selected[$cursor]="0"
+                else
+                    selected[$cursor]="1"
+                fi
+                ;;
+            'a'|'A') # Select all
+                for (( i=0; i<count; i++ )); do selected[$i]="1"; done
+                ;;
+            'n'|'N') # Deselect all
+                for (( i=0; i<count; i++ )); do selected[$i]="0"; done
+                ;;
+            '') # Enter: confirm
+                break
+                ;;
+        esac
     done
+
+    # Move past drawing area
+    printf "\033[${total_lines}B"
+
+    # Show cursor
+    printf '\033[?25h'
 
     # Build result
     for (( i=0; i<count; i++ )); do
-        if [[ "${selected[$i]}" == "1" ]]; then
-            SELECTED_INDICES+=("$i")
-        fi
+        [[ "${selected[$i]}" == "1" ]] && SELECTED_INDICES+=("$i")
     done
 
     # Show summary
+    printf '\033[2K'
     echo -e "${C_CYAN}◇  OpenClaw 初始安裝技能工具${C_RESET}"
     if [[ ${#SELECTED_INDICES[@]} -gt 0 ]]; then
         local names=""
         for idx in "${SELECTED_INDICES[@]}"; do
-            if [[ -n "$names" ]]; then names+=", "; fi
+            [[ -n "$names" ]] && names+=", "
             names+="${SKILL_EMOJIS[$idx]} ${SKILL_NAMES[$idx]}"
         done
         echo -e "│  ${C_GREEN}已選擇: ${names}${C_RESET}"
