@@ -10,8 +10,9 @@
 #   4. 複製 .env.example → .env
 #   5. 啟動 Docker Compose
 #   6. 設定 API 金鑰（可多組，迴圈詢問）
-#   7. 安裝插件（LINE / Discord）
-#   8. 裝置配對
+#   7. 啟用語音轉文字（OpenAI Whisper）
+#   8. 安裝插件（LINE / Discord）
+#   9. 裝置配對
 # ============================================================
 
 $ErrorActionPreference = "Stop"
@@ -596,6 +597,42 @@ do {
         Write-Host "  docker compose exec openclaw-gateway openclaw configure --section model" -ForegroundColor Yellow
     }
 } while ($true)
+
+# 7b. 語音轉文字功能（需要 OpenAI API 金鑰）
+Write-Host ""
+Write-Info "語音轉文字功能可將語音訊息自動轉為文字（使用 OpenAI Whisper）。"
+if (Confirm-YesNo "是否要啟用語音轉文字功能？（需要已設定 OpenAI API 金鑰）") {
+    try {
+        $config = Get-Content -Path $ConfigFile -Raw | ConvertFrom-Json
+        if (-not $config.PSObject.Properties['tools']) {
+            $config | Add-Member -MemberType NoteProperty -Name 'tools' -Value ([PSCustomObject]@{})
+        }
+        $audioConfig = [PSCustomObject]@{
+            enabled        = $true
+            language        = "zh"
+            models          = @(
+                [PSCustomObject]@{
+                    provider = "openai"
+                    model    = "whisper-1"
+                    profile  = "openai:manual"
+                }
+            )
+            echoTranscript = $true
+        }
+        $mediaConfig = [PSCustomObject]@{ audio = $audioConfig }
+        if ($config.tools.PSObject.Properties['media']) {
+            $config.tools.media = $mediaConfig
+        } else {
+            $config.tools | Add-Member -MemberType NoteProperty -Name 'media' -Value $mediaConfig
+        }
+        $config | ConvertTo-Json -Depth 10 | Set-Content -Path $ConfigFile -Encoding UTF8
+        Write-Ok "語音轉文字功能已啟用（language=zh, model=whisper-1）"
+    } catch {
+        Write-Err "無法寫入語音設定：$_"
+    }
+} else {
+    Write-Info "略過語音轉文字功能。您可稍後手動編輯 .openclaw\openclaw.json 的 tools.media.audio 區段。"
+}
 
 # 重啟以套用設定
 if (-not (Restart-AndWait -Reason "套用設定")) {
