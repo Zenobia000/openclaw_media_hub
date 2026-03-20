@@ -18,6 +18,15 @@
 
 set -euo pipefail
 
+# ── Global cleanup on Ctrl+C / exit ──────────────────────────
+cleanup() {
+    printf '\033[?25h'  # restore cursor
+    echo ""
+    echo -e '\033[0;33m[WARN]  腳本已中斷。\033[0m'
+    exit 130
+}
+trap cleanup INT TERM
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OPENCLAW_DIR="${SCRIPT_DIR}/.openclaw"
 CONFIG_FILE="${OPENCLAW_DIR}/openclaw.json"
@@ -178,9 +187,8 @@ show_skill_selector() {
     # total lines = 1(title) + 1(│) + count(items) + 1(│) + 1(hint) = count+4
     local total_lines=$(( count + 4 ))
 
-    # Hide cursor, restore on exit/interrupt
+    # Hide cursor (global trap handles restore)
     printf '\033[?25l'
-    trap 'printf "\033[?25h"' EXIT INT TERM
 
     # Print initial blank lines to reserve space
     for (( i=0; i<total_lines; i++ )); do printf '\n'; done
