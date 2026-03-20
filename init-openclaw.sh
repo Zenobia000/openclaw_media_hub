@@ -794,22 +794,37 @@ done
 # 7b. Speech-to-text (OpenAI Whisper)
 echo ""
 write_info "語音轉文字功能可將語音訊息自動轉為文字（使用 OpenAI Whisper）。"
-if confirm_yesno "是否要啟用語音轉文字功能？（需要已設定 OpenAI API 金鑰）"; then
-    audio_config='{"enabled":true,"language":"zh","models":[{"provider":"openai","model":"whisper-1","profile":"openai:manual"}],"echoTranscript":true}'
-    if jq --argjson audio "$audio_config" \
-        '.tools.media.audio = $audio' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" 2>/dev/null; then
-        mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
-        write_ok "語音轉文字功能已啟用（language=zh, model=whisper-1）"
-    else
-        rm -f "${CONFIG_FILE}.tmp"
-        # Ensure tools.media path exists
-        jq --argjson audio "$audio_config" \
-            'if .tools == null then .tools = {} else . end |
-             if .tools.media == null then .tools.media = {} else . end |
-             .tools.media.audio = $audio' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp"
-        mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
-        write_ok "語音轉文字功能已啟用（language=zh, model=whisper-1）"
+if confirm_yesno "是否要啟用語音轉文字功能？（需要 OpenAI API 金鑰）"; then
+
+    # Check if OpenAI profile already exists
+    has_openai=false
+    if [[ -f "$CONFIG_FILE" ]]; then
+        openai_profiles=$(jq -r '.auth.profiles // {} | keys[] | select(startswith("openai"))' "$CONFIG_FILE" 2>/dev/null) || true
+        if [[ -n "$openai_profiles" ]]; then
+            has_openai=true
+            write_ok "偵測到已設定的 OpenAI 金鑰：${openai_profiles}"
+        fi
     fi
+
+    if [[ "$has_openai" == "false" ]]; then
+        write_warn "尚未設定 OpenAI API 金鑰，語音轉文字需要此金鑰才能運作。"
+        if confirm_yesno "是否現在設定 OpenAI API 金鑰？"; then
+            echo ""
+            write_info "即將啟動 openclaw 設定精靈，請選擇 OpenAI 作為 Provider。"
+            echo ""
+            docker compose exec openclaw-gateway openclaw configure --section model || true
+        else
+            write_warn "略過 OpenAI 金鑰設定。語音轉文字功能將無法使用，直到您設定 OpenAI 金鑰。"
+        fi
+    fi
+
+    audio_config='{"enabled":true,"language":"zh","models":[{"provider":"openai","model":"whisper-1","profile":"openai:manual"}],"echoTranscript":true}'
+    jq --argjson audio "$audio_config" \
+        'if .tools == null then .tools = {} else . end |
+         if .tools.media == null then .tools.media = {} else . end |
+         .tools.media.audio = $audio' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && \
+        mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
+    write_ok "語音轉文字功能已啟用（language=zh, model=whisper-1）"
 else
     write_info "略過語音轉文字功能。您可稍後手動編輯 .openclaw/openclaw.json 的 tools.media.audio 區段。"
 fi
