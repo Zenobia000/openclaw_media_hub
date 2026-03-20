@@ -124,111 +124,99 @@ for ((i = 0; i < total; i++)); do
     selected+=("${skill_installed[$i]}")
 done
 
-# ── 互動式選擇介面 ───────────────────────────────────────────
+# ── 互動式選擇介面 (TUI with arrow keys) ────────────────────
 show_skill_selector() {
+    local cursor=0
+    local total_lines=$(( total + 4 ))  # title + │ + items + │ + hint
+
+    # Hide cursor
+    printf '\033[?25l'
+
+    # Reserve space
+    for (( i=0; i<total_lines; i++ )); do printf '\n'; done
+    printf "\033[${total_lines}A"
+
     while true; do
+        printf '\033[0G'
+
         # Count selected
-        sel_count=0
+        local sel_count=0
         for ((i = 0; i < total; i++)); do
-            if [[ "${selected[$i]}" == "true" ]]; then
-                ((sel_count++)) || true
-            fi
+            [[ "${selected[$i]}" == "true" ]] && ((sel_count++)) || true
         done
 
-        printf "\n"
+        # Title
+        printf '\033[2K'
         printf "${CYAN}◆  OpenClaw Skill Hub 安裝工具${RESET}\n"
+        printf '\033[2K'
         printf "│\n"
 
+        # Skill list
         for ((i = 0; i < total; i++)); do
-            # Checkbox marker
-            if [[ "${selected[$i]}" == "true" ]]; then
-                check="[x]"
-            else
-                check="[ ]"
+            printf '\033[2K'
+            local check="◻"
+            [[ "${selected[$i]}" == "true" ]] && check="◼"
+            local tag=""
+            [[ "${skill_installed[$i]}" == "true" ]] && tag=" (已安裝)"
+            local desc="${skill_descs[$i]}"
+            [[ ${#desc} -gt 50 ]] && desc="${desc:0:47}..."
+            local color="${RESET}"
+            if [[ $i -eq $cursor ]]; then
+                color="${CYAN}"
+            elif [[ "${skill_installed[$i]}" == "true" ]]; then
+                color="${DARK_GRAY}"
             fi
-
-            # Installed tag
-            tag=""
-            if [[ "${skill_installed[$i]}" == "true" ]]; then
-                tag=" (已安裝)"
-            fi
-
-            # Truncate description
-            desc="${skill_descs[$i]}"
-            if [[ ${#desc} -gt 50 ]]; then
-                desc="${desc:0:47}..."
-            fi
-
-            # Color based on state
-            num=$((i + 1))
-            line="$check ${skill_emojis[$i]} ${skill_names[$i]} — ${desc}${tag}"
-
-            if [[ "${skill_installed[$i]}" == "true" ]]; then
-                printf "│  ${DARK_GRAY}%2d) %s${RESET}\n" "$num" "$line"
-            else
-                printf "│  ${WHITE}%2d) %s${RESET}\n" "$num" "$line"
-            fi
+            local pointer=" "
+            [[ $i -eq $cursor ]] && pointer=">"
+            printf "${color}│  ${pointer} ${check} ${skill_emojis[$i]} ${skill_names[$i]} — ${desc}${tag}${RESET}\n"
         done
 
+        # Footer
+        printf '\033[2K'
         printf "│\n"
-        if [[ $sel_count -gt 0 ]]; then
-            printf "${DARK_GRAY}│  輸入編號切換選取 • a: 全選 • n: 全不選 • q: 確認安裝  (已選 %d 個)${RESET}\n" "$sel_count"
-        else
-            printf "${DARK_GRAY}│  輸入編號切換選取 • a: 全選 • n: 全不選 • q: 確認安裝  (未選擇任何技能)${RESET}\n"
-        fi
-        printf "\n"
+        printf '\033[2K'
+        local status
+        [[ $sel_count -gt 0 ]] && status="(已選 ${sel_count} 個)" || status="(未選擇任何技能)"
+        printf "${DARK_GRAY}│  ↑/↓ 移動 • Space: 選取 • a: 全選 • n: 全不選 • Enter: 確認  ${status}${RESET}\n"
 
-        # Read user input
-        read -rp ">>> " input
+        # Move back up
+        printf "\033[${total_lines}A"
 
-        case "$input" in
-            q|Q)
-                return 0
+        # Read keypress
+        local key
+        IFS= read -rsn1 key
+
+        case "$key" in
+            $'\x1b')
+                local seq
+                IFS= read -rsn2 -t 0.1 seq
+                case "$seq" in
+                    '[A') (( cursor > 0 )) && (( cursor-- )) ;;
+                    '[B') (( cursor < total - 1 )) && (( cursor++ )) ;;
+                esac
                 ;;
-            a|A)
-                for ((i = 0; i < total; i++)); do
-                    selected[$i]="true"
-                done
-                ;;
-            n|N)
-                for ((i = 0; i < total; i++)); do
-                    selected[$i]="false"
-                done
-                ;;
-            ''|*[!0-9]*)
-                # Try to parse space-separated numbers
-                valid=false
-                for token in $input; do
-                    if [[ "$token" =~ ^[0-9]+$ ]]; then
-                        idx=$((token - 1))
-                        if [[ $idx -ge 0 && $idx -lt $total ]]; then
-                            if [[ "${selected[$idx]}" == "true" ]]; then
-                                selected[$idx]="false"
-                            else
-                                selected[$idx]="true"
-                            fi
-                            valid=true
-                        fi
-                    fi
-                done
-                if ! $valid; then
-                    write_warn "無效輸入，請輸入技能編號、a、n 或 q。"
-                fi
-                ;;
-            *)
-                idx=$((input - 1))
-                if [[ $idx -ge 0 && $idx -lt $total ]]; then
-                    if [[ "${selected[$idx]}" == "true" ]]; then
-                        selected[$idx]="false"
-                    else
-                        selected[$idx]="true"
-                    fi
+            ' ') # Space: toggle
+                if [[ "${selected[$cursor]}" == "true" ]]; then
+                    selected[$cursor]="false"
                 else
-                    write_warn "編號超出範圍，請輸入 1-$total。"
+                    selected[$cursor]="true"
                 fi
+                ;;
+            'a'|'A')
+                for ((i = 0; i < total; i++)); do selected[$i]="true"; done
+                ;;
+            'n'|'N')
+                for ((i = 0; i < total; i++)); do selected[$i]="false"; done
+                ;;
+            '') # Enter: confirm
+                break
                 ;;
         esac
     done
+
+    # Move past drawing area and show cursor
+    printf "\033[${total_lines}B"
+    printf '\033[?25h'
 }
 
 show_skill_selector
