@@ -1,0 +1,99 @@
+# scheduled_notify_config.yaml
+# OpenClaw Scheduled Notify - Default Configuration Template
+#
+# Instructions:
+#   1. Copy this file or edit in place
+#   2. Replace ${...} placeholders with actual values or set as env vars
+#   3. Add/remove tasks as needed
+#   4. Cron reference: see cron_reference.md
+
+# ---------------------------------------------------------------------------
+# Global settings
+# ---------------------------------------------------------------------------
+global:
+  timezone: "Asia/Taipei"
+  notification_channel: "telegram"
+  record_destination: "file"
+
+# ---------------------------------------------------------------------------
+# Telegram notification settings
+# ---------------------------------------------------------------------------
+telegram:
+  bot_token: "${TELEGRAM_BOT_TOKEN}"
+  chat_id: "${TELEGRAM_CHAT_ID}"
+  parse_mode: "Markdown"
+
+# ---------------------------------------------------------------------------
+# Email notification settings (used for failure notifications)
+# ---------------------------------------------------------------------------
+email:
+  smtp_host: "smtp.gmail.com"
+  smtp_port: 587
+  smtp_user: "${EMAIL_USER}"
+  smtp_password: "${EMAIL_APP_PASSWORD}"
+  from: "${EMAIL_USER}"
+  to: "admin@example.com"
+  subject_prefix: "[OpenClaw]"
+
+# ---------------------------------------------------------------------------
+# Failure handling
+# ---------------------------------------------------------------------------
+failure_handling:
+  max_retries: 1
+  retry_delay_seconds: 30
+  on_final_failure: "notify_admin"
+  missed_execution: "skip"
+
+# ---------------------------------------------------------------------------
+# Quiet hours - no general notifications during this window
+# ---------------------------------------------------------------------------
+quiet_hours:
+  start: "23:00"
+  end: "07:00"
+  exceptions: ["failure_notification"]
+
+# ---------------------------------------------------------------------------
+# Scheduled tasks
+# ---------------------------------------------------------------------------
+tasks:
+  - name: "每日早報"
+    skill: "daily_brief"
+    schedule: "0 8 * * *"
+    params:
+      topic: "AI 產業動態"
+      output_destination: "notion"
+    notification:
+      on_success: true
+      on_failure: true
+
+  - name: "CRM 跟進提醒"
+    skill: "crm_followup"
+    schedule: "0 9 * * 1-5"
+    params:
+      filter: "status=待跟進 AND days_since_last_contact>=3"
+      sort: "priority DESC"
+    notification:
+      on_success: true
+      on_failure: true
+      skip_if_empty: true
+
+  - name: "週報彙整"
+    skill: "weekly_report"
+    schedule: "0 17 * * 5"
+    params:
+      data_sources: ["daily_brief", "crm", "tasks"]
+      output_destination: "notion"
+    notification:
+      on_success: true
+      on_failure: true
+
+  - name: "行程提醒"
+    skill: "calendar_check"
+    schedule: "0 * * * *"
+    params:
+      lookahead_minutes: 60
+      calendar_source: "google"
+    notification:
+      on_success: true
+      on_failure: false
+      skip_if_empty: true

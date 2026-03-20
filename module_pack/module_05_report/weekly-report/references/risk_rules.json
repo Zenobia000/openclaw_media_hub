@@ -1,0 +1,32 @@
+{
+  "rules": [
+    {
+      "metric": "task_completion_rate",
+      "threshold": 0.6,
+      "condition": "below",
+      "severity": "warning",
+      "message": "任務完成率低於 60%"
+    },
+    {
+      "metric": "new_leads_change_pct",
+      "threshold": -0.3,
+      "condition": "below",
+      "severity": "warning",
+      "message": "新 Lead 數較上週下降超過 30%"
+    },
+    {
+      "metric": "days_without_followup",
+      "threshold": 3,
+      "condition": "above",
+      "severity": "warning",
+      "message": "超過 3 天未跟進的 lead"
+    },
+    {
+      "metric": "overdue_tasks_next_week",
+      "threshold": 0,
+      "condition": "above",
+      "severity": "info",
+      "message": "截止日在下週的未完成任務"
+    }
+  ]
+}

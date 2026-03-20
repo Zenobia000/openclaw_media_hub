@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Weekly Report Schema",
+  "description": "週報輸出結構定義，提取自 report_output_schema.json 的 weekly_report 型別",
+  "type": "object",
+  "required": ["title", "week_range", "highlights", "metrics", "next_week_todos", "risks", "generated_at"],
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "報告標題"
+    },
+    "week_range": {
+      "type": "string",
+      "description": "週報涵蓋範圍，格式：YYYY-MM-DD ~ YYYY-MM-DD",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2} ~ \\d{4}-\\d{2}-\\d{2}$"
+    },
+    "highlights": {
+      "type": "array",
+      "description": "本週重點摘要，3-5 條",
+      "items": {
+        "type": "string",
+        "maxLength": 100
+      },
+      "minItems": 3,
+      "maxItems": 5
+    },
+    "metrics": {
+      "type": "object",
+      "description": "業務數據",
+      "required": ["new_leads", "follow_ups", "conversions", "tasks_completed", "tasks_total"],
+      "properties": {
+        "new_leads": {
+          "type": "number",
+          "description": "本週新 Lead 數",
+          "minimum": 0
+        },
+        "follow_ups": {
+          "type": "number",
+          "description": "本週跟進數",
+          "minimum": 0
+        },
+        "conversions": {
+          "type": "number",
+          "description": "本週成交數",
+          "minimum": 0
+        },
+        "tasks_completed": {
+          "type": "number",
+          "description": "本週完成任務數",
+          "minimum": 0
+        },
+        "tasks_total": {
+          "type": "number",
+          "description": "本週任務總數",
+          "minimum": 0
+        }
+      }
+    },
+    "next_week_todos": {
+      "type": "array",
+      "description": "下週待辦事項",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "maxItems": 10
+    },
+    "risks": {
+      "type": "array",
+      "description": "風險提醒，含描述和建議動作",
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 5
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "報告生成時間，ISO 8601 格式"
+    }
+  }
+}
