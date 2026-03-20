@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Daily Brief Report Schema",
+  "description": "daily_brief 報告的輸出結構定義，從 report_output_schema.json 提取。所有 daily brief 報告必須嚴格遵循此 schema。",
+  "version": "1.0",
+  "type": "object",
+  "required": ["title", "date", "topic", "summary", "key_points", "sources", "generated_at"],
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "報告標題，格式：[主題] — 每日摘要"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "報告日期，格式：YYYY-MM-DD",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "topic": {
+      "type": "string",
+      "description": "報告主題關鍵字"
+    },
+    "summary": {
+      "type": "string",
+      "description": "整體摘要，100-200 字",
+      "minLength": 100,
+      "maxLength": 200
+    },
+    "key_points": {
+      "type": "array",
+      "description": "重點清單，3-5 條",
+      "items": {
+        "type": "string",
+        "maxLength": 80
+      },
+      "minItems": 3,
+      "maxItems": 5
+    },
+    "sources": {
+      "type": "array",
+      "description": "來源清單",
+      "items": {
+        "type": "object",
+        "required": ["title", "url"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "來源標題"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "來源連結"
+          }
+        }
+      },
+      "minItems": 1,
+      "maxItems": 10
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "報告生成時間，ISO 8601 格式"
+    }
+  },
+  "output_settings": {
+    "description": "全域輸出設定",
+    "type": "object",
+    "properties": {
+      "language": {
+        "type": "string",
+        "default": "zh-TW",
+        "description": "輸出語言"
+      },
+      "max_summary_length": {
+        "type": "number",
+        "default": 200,
+        "description": "摘要最大字數"
+      },
+      "max_key_points": {
+        "type": "number",
+        "default": 5,
+        "description": "重點清單最大條數"
+      },
+      "include_sources": {
+        "type": "boolean",
+        "default": true,
+        "description": "是否包含來源連結"
+      }
+    }
+  }
+}
