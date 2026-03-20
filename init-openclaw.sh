@@ -370,7 +370,7 @@ start_ngrok_tunnel() {
         fi
 
         write_info "正在背景啟動 ngrok http 18789..."
-        ngrok http 18789 --log /tmp/ngrok_openclaw.log --log-level info &
+        ngrok http 18789 --log /tmp/ngrok_openclaw.log --log-level info >/dev/null 2>&1 &
         local ngrok_pid=$!
         for (( i=0; i<10; i++ )); do
             sleep 2
