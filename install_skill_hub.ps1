@@ -113,6 +113,9 @@ function Show-SkillSelector {
     param([array]$Skills)
 
     $selected = New-Object bool[] $Skills.Count
+    for ($i = 0; $i -lt $Skills.Count; $i++) {
+        $selected[$i] = [bool]$Skills[$i].Installed
+    }
     $cursor = 0
     $search = ""
     $lastLineCount = 0
@@ -211,7 +214,11 @@ function Show-SkillSelector {
 
         # 操作提示
         $hint = "│  ↑/↓ 移動 • Space/Tab: 選取 • Enter: 確認 • Ctrl+A: 全選 • Esc: 取消"
-        if ($selCount -gt 0) { $hint += "  (已選 $selCount 個)" }
+        if ($selCount -gt 0) { 
+            $hint += "  (已選 $selCount 個)" 
+        } else {
+            $hint += "  (未選擇任何技能)"
+        }
         Write-Host $hint -ForegroundColor DarkGray
         $lineCount++
 
@@ -241,7 +248,6 @@ function Show-SkillSelector {
                 if ($filtered.Count -gt 0) {
                     $idx = $filtered[$cursor]
                     $selected[$idx] = -not $selected[$idx]
-                    if ($cursor -lt $filtered.Count - 1) { $cursor++ }
                 }
             }
             'Enter' {
@@ -267,7 +273,7 @@ function Show-SkillSelector {
                 }
                 Write-Host ""
                 [Console]::CursorVisible = $true
-                return $result
+                return ,@($result)
             }
             'Escape' {
                 # 最終畫面：取消
@@ -317,9 +323,6 @@ $selectedIndices = Show-SkillSelector -Skills $skills
 if ($null -eq $selectedIndices) {
     exit 0
 }
-if ($selectedIndices.Count -eq 0) {
-    exit 0
-}
 
 # ── 確保目標目錄存在 ──────────────────────────────────────────
 if (-not (Test-Path $SkillsTargetDir)) {
@@ -327,31 +330,34 @@ if (-not (Test-Path $SkillsTargetDir)) {
     Write-Ok "建立目錄：.openclaw\workspace\skills"
 }
 
-# ── 安裝技能 ──────────────────────────────────────────────────
+# ── 安裝與移除技能 ──────────────────────────────────────────────────
 $countInstalled = 0
+$countRemoved = 0
 $countSkipped = 0
 
-foreach ($idx in $selectedIndices) {
-    $s = $skills[$idx]
+for ($i = 0; $i -lt $skills.Count; $i++) {
+    $s = $skills[$i]
+    $isSelected = $selectedIndices -contains $i
     $targetDir = Join-Path $SkillsTargetDir $s.Name
 
-    if (Test-Path $targetDir) {
-        Write-Info "技能已存在：$($s.Name)（略過）"
-        $countSkipped++
-    } else {
+    if ($isSelected -and -not $s.Installed) {
         Copy-Item -Path $s.SourceDir -Destination $targetDir -Recurse
         Write-Ok "安裝技能：$($s.Emoji) $($s.Name) → .openclaw\workspace\skills\$($s.Name)"
         $countInstalled++
+    } elseif (-not $isSelected -and $s.Installed) {
+        if (Test-Path $targetDir) {
+            Remove-Item -Path $targetDir -Recurse -Force
+            Write-Ok "移除技能：$($s.Emoji) $($s.Name)"
+            $countRemoved++
+        }
+    } else {
+        $countSkipped++
     }
 }
 
 # ── 摘要 ──────────────────────────────────────────────────────
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
-if ($countInstalled -gt 0) {
-    Write-Ok "安裝完成！新安裝 $countInstalled 個技能，略過 $countSkipped 個。"
-} else {
-    Write-Info "無新技能安裝（略過 $countSkipped 個已存在的技能）。"
-}
+Write-Ok "處理完成！新安裝 $countInstalled 個，移除 $countRemoved 個，略過 $countSkipped 個。"
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
