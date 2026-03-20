@@ -13,6 +13,15 @@
 
 set -euo pipefail
 
+# ── Global cleanup on Ctrl+C / exit ──────────────────────────
+cleanup() {
+    printf '\033[?25h'
+    echo ""
+    echo -e '\033[0;33m[WARN]  腳本已中斷。\033[0m'
+    exit 130
+}
+trap cleanup INT TERM
+
 # ── 路徑 ────────────────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKILL_HUB_DIR="$SCRIPT_DIR/skill_hub"
@@ -129,9 +138,8 @@ show_skill_selector() {
     local cursor=0
     local total_lines=$(( total + 4 ))  # title + │ + items + │ + hint
 
-    # Hide cursor, restore on exit/interrupt
+    # Hide cursor (global trap handles restore)
     printf '\033[?25l'
-    trap 'printf "\033[?25h"' EXIT INT TERM
 
     # Reserve space
     for (( i=0; i<total_lines; i++ )); do printf '\n'; done
