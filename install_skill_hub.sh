@@ -129,8 +129,9 @@ show_skill_selector() {
     local cursor=0
     local total_lines=$(( total + 4 ))  # title + │ + items + │ + hint
 
-    # Hide cursor
+    # Hide cursor, restore on exit/interrupt
     printf '\033[?25l'
+    trap 'printf "\033[?25h"' EXIT INT TERM
 
     # Reserve space
     for (( i=0; i<total_lines; i++ )); do printf '\n'; done
@@ -191,8 +192,8 @@ show_skill_selector() {
                 local seq
                 IFS= read -rsn2 -t 0.1 seq
                 case "$seq" in
-                    '[A') (( cursor > 0 )) && (( cursor-- )) ;;
-                    '[B') (( cursor < total - 1 )) && (( cursor++ )) ;;
+                    '[A') (( cursor > 0 )) && (( cursor-- )) || true ;;
+                    '[B') (( cursor < total - 1 )) && (( cursor++ )) || true ;;
                 esac
                 ;;
             ' ') # Space: toggle
