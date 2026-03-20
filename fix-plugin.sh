@@ -36,6 +36,12 @@ write_ok()    { echo -e "${GREEN}[OK]    $1${RESET}"; }
 write_warn()  { echo -e "${YELLOW}[WARN]  $1${RESET}"; }
 write_err()   { echo -e "${RED}[ERROR] $1${RESET}"; }
 
+# -- Check prerequisites ------------------------------------
+if ! command -v jq &> /dev/null; then
+    write_err "jq 未安裝。請先執行 'sudo apt install -y jq' 再執行此腳本。"
+    exit 1
+fi
+
 # -- Argument parsing ----------------------------------------
 LIST=false
 DRY_RUN=false

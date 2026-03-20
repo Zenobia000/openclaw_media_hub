@@ -580,7 +580,12 @@ build_discord_config() {
 # Main flow
 # ════════════════════════════════════════════════════════════════
 
-# 0. Check Docker
+# 0. Check prerequisites
+if ! command -v jq &> /dev/null; then
+    write_err "jq 未安裝。請先執行 'sudo apt install -y jq' 再執行此腳本。"
+    exit 1
+fi
+
 write_info "檢查 Docker 是否正在執行..."
 if docker info > /dev/null 2>&1; then
     write_ok "Docker 已啟動"
