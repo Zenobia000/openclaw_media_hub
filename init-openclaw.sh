@@ -172,8 +172,9 @@ show_skill_selector() {
     # total lines = 1(title) + 1(│) + count(items) + 1(│) + 1(hint) = count+4
     local total_lines=$(( count + 4 ))
 
-    # Hide cursor
+    # Hide cursor, restore on exit/interrupt
     printf '\033[?25l'
+    trap 'printf "\033[?25h"' EXIT INT TERM
 
     # Print initial blank lines to reserve space
     for (( i=0; i<total_lines; i++ )); do printf '\n'; done
@@ -238,10 +239,10 @@ show_skill_selector() {
                 IFS= read -rsn2 -t 0.1 seq
                 case "$seq" in
                     '[A') # Up
-                        (( cursor > 0 )) && (( cursor-- ))
+                        (( cursor > 0 )) && (( cursor-- )) || true
                         ;;
                     '[B') # Down
-                        (( cursor < count - 1 )) && (( cursor++ ))
+                        (( cursor < count - 1 )) && (( cursor++ )) || true
                         ;;
                 esac
                 ;;
