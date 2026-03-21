@@ -140,23 +140,16 @@ while true; do
     docker compose exec openclaw-gateway openclaw configure --section model
 done
 
-# 5. 語音轉文字功能（需要 OpenAI API 金鑰）
+# 5. 語音轉文字功能（偵測到 OpenAI API 金鑰時自動啟用）
 echo ""
-info "語音轉文字功能可將語音訊息自動轉為文字（使用 OpenAI Whisper）。"
-if confirm_yes_no "是否要啟用語音轉文字功能？（需要已設定 OpenAI API 金鑰）"; then
-    # 從 auth-profiles.json 讀取 OpenAI profile 名稱
-    auth_profiles_file="$OPENCLAW_DIR/agents/main/agent/auth-profiles.json"
-    openai_profile=""
-    if [[ -f "$auth_profiles_file" ]]; then
-        openai_profile=$(jq -r '.profiles | to_entries[] | select(.value.provider == "openai") | .key' "$auth_profiles_file" 2>/dev/null | head -1)
-    fi
-    if [[ -z "$openai_profile" ]]; then
-        warn "未在 auth-profiles.json 中找到 OpenAI profile，請先設定 OpenAI API 金鑰。"
-    else
-        info "使用 OpenAI profile：$openai_profile"
-    fi
-
-    if [[ -n "$openai_profile" ]] && jq --arg profile "$openai_profile" '.tools //= {} |
+auth_profiles_file="$OPENCLAW_DIR/agents/main/agent/auth-profiles.json"
+openai_profile=""
+if [[ -f "$auth_profiles_file" ]]; then
+    openai_profile=$(jq -r '.profiles | to_entries[] | select(.value.provider == "openai") | .key' "$auth_profiles_file" 2>/dev/null | head -1)
+fi
+if [[ -n "$openai_profile" ]]; then
+    info "偵測到 OpenAI profile：$openai_profile，自動啟用語音轉文字功能..."
+    if jq --arg profile "$openai_profile" '.tools //= {} |
         .tools.media = {
             "audio": {
                 "enabled": true,
@@ -171,13 +164,13 @@ if confirm_yes_no "是否要啟用語音轉文字功能？（需要已設定 Ope
                 "echoTranscript": true
             }
         }' "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"; then
-        ok "語音轉文字功能已啟用（language=zh, model=whisper-1）"
+        ok "語音轉文字功能已啟用（language=zh, model=whisper-1, profile=$openai_profile）"
     else
         err "無法寫入語音設定"
         rm -f "${CONFIG_FILE}.tmp"
     fi
 else
-    info "略過語音轉文字功能。您可稍後手動編輯 .openclaw/openclaw.json 的 tools.media.audio 區段。"
+    info "未偵測到 OpenAI API 金鑰，略過語音轉文字功能。"
 fi
 
 # 重啟以套用設定

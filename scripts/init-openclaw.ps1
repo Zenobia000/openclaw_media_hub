@@ -122,26 +122,19 @@ do {
     docker compose exec openclaw-gateway openclaw configure --section model
 } while ($true)
 
-# 5. 語音轉文字功能（需要 OpenAI API 金鑰）
+# 5. 語音轉文字功能（偵測到 OpenAI API 金鑰時自動啟用）
 Write-Host ""
-Write-Info "語音轉文字功能可將語音訊息自動轉為文字（使用 OpenAI Whisper）。"
-if (Confirm-YesNo "是否要啟用語音轉文字功能？（需要已設定 OpenAI API 金鑰）") {
+$authProfilesFile = Join-Path $OpenClawDir "agents\main\agent\auth-profiles.json"
+$openaiProfile = $null
+if (Test-Path $authProfilesFile) {
+    $authProfiles = Get-Content -Path $authProfilesFile -Raw | ConvertFrom-Json
+    $openaiProfile = $authProfiles.profiles.PSObject.Properties |
+        Where-Object { $_.Value.provider -eq "openai" } |
+        Select-Object -First 1 -ExpandProperty Name
+}
+if (-not [string]::IsNullOrWhiteSpace($openaiProfile)) {
+    Write-Info "偵測到 OpenAI profile：$openaiProfile，自動啟用語音轉文字功能..."
     try {
-        # 從 auth-profiles.json 讀取 OpenAI profile 名稱
-        $authProfilesFile = Join-Path $OpenClawDir "agents\main\agent\auth-profiles.json"
-        $openaiProfile = $null
-        if (Test-Path $authProfilesFile) {
-            $authProfiles = Get-Content -Path $authProfilesFile -Raw | ConvertFrom-Json
-            $openaiProfile = $authProfiles.profiles.PSObject.Properties |
-                Where-Object { $_.Value.provider -eq "openai" } |
-                Select-Object -First 1 -ExpandProperty Name
-        }
-        if ([string]::IsNullOrWhiteSpace($openaiProfile)) {
-            Write-Warn "未在 auth-profiles.json 中找到 OpenAI profile，請先設定 OpenAI API 金鑰。"
-            throw "缺少 OpenAI profile"
-        }
-        Write-Info "使用 OpenAI profile：$openaiProfile"
-
         $config = Get-Content -Path $ConfigFile -Raw | ConvertFrom-Json
         if (-not $config.PSObject.Properties['tools']) {
             $config | Add-Member -MemberType NoteProperty -Name 'tools' -Value ([PSCustomObject]@{})
@@ -165,12 +158,12 @@ if (Confirm-YesNo "是否要啟用語音轉文字功能？（需要已設定 Ope
             $config.tools | Add-Member -MemberType NoteProperty -Name 'media' -Value $mediaConfig
         }
         $config | ConvertTo-Json -Depth 10 | Set-Content -Path $ConfigFile -Encoding UTF8
-        Write-Ok "語音轉文字功能已啟用（language=zh, model=whisper-1）"
+        Write-Ok "語音轉文字功能已啟用（language=zh, model=whisper-1, profile=$openaiProfile）"
     } catch {
         Write-Err "無法寫入語音設定：$_"
     }
 } else {
-    Write-Info "略過語音轉文字功能。您可稍後手動編輯 .openclaw\openclaw.json 的 tools.media.audio 區段。"
+    Write-Info "未偵測到 OpenAI API 金鑰，略過語音轉文字功能。"
 }
 
 # 重啟以套用設定
