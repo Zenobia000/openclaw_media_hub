@@ -2,96 +2,14 @@
 # ============================================================
 # install-plugins.sh — 安裝與設定 OpenClaw 插件 (LINE / Discord)
 #
-# 用法：./install-plugins.sh
+# 用法：./scripts/install-plugins.sh
 #
 # 流程：
 #   1. 安裝 LINE 插件
 #   2. 安裝 Discord 插件
 # ============================================================
 
-set -euo pipefail
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-OPENCLAW_DIR="$SCRIPT_DIR/.openclaw"
-CONFIG_FILE="$OPENCLAW_DIR/openclaw.json"
-HEALTH_URL="http://127.0.0.1:18789/healthz"
-SPIN_CHARS=('|' '/' '-' '\')
-
-# ── 輸出工具 ─────────────────────────────────────────────────
-
-info()  { printf '\033[34m[INFO]  %s\033[0m\n' "$1"; }
-ok()    { printf '\033[32m[OK]    %s\033[0m\n' "$1"; }
-warn()  { printf '\033[33m[WARN]  %s\033[0m\n' "$1"; }
-err()   { printf '\033[31m[ERROR] %s\033[0m\n' "$1"; }
-
-# ── Y/n 確認提示 ─────────────────────────────────────────────
-
-confirm_yes_no() {
-    local prompt="$1"
-    printf '%s (Y/n) ' "$prompt"
-    read -r answer
-    [[ "$answer" != "n" && "$answer" != "N" ]]
-}
-
-# ── 非空輸入提示（支援 n 略過）────────────────────────────────
-
-read_non_empty() {
-    local prompt="$1" value
-    while true; do
-        printf '%s: ' "$prompt"
-        read -r value
-        if [[ -n "${value// /}" ]]; then
-            echo "$value"
-            return
-        fi
-        warn "不可空白，請重新輸入或輸入 n 略過。"
-    done
-}
-
-# ── 執行 Gateway CLI 指令 ────────────────────────────────────
-
-invoke_gateway() {
-    docker compose exec openclaw-gateway openclaw "$@" >/dev/null 2>&1
-}
-
-# ── 等待 Gateway 就緒（含 spinner）───────────────────────────
-
-wait_gateway() {
-    local label="${1:-等待 Gateway 就緒}"
-    local timeout="${2:-30}"
-
-    printf '\033[34m[INFO]  %s... \033[0m' "$label"
-    for (( i=0; i<timeout; i++ )); do
-        printf '\b\033[36m%s\033[0m' "${SPIN_CHARS[$((i % 4))]}"
-        if resp=$(curl -s --max-time 2 "$HEALTH_URL" 2>/dev/null); then
-            if echo "$resp" | grep -q '"ok"\s*:\s*true'; then
-                printf '\b \n'
-                ok "$label — 完成（${i} 秒）"
-                return 0
-            fi
-        fi
-        sleep 1
-    done
-    printf '\b \n'
-    warn "$label — 逾時（${timeout} 秒）"
-    return 1
-}
-
-# ── 重啟 Docker Compose 並等待就緒 ───────────────────────────
-
-restart_and_wait() {
-    local reason="${1:-套用設定}"
-    echo ""
-    info "正在重新啟動服務以${reason}..."
-    if docker compose restart; then
-        ok "服務已重新啟動"
-    else
-        err "無法重新啟動服務"
-        return 1
-    fi
-    echo ""
-    wait_gateway "等待 Gateway 重新就緒"
-}
+source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 # ── 寫入頻道設定到 openclaw.json（使用 jq）───────────────────
 
@@ -265,10 +183,6 @@ start_ngrok_tunnel() {
 #
 # 用法:
 #   install_plugin <Name> <Package> <Channel> <credential_keys> <credential_prompts> <build_config_fn>
-#
-#   credential_keys   : 逗號分隔的欄位名（e.g. "channelAccessToken,channelSecret"）
-#   credential_prompts: 逗號分隔的提示文字
-#   build_config_fn   : 接收已收集的 cred_<key> 變數，輸出 JSON 的函式名
 
 install_plugin() {
     local name="$1"

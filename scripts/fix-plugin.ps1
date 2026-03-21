@@ -2,11 +2,11 @@
 # fix-plugin.ps1 — 修復指定插件路徑不存在的問題（通用型）
 #
 # 用法：
-#   .\fix-plugin.ps1 <plugin_name> [plugin_name2 ...]
-#   .\fix-plugin.ps1 notion
-#   .\fix-plugin.ps1 notion slack google-calendar
-#   .\fix-plugin.ps1 -List                          # 列出已安裝的插件
-#   .\fix-plugin.ps1 -DryRun notion                 # 預覽變更但不實際修改
+#   .\scripts\fix-plugin.ps1 <plugin_name> [plugin_name2 ...]
+#   .\scripts\fix-plugin.ps1 notion
+#   .\scripts\fix-plugin.ps1 notion slack google-calendar
+#   .\scripts\fix-plugin.ps1 -List                          # 列出已安裝的插件
+#   .\scripts\fix-plugin.ps1 -DryRun notion                 # 預覽變更但不實際修改
 #
 # 此腳本會：
 #   1. 從 openclaw.json 移除指定插件的設定
@@ -23,17 +23,7 @@ param(
     [switch]$SkipRestart
 )
 
-$ErrorActionPreference = "Stop"
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-
-$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
-$ConfigFile = Join-Path $ScriptDir ".openclaw\openclaw.json"
-
-# -- 顏色輸出 -------------------------------------------------
-function Write-Info  { param($Msg) Write-Host "[INFO]  $Msg" -ForegroundColor Blue }
-function Write-Ok    { param($Msg) Write-Host "[OK]    $Msg" -ForegroundColor Green }
-function Write-Warn  { param($Msg) Write-Host "[WARN]  $Msg" -ForegroundColor Yellow }
-function Write-Err   { param($Msg) Write-Host "[ERROR] $Msg" -ForegroundColor Red }
+. "$PSScriptRoot\common.ps1"
 
 # -- 檢查設定檔 -----------------------------------------------
 if (-not (Test-Path $ConfigFile)) {
@@ -89,7 +79,7 @@ if ($List) {
 
 # -- 檢查參數 -------------------------------------------------
 if (-not $PluginNames -or $PluginNames.Count -eq 0) {
-    Write-Err "請提供至少一個插件名稱。用法：.\fix-plugin.ps1 <plugin_name> [...]"
+    Write-Err "請提供至少一個插件名稱。用法：.\scripts\fix-plugin.ps1 <plugin_name> [...]"
     Write-Info "使用 -List 查看已安裝的插件。"
     exit 1
 }
@@ -184,29 +174,10 @@ if ($SkipRestart) {
     }
 
     # 等待 Gateway 就緒
-    $spinChars = @('|', '/', '-', '\')
-    $spinIdx = 0
-    $maxWait = 30
-    $waited = 0
-    $gatewayReady = $false
-    Write-Host -NoNewline "[INFO]  等待 Gateway 就緒... " -ForegroundColor Blue
-    while ($waited -lt $maxWait) {
-        Write-Host -NoNewline "`b$($spinChars[$spinIdx % 4])" -ForegroundColor Cyan
-        $spinIdx++
-        try {
-            $health = Invoke-RestMethod -Uri "http://127.0.0.1:18789/healthz" -TimeoutSec 2 -ErrorAction Stop
-            if ($health.ok -eq $true) { $gatewayReady = $true; break }
-        } catch { }
-        Start-Sleep -Seconds 1
-        $waited += 1
-    }
-    Write-Host "`b "
-
-    if (-not $gatewayReady) {
-        Write-Err "Gateway 未在 ${maxWait} 秒內就緒，請手動檢查容器狀態。"
+    if (-not (Wait-Gateway -Label "等待 Gateway 就緒" -Timeout 30)) {
+        Write-Err "Gateway 未在 30 秒內就緒，請手動檢查容器狀態。"
         exit 1
     }
-    Write-Ok "Gateway 已就緒（${waited} 秒）"
 
     # 執行 openclaw doctor 驗證
     Write-Host ""

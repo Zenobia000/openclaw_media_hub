@@ -1,8 +1,7 @@
 # ============================================================
 # check-env.ps1 — 環境檢查腳本
 #
-# 用法：
-#   .\check-env.ps1
+# 用法：.\scripts\check-env.ps1
 #
 # 此腳本會檢查以下軟體是否已安裝：
 #   1. Docker
@@ -10,12 +9,8 @@
 #   3. ngrok
 # ============================================================
 
-$ErrorActionPreference = "Continue"
-
-# ── 顏色輸出 ────────────────────────────────────────────────
-function Write-Info  { param($Msg) Write-Host "[INFO]  $Msg" -ForegroundColor Blue }
-function Write-Ok    { param($Msg) Write-Host "[OK]    $Msg" -ForegroundColor Green }
-function Write-Fail  { param($Msg) Write-Host "[FAIL]  $Msg" -ForegroundColor Red }
+. "$PSScriptRoot\common.ps1"
+$ErrorActionPreference = "Continue"  # 環境檢查時不中斷
 
 $allPassed = $true
 

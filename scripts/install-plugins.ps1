@@ -1,100 +1,14 @@
 # ============================================================
 # install-plugins.ps1 — 安裝與設定 OpenClaw 插件 (LINE / Discord)
 #
-# 用法：.\install-plugins.ps1
+# 用法：.\scripts\install-plugins.ps1
 #
 # 流程：
 #   1. 安裝 LINE 插件
 #   2. 安裝 Discord 插件
 # ============================================================
 
-$ErrorActionPreference = "Stop"
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-
-$ScriptDir    = Split-Path -Parent $MyInvocation.MyCommand.Definition
-$OpenClawDir  = Join-Path $ScriptDir ".openclaw"
-$ConfigFile   = Join-Path $OpenClawDir "openclaw.json"
-$HealthUrl    = "http://127.0.0.1:18789/healthz"
-$SpinChars    = @('|', '/', '-', '\')
-
-# ── 輸出工具 ─────────────────────────────────────────────────
-
-function Write-Info  { param($Msg) Write-Host "[INFO]  $Msg" -ForegroundColor Blue }
-function Write-Ok    { param($Msg) Write-Host "[OK]    $Msg" -ForegroundColor Green }
-function Write-Warn  { param($Msg) Write-Host "[WARN]  $Msg" -ForegroundColor Yellow }
-function Write-Err   { param($Msg) Write-Host "[ERROR] $Msg" -ForegroundColor Red }
-
-# ── Y/n 確認提示 ─────────────────────────────────────────────
-
-function Confirm-YesNo {
-    param([string]$Prompt)
-    $answer = Read-Host "$Prompt (Y/n)"
-    return ($answer -ne 'n' -and $answer -ne 'N')
-}
-
-# ── 非空輸入提示（支援 n 略過）────────────────────────────────
-
-function Read-NonEmpty {
-    param([string]$Prompt)
-    do {
-        $value = Read-Host $Prompt
-        if ([string]::IsNullOrWhiteSpace($value)) {
-            Write-Warn "不可空白，請重新輸入或輸入 n 略過。"
-        }
-    } while ([string]::IsNullOrWhiteSpace($value))
-    return $value
-}
-
-# ── 執行 Gateway CLI 指令 ────────────────────────────────────
-
-function Invoke-Gateway {
-    param([string[]]$GwArgs)
-    $null = docker compose exec openclaw-gateway openclaw @GwArgs 2>&1
-    return ($LASTEXITCODE -eq 0)
-}
-
-# ── 等待 Gateway 就緒（含 spinner）───────────────────────────
-
-function Wait-Gateway {
-    param(
-        [string]$Label = "等待 Gateway 就緒",
-        [int]$Timeout  = 30
-    )
-    Write-Host -NoNewline "[INFO]  $Label... " -ForegroundColor Blue
-    for ($i = 0; $i -lt $Timeout; $i++) {
-        Write-Host -NoNewline "`b$($SpinChars[$i % 4])" -ForegroundColor Cyan
-        try {
-            $health = Invoke-RestMethod -Uri $HealthUrl -TimeoutSec 2 -ErrorAction Stop
-            if ($health.ok -eq $true) {
-                Write-Host "`b "
-                Write-Ok "$Label — 完成（${i} 秒）"
-                return $true
-            }
-        } catch { }
-        Start-Sleep -Seconds 1
-    }
-    Write-Host "`b "
-    Write-Warn "$Label — 逾時（${Timeout} 秒）"
-    return $false
-}
-
-# ── 重啟 Docker Compose 並等待就緒 ───────────────────────────
-
-function Restart-AndWait {
-    param([string]$Reason = "套用設定")
-    Write-Host ""
-    Write-Info "正在重新啟動服務以${Reason}..."
-    try {
-        docker compose restart
-        if ($LASTEXITCODE -ne 0) { throw "docker compose restart 失敗" }
-        Write-Ok "服務已重新啟動"
-    } catch {
-        Write-Err "無法重新啟動服務：$_"
-        return $false
-    }
-    Write-Host ""
-    return (Wait-Gateway -Label "等待 Gateway 重新就緒")
-}
+. "$PSScriptRoot\common.ps1"
 
 # ── 寫入頻道設定到 openclaw.json ─────────────────────────────
 
