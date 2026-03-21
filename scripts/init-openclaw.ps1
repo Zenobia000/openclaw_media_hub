@@ -6,11 +6,10 @@
 # 流程：
 #   1. 建立 .openclaw 目錄結構
 #   2. 產生 openclaw.json（Gateway 設定）
-#   3. 複製 .env.example → .env
-#   4. 啟動 Docker Compose
-#   5. 設定 API 金鑰（可多組，迴圈詢問）
-#   6. 啟用語音轉文字（OpenAI Whisper）
-#   7. 裝置配對
+#   3. 啟動 Docker Compose
+#   4. 設定 API 金鑰（可多組，迴圈詢問）
+#   5. 啟用語音轉文字（OpenAI Whisper）
+#   6. 裝置配對
 # ============================================================
 
 . "$PSScriptRoot\common.ps1"
@@ -70,21 +69,7 @@ if (-not (Test-Path $ConfigFile)) {
 Write-Host ""
 Write-Ok "初始化完成！"
 
-# 3. 複製 .env.example → .env
-$envExample = Join-Path $ProjectRoot ".env.example"
-$envFile    = Join-Path $ProjectRoot ".env"
-if (-not (Test-Path $envFile)) {
-    if (Test-Path $envExample) {
-        Copy-Item -Path $envExample -Destination $envFile
-        Write-Ok "已從 .env.example 複製建立 .env"
-    } else {
-        Write-Warn ".env.example 不存在，請手動建立 .env 檔案。"
-    }
-} else {
-    Write-Info ".env 已存在（略過複製）"
-}
-
-# 4. 啟動 Docker Compose
+# 3. 啟動 Docker Compose
 Write-Host ""
 Write-Info "正在啟動 Docker Compose 服務..."
 try {
@@ -102,7 +87,7 @@ if (-not (Wait-Gateway -Label "等待 Gateway 啟動")) {
     exit 1
 }
 
-# 5. 設定 API 金鑰（迴圈，可設定多組）
+# 4. 設定 API 金鑰（迴圈，可設定多組）
 do {
     # 顯示目前已設定的 API 金鑰摘要
     Write-Host ""
@@ -137,11 +122,26 @@ do {
     docker compose exec openclaw-gateway openclaw configure --section model
 } while ($true)
 
-# 6b. 語音轉文字功能（需要 OpenAI API 金鑰）
+# 5. 語音轉文字功能（需要 OpenAI API 金鑰）
 Write-Host ""
 Write-Info "語音轉文字功能可將語音訊息自動轉為文字（使用 OpenAI Whisper）。"
 if (Confirm-YesNo "是否要啟用語音轉文字功能？（需要已設定 OpenAI API 金鑰）") {
     try {
+        # 從 auth-profiles.json 讀取 OpenAI profile 名稱
+        $authProfilesFile = Join-Path $OpenClawDir "agents\main\agent\auth-profiles.json"
+        $openaiProfile = $null
+        if (Test-Path $authProfilesFile) {
+            $authProfiles = Get-Content -Path $authProfilesFile -Raw | ConvertFrom-Json
+            $openaiProfile = $authProfiles.profiles.PSObject.Properties |
+                Where-Object { $_.Value.provider -eq "openai" } |
+                Select-Object -First 1 -ExpandProperty Name
+        }
+        if ([string]::IsNullOrWhiteSpace($openaiProfile)) {
+            Write-Warn "未在 auth-profiles.json 中找到 OpenAI profile，請先設定 OpenAI API 金鑰。"
+            throw "缺少 OpenAI profile"
+        }
+        Write-Info "使用 OpenAI profile：$openaiProfile"
+
         $config = Get-Content -Path $ConfigFile -Raw | ConvertFrom-Json
         if (-not $config.PSObject.Properties['tools']) {
             $config | Add-Member -MemberType NoteProperty -Name 'tools' -Value ([PSCustomObject]@{})
@@ -153,7 +153,7 @@ if (Confirm-YesNo "是否要啟用語音轉文字功能？（需要已設定 Ope
                 [PSCustomObject]@{
                     provider = "openai"
                     model    = "whisper-1"
-                    profile  = "openai:manual"
+                    profile  = $openaiProfile
                 }
             )
             echoTranscript = $true
@@ -194,7 +194,7 @@ try {
 }
 
 
-# 7. 裝置配對
+# 6. 裝置配對
 Write-Host ""
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host "  Dashboard 連線資訊" -ForegroundColor Cyan

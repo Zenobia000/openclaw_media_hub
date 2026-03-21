@@ -3,10 +3,11 @@
 #
 # 用法：.\scripts\check-env.ps1
 #
-# 此腳本會檢查以下軟體是否已安裝：
+# 此腳本會檢查以下項目：
 #   1. Docker
 #   2. VS Code
 #   3. ngrok
+#   4. 複製 .env.example → .env（若 .env 不存在）
 # ============================================================
 
 . "$PSScriptRoot\common.ps1"
@@ -81,6 +82,23 @@ try {
 } catch {
     Write-Fail "ngrok 未安裝。請參考 1.軟體安裝指引\3.ngrok軟體 進行安裝。"
     $allPassed = $false
+}
+
+# ── 4. 複製 .env.example → .env ────────────────────────────────
+Write-Host ""
+Write-Info "檢查 .env 檔案..."
+$envExample = Join-Path $ProjectRoot ".env.example"
+$envFile    = Join-Path $ProjectRoot ".env"
+if (-not (Test-Path $envFile)) {
+    if (Test-Path $envExample) {
+        Copy-Item -Path $envExample -Destination $envFile
+        Write-Ok "已從 .env.example 複製建立 .env"
+    } else {
+        Write-Fail ".env.example 不存在，請手動建立 .env 檔案。"
+        $allPassed = $false
+    }
+} else {
+    Write-Ok ".env 已存在"
 }
 
 # ── 結果摘要 ──────────────────────────────────────────────────

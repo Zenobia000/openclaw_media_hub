@@ -4,10 +4,11 @@
 #
 # 用法：./scripts/check-env.sh
 #
-# 此腳本會檢查以下軟體是否已安裝：
+# 此腳本會檢查以下項目：
 #   1. Docker
 #   2. VS Code
 #   3. ngrok
+#   4. 複製 .env.example → .env（若 .env 不存在）
 # ============================================================
 
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
@@ -64,6 +65,23 @@ if ngrok_version=$(ngrok version 2>&1) && [[ $? -eq 0 ]]; then
 else
     err "ngrok 未安裝。請參考 1.軟體安裝指引/3.ngrok軟體 進行安裝。"
     all_passed=false
+fi
+
+# ── 4. 複製 .env.example → .env ────────────────────────────────
+echo ""
+info "檢查 .env 檔案..."
+env_example="$PROJECT_ROOT/.env.example"
+env_file="$PROJECT_ROOT/.env"
+if [[ ! -f "$env_file" ]]; then
+    if [[ -f "$env_example" ]]; then
+        cp "$env_example" "$env_file"
+        ok "已從 .env.example 複製建立 .env"
+    else
+        err ".env.example 不存在，請手動建立 .env 檔案。"
+        all_passed=false
+    fi
+else
+    ok ".env 已存在"
 fi
 
 # ── 結果摘要 ──────────────────────────────────────────────────

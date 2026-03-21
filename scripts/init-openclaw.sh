@@ -7,11 +7,10 @@
 # 流程：
 #   1. 建立 .openclaw 目錄結構
 #   2. 產生 openclaw.json（Gateway 設定）
-#   3. 複製 .env.example → .env
-#   4. 啟動 Docker Compose
-#   5. 設定 API 金鑰（可多組，迴圈詢問）
-#   6. 啟用語音轉文字（OpenAI Whisper）
-#   7. 裝置配對
+#   3. 啟動 Docker Compose
+#   4. 設定 API 金鑰（可多組，迴圈詢問）
+#   5. 啟用語音轉文字（OpenAI Whisper）
+#   6. 裝置配對
 #
 # 相依工具：bash 4+, docker, curl, jq
 # ============================================================
@@ -97,21 +96,7 @@ fi
 echo ""
 ok "初始化完成！"
 
-# 3. 複製 .env.example → .env
-env_example="$PROJECT_ROOT/.env.example"
-env_file="$PROJECT_ROOT/.env"
-if [[ ! -f "$env_file" ]]; then
-    if [[ -f "$env_example" ]]; then
-        cp "$env_example" "$env_file"
-        ok "已從 .env.example 複製建立 .env"
-    else
-        warn ".env.example 不存在，請手動建立 .env 檔案。"
-    fi
-else
-    info ".env 已存在（略過複製）"
-fi
-
-# 4. 啟動 Docker Compose
+# 3. 啟動 Docker Compose
 echo ""
 info "正在啟動 Docker Compose 服務..."
 if docker compose up -d; then
@@ -127,7 +112,7 @@ if ! wait_gateway "等待 Gateway 啟動"; then
     exit 1
 fi
 
-# 5. 設定 API 金鑰（迴圈，可設定多組）
+# 4. 設定 API 金鑰（迴圈，可設定多組）
 while true; do
     echo ""
     # 顯示目前已設定的 API 金鑰摘要
@@ -155,11 +140,23 @@ while true; do
     docker compose exec openclaw-gateway openclaw configure --section model
 done
 
-# 6. 語音轉文字功能（需要 OpenAI API 金鑰）
+# 5. 語音轉文字功能（需要 OpenAI API 金鑰）
 echo ""
 info "語音轉文字功能可將語音訊息自動轉為文字（使用 OpenAI Whisper）。"
 if confirm_yes_no "是否要啟用語音轉文字功能？（需要已設定 OpenAI API 金鑰）"; then
-    if jq '.tools //= {} |
+    # 從 auth-profiles.json 讀取 OpenAI profile 名稱
+    auth_profiles_file="$OPENCLAW_DIR/agents/main/agent/auth-profiles.json"
+    openai_profile=""
+    if [[ -f "$auth_profiles_file" ]]; then
+        openai_profile=$(jq -r '.profiles | to_entries[] | select(.value.provider == "openai") | .key' "$auth_profiles_file" 2>/dev/null | head -1)
+    fi
+    if [[ -z "$openai_profile" ]]; then
+        warn "未在 auth-profiles.json 中找到 OpenAI profile，請先設定 OpenAI API 金鑰。"
+    else
+        info "使用 OpenAI profile：$openai_profile"
+    fi
+
+    if [[ -n "$openai_profile" ]] && jq --arg profile "$openai_profile" '.tools //= {} |
         .tools.media = {
             "audio": {
                 "enabled": true,
@@ -168,7 +165,7 @@ if confirm_yes_no "是否要啟用語音轉文字功能？（需要已設定 Ope
                     {
                         "provider": "openai",
                         "model": "whisper-1",
-                        "profile": "openai:manual"
+                        "profile": $profile
                     }
                 ],
                 "echoTranscript": true
@@ -203,7 +200,7 @@ else
     warn "您可手動查看 .openclaw/openclaw.json 中的 gateway.auth.token 欄位。"
 fi
 
-# 7. 裝置配對
+# 6. 裝置配對
 echo ""
 printf '\033[36m============================================================\033[0m\n'
 printf '\033[36m  Dashboard 連線資訊\033[0m\n'
