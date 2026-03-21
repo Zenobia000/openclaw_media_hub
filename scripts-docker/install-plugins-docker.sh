@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ============================================================
-# install-plugins.sh — 安裝與設定 OpenClaw 插件 (LINE / Discord)
+# install-plugins-docker.sh — 安裝與設定 OpenClaw 插件 (LINE / Discord) (Docker)
 #
-# 用法：./scripts/install-plugins.sh
+# 用法：./scripts-docker/install-plugins-docker.sh
 #
 # 流程：
 #   1. 安裝 LINE 插件

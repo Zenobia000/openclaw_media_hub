@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ============================================================
-# deploy-skills.sh — 部署技能（module_pack → workspace/skills）
+# deploy-skills-docker.sh — 部署技能（module_pack → workspace/skills）(Docker)
 #
-# 用法：./scripts/deploy-skills.sh
+# 用法：./scripts-docker/deploy-skills-docker.sh
 #
 # 掃描 module_pack 目錄中的技能（透過 SKILL.md），提供互動式
 # 選擇介面讓使用者勾選要部署或移除的技能。

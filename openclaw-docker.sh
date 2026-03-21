@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ============================================================
-# openclaw.sh — OpenClaw 統一入口腳本
+# openclaw-docker.sh — OpenClaw 統一入口腳本 (Docker)
 #
-# 用法：./openclaw.sh <子命令> [參數...]
+# 用法：./openclaw-docker.sh <子命令> [參數...]
 #
 # 子命令：
 #   init              初始化 .openclaw 目錄結構與插件設定
@@ -14,11 +14,11 @@
 
 set -euo pipefail
 
-SCRIPTS_DIR="$(cd "$(dirname "$0")/scripts" && pwd)"
+SCRIPTS_DIR="$(cd "$(dirname "$0")/scripts-docker" && pwd)"
 
 usage() {
     cat <<'USAGE'
-用法：./openclaw.sh <子命令> [參數...]
+用法：./openclaw-docker.sh <子命令> [參數...]
 
 子命令：
   init              初始化 .openclaw 目錄結構與插件設定
@@ -37,11 +37,11 @@ fi
 cmd="$1"; shift
 
 case "$cmd" in
-    init)             exec "$SCRIPTS_DIR/init-openclaw.sh" "$@" ;;
-    deploy-skills)    exec "$SCRIPTS_DIR/deploy-skills.sh" "$@" ;;
-    check-env)        exec "$SCRIPTS_DIR/check-env.sh" "$@" ;;
-    fix-plugin)       exec "$SCRIPTS_DIR/fix-plugin.sh" "$@" ;;
-    install-plugins)  exec "$SCRIPTS_DIR/install-plugins.sh" "$@" ;;
+    init)             exec "$SCRIPTS_DIR/init-openclaw-docker.sh" "$@" ;;
+    deploy-skills)    exec "$SCRIPTS_DIR/deploy-skills-docker.sh" "$@" ;;
+    check-env)        exec "$SCRIPTS_DIR/check-env-docker.sh" "$@" ;;
+    fix-plugin)       exec "$SCRIPTS_DIR/fix-plugin-docker.sh" "$@" ;;
+    install-plugins)  exec "$SCRIPTS_DIR/install-plugins-docker.sh" "$@" ;;
     *)
         echo "錯誤：未知的子命令 '$cmd'" >&2
         echo "" >&2

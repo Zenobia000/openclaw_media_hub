@@ -1,7 +1,7 @@
 # ============================================================
-# check-env.ps1 — 環境檢查腳本
+# check-env-docker.ps1 — 環境檢查腳本 (Docker)
 #
-# 用法：.\scripts\check-env.ps1
+# 用法：.\scripts-docker\check-env-docker.ps1
 #
 # 此腳本會檢查以下項目：
 #   1. Docker

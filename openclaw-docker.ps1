@@ -1,7 +1,7 @@
 # ============================================================
-# openclaw.ps1 — OpenClaw 統一入口腳本
+# openclaw-docker.ps1 — OpenClaw 統一入口腳本 (Docker)
 #
-# 用法：.\openclaw.ps1 <子命令> [參數...]
+# 用法：.\openclaw-docker.ps1 <子命令> [參數...]
 #
 # 子命令：
 #   init                初始化 .openclaw 目錄結構與插件設定
@@ -20,11 +20,11 @@ param(
     [string[]]$Rest
 )
 
-$ScriptsDir = Join-Path $PSScriptRoot "scripts"
+$ScriptsDir = Join-Path $PSScriptRoot "scripts-docker"
 
 function Show-Usage {
     Write-Host @"
-用法：.\openclaw.ps1 <子命令> [參數...]
+用法：.\openclaw-docker.ps1 <子命令> [參數...]
 
 子命令：
   init                初始化 .openclaw 目錄結構與插件設定
@@ -40,12 +40,12 @@ function Show-Usage {
 if (-not $Command) { Show-Usage }
 
 switch ($Command) {
-    'init'              { & "$ScriptsDir\init-openclaw.ps1" @Rest }
-    'deploy-skills'     { & "$ScriptsDir\deploy-skills.ps1" @Rest }
-    'check-env'         { & "$ScriptsDir\check-env.ps1" @Rest }
-    'fix-plugin'        { & "$ScriptsDir\fix-plugin.ps1" @Rest }
-    'install-plugins'   { & "$ScriptsDir\install-plugins.ps1" @Rest }
-    'install-skill-hub' { & "$ScriptsDir\install-skill-hub.ps1" @Rest }
+    'init'              { & "$ScriptsDir\init-openclaw-docker.ps1" @Rest }
+    'deploy-skills'     { & "$ScriptsDir\deploy-skills-docker.ps1" @Rest }
+    'check-env'         { & "$ScriptsDir\check-env-docker.ps1" @Rest }
+    'fix-plugin'        { & "$ScriptsDir\fix-plugin-docker.ps1" @Rest }
+    'install-plugins'   { & "$ScriptsDir\install-plugins-docker.ps1" @Rest }
+    'install-skill-hub' { & "$ScriptsDir\install-skill-hub-docker.ps1" @Rest }
     default {
         Write-Host "錯誤：未知的子命令 '$Command'" -ForegroundColor Red
         Write-Host ""

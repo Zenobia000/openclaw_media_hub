@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ============================================================
-# init-openclaw.sh — 初始化 OpenClaw 環境
+# init-openclaw-docker.sh — 初始化 OpenClaw 環境 (Docker)
 #
-# 用法：./scripts/init-openclaw.sh
+# 用法：./scripts-docker/init-openclaw-docker.sh
 #
 # 流程：
 #   1. 檢查 Docker
