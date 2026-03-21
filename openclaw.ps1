@@ -7,6 +7,7 @@
 #   init                初始化 .openclaw 目錄結構與插件設定
 #   check-env           檢查環境相依工具
 #   fix-plugin          修復插件問題
+#   deploy-skills       部署技能（module_pack → workspace\skills）
 #   install-plugins     安裝 / 管理插件
 #   install-skill-hub   安裝 Skill Hub
 # ============================================================
@@ -27,6 +28,7 @@ function Show-Usage {
 
 子命令：
   init                初始化 .openclaw 目錄結構與插件設定
+  deploy-skills       部署技能（module_pack → workspace\skills）
   check-env           檢查環境相依工具
   fix-plugin          修復插件問題
   install-plugins     安裝 / 管理插件
@@ -39,6 +41,7 @@ if (-not $Command) { Show-Usage }
 
 switch ($Command) {
     'init'              { & "$ScriptsDir\init-openclaw.ps1" @Rest }
+    'deploy-skills'     { & "$ScriptsDir\deploy-skills.ps1" @Rest }
     'check-env'         { & "$ScriptsDir\check-env.ps1" @Rest }
     'fix-plugin'        { & "$ScriptsDir\fix-plugin.ps1" @Rest }
     'install-plugins'   { & "$ScriptsDir\install-plugins.ps1" @Rest }

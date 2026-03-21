@@ -5,13 +5,12 @@
 #
 # 流程：
 #   1. 建立 .openclaw 目錄結構
-#   2. 部署技能（module_pack → workspace\skills）
-#   3. 產生 openclaw.json（Gateway 設定）
-#   4. 複製 .env.example → .env
-#   5. 啟動 Docker Compose
-#   6. 設定 API 金鑰（可多組，迴圈詢問）
-#   7. 啟用語音轉文字（OpenAI Whisper）
-#   8. 裝置配對
+#   2. 產生 openclaw.json（Gateway 設定）
+#   3. 複製 .env.example → .env
+#   4. 啟動 Docker Compose
+#   5. 設定 API 金鑰（可多組，迴圈詢問）
+#   6. 啟用語音轉文字（OpenAI Whisper）
+#   7. 裝置配對
 # ============================================================
 
 . "$PSScriptRoot\common.ps1"
@@ -52,59 +51,7 @@ foreach ($dir in $dirs) {
     }
 }
 
-# 2. 部署技能
-$modulePackDir   = Join-Path $ProjectRoot "module_pack"
-$skillsTargetDir = Join-Path $OpenClawDir "workspace\skills"
-
-if (Test-Path $modulePackDir) {
-    Write-Info "掃描 module_pack 中的技能..."
-    $skillFiles = Get-ChildItem -Path $modulePackDir -Recurse -Filter "SKILL.md"
-
-    if ($skillFiles.Count -eq 0) {
-        Write-Info "module_pack 中未找到任何技能。"
-    } else {
-        $skills = $skillFiles | ForEach-Object {
-            $meta = Get-SkillMeta -Path $_.FullName
-            [PSCustomObject]@{
-                Name        = $_.Directory.Name
-                Emoji       = $meta.Emoji
-                Description = $meta.Description
-                SourceDir   = $_.Directory.FullName
-                Installed   = Test-Path (Join-Path $skillsTargetDir $_.Directory.Name)
-            }
-        }
-
-        $selectedIndices = Show-SkillSelector -Skills $skills -Title "OpenClaw 初始安裝技能工具"
-
-        if ($null -ne $selectedIndices) {
-            $installed = 0; $removed = 0; $skipped = 0
-            for ($i = 0; $i -lt $skills.Count; $i++) {
-                $s = $skills[$i]
-                $isSelected = $selectedIndices -contains $i
-                $targetDir  = Join-Path $skillsTargetDir $s.Name
-
-                if ($isSelected -and -not $s.Installed) {
-                    Copy-Item -Path $s.SourceDir -Destination $targetDir -Recurse
-                    Write-Ok "部署技能：$($s.Emoji) $($s.Name)"
-                    $installed++
-                } elseif (-not $isSelected -and $s.Installed) {
-                    Remove-Item -Path $targetDir -Recurse -Force
-                    Write-Ok "移除技能：$($s.Emoji) $($s.Name)"
-                    $removed++
-                } else {
-                    $skipped++
-                }
-            }
-            Write-Info "技能處理完成！新部署 $installed 個，移除 $removed 個，略過 $skipped 個。"
-        } else {
-            Write-Info "已取消任務，無更動。"
-        }
-    }
-} else {
-    Write-Warn "module_pack 目錄不存在，略過技能部署。"
-}
-
-# 3. 產生 openclaw.json
+# 2. 產生 openclaw.json
 if (-not (Test-Path $ConfigFile)) {
     @'
 {
@@ -123,7 +70,7 @@ if (-not (Test-Path $ConfigFile)) {
 Write-Host ""
 Write-Ok "初始化完成！"
 
-# 4. 複製 .env.example → .env
+# 3. 複製 .env.example → .env
 $envExample = Join-Path $ProjectRoot ".env.example"
 $envFile    = Join-Path $ProjectRoot ".env"
 if (-not (Test-Path $envFile)) {
@@ -137,7 +84,7 @@ if (-not (Test-Path $envFile)) {
     Write-Info ".env 已存在（略過複製）"
 }
 
-# 5. 啟動 Docker Compose
+# 4. 啟動 Docker Compose
 Write-Host ""
 Write-Info "正在啟動 Docker Compose 服務..."
 try {
@@ -149,14 +96,13 @@ try {
     exit 1
 }
 
-# 6. 等待 Gateway 就緒
 Write-Host ""
 if (-not (Wait-Gateway -Label "等待 Gateway 啟動")) {
     Write-Err "Gateway 未就緒，請手動檢查容器狀態。"
     exit 1
 }
 
-# 7. 設定 API 金鑰（迴圈，可設定多組）
+# 5. 設定 API 金鑰（迴圈，可設定多組）
 do {
     # 顯示目前已設定的 API 金鑰摘要
     Write-Host ""
@@ -191,7 +137,7 @@ do {
     docker compose exec openclaw-gateway openclaw configure --section model
 } while ($true)
 
-# 7b. 語音轉文字功能（需要 OpenAI API 金鑰）
+# 6b. 語音轉文字功能（需要 OpenAI API 金鑰）
 Write-Host ""
 Write-Info "語音轉文字功能可將語音訊息自動轉為文字（使用 OpenAI Whisper）。"
 if (Confirm-YesNo "是否要啟用語音轉文字功能？（需要已設定 OpenAI API 金鑰）") {
@@ -248,7 +194,7 @@ try {
 }
 
 
-# 9. 裝置配對
+# 7. 裝置配對
 Write-Host ""
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host "  Dashboard 連線資訊" -ForegroundColor Cyan

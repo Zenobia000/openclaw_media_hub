@@ -6,13 +6,12 @@
 #
 # 流程：
 #   1. 建立 .openclaw 目錄結構
-#   2. 部署技能（module_pack → workspace/skills）
-#   3. 產生 openclaw.json（Gateway 設定）
-#   4. 複製 .env.example → .env
-#   5. 啟動 Docker Compose
-#   6. 設定 API 金鑰（可多組，迴圈詢問）
-#   7. 啟用語音轉文字（OpenAI Whisper）
-#   8. 裝置配對
+#   2. 產生 openclaw.json（Gateway 設定）
+#   3. 複製 .env.example → .env
+#   4. 啟動 Docker Compose
+#   5. 設定 API 金鑰（可多組，迴圈詢問）
+#   6. 啟用語音轉文字（OpenAI Whisper）
+#   7. 裝置配對
 #
 # 相依工具：bash 4+, docker, curl, jq
 # ============================================================
@@ -79,73 +78,7 @@ for dir in "${dirs[@]}"; do
     fi
 done
 
-# 2. 部署技能
-MODULE_PACK_DIR="$PROJECT_ROOT/module_pack"
-SKILLS_TARGET_DIR="$OPENCLAW_DIR/workspace/skills"
-
-if [[ -d "$MODULE_PACK_DIR" ]]; then
-    info "掃描 module_pack 中的技能..."
-
-    # 搜尋所有 SKILL.md
-    mapfile -t skill_files < <(find "$MODULE_PACK_DIR" -name "SKILL.md" -type f 2>/dev/null)
-
-    if ((${#skill_files[@]} == 0)); then
-        info "module_pack 中未找到任何技能。"
-    else
-        SKILL_NAMES=()
-        SKILL_EMOJIS=()
-        SKILL_DESCS=()
-        SKILL_SOURCES=()
-        SKILL_INSTALLED=()
-
-        for sf in "${skill_files[@]}"; do
-            skill_dir="$(dirname "$sf")"
-            skill_name="$(basename "$skill_dir")"
-            get_skill_meta "$sf"
-            SKILL_NAMES+=("$skill_name")
-            SKILL_EMOJIS+=("$SKILL_EMOJI")
-            SKILL_DESCS+=("$SKILL_DESC")
-            SKILL_SOURCES+=("$skill_dir")
-            if [[ -d "$SKILLS_TARGET_DIR/$skill_name" ]]; then
-                SKILL_INSTALLED+=(1)
-            else
-                SKILL_INSTALLED+=(0)
-            fi
-        done
-
-        SELECTOR_RESULT=""
-        if show_skill_selector "OpenClaw 初始安裝技能工具"; then
-            installed=0 removed=0 skipped=0
-            for ((i = 0; i < ${#SKILL_NAMES[@]}; i++)); do
-                is_selected=0
-                for idx in $SELECTOR_RESULT; do
-                    if ((idx == i)); then is_selected=1; break; fi
-                done
-
-                target_dir="$SKILLS_TARGET_DIR/${SKILL_NAMES[$i]}"
-
-                if ((is_selected && ! SKILL_INSTALLED[i])); then
-                    cp -r "${SKILL_SOURCES[$i]}" "$target_dir"
-                    ok "部署技能：${SKILL_EMOJIS[$i]} ${SKILL_NAMES[$i]}"
-                    installed=$((installed + 1))
-                elif (( ! is_selected && SKILL_INSTALLED[i])); then
-                    rm -rf "$target_dir"
-                    ok "移除技能：${SKILL_EMOJIS[$i]} ${SKILL_NAMES[$i]}"
-                    removed=$((removed + 1))
-                else
-                    skipped=$((skipped + 1))
-                fi
-            done
-            info "技能處理完成！新部署 $installed 個，移除 $removed 個，略過 $skipped 個。"
-        else
-            info "已取消任務，無更動。"
-        fi
-    fi
-else
-    warn "module_pack 目錄不存在，略過技能部署。"
-fi
-
-# 3. 產生 openclaw.json
+# 2. 產生 openclaw.json
 if [[ ! -f "$CONFIG_FILE" ]]; then
     cat > "$CONFIG_FILE" <<'JSON'
 {
@@ -164,7 +97,7 @@ fi
 echo ""
 ok "初始化完成！"
 
-# 4. 複製 .env.example → .env
+# 3. 複製 .env.example → .env
 env_example="$PROJECT_ROOT/.env.example"
 env_file="$PROJECT_ROOT/.env"
 if [[ ! -f "$env_file" ]]; then
@@ -178,7 +111,7 @@ else
     info ".env 已存在（略過複製）"
 fi
 
-# 5. 啟動 Docker Compose
+# 4. 啟動 Docker Compose
 echo ""
 info "正在啟動 Docker Compose 服務..."
 if docker compose up -d; then
@@ -188,14 +121,13 @@ else
     exit 1
 fi
 
-# 6. 等待 Gateway 就緒
 echo ""
 if ! wait_gateway "等待 Gateway 啟動"; then
     err "Gateway 未就緒，請手動檢查容器狀態。"
     exit 1
 fi
 
-# 7. 設定 API 金鑰（迴圈，可設定多組）
+# 5. 設定 API 金鑰（迴圈，可設定多組）
 while true; do
     echo ""
     # 顯示目前已設定的 API 金鑰摘要
@@ -223,7 +155,7 @@ while true; do
     docker compose exec openclaw-gateway openclaw configure --section model
 done
 
-# 7b. 語音轉文字功能（需要 OpenAI API 金鑰）
+# 6. 語音轉文字功能（需要 OpenAI API 金鑰）
 echo ""
 info "語音轉文字功能可將語音訊息自動轉為文字（使用 OpenAI Whisper）。"
 if confirm_yes_no "是否要啟用語音轉文字功能？（需要已設定 OpenAI API 金鑰）"; then
@@ -271,7 +203,7 @@ else
     warn "您可手動查看 .openclaw/openclaw.json 中的 gateway.auth.token 欄位。"
 fi
 
-# 9. 裝置配對
+# 7. 裝置配對
 echo ""
 printf '\033[36m============================================================\033[0m\n'
 printf '\033[36m  Dashboard 連線資訊\033[0m\n'

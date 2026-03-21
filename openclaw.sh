@@ -6,6 +6,7 @@
 #
 # 子命令：
 #   init              初始化 .openclaw 目錄結構與插件設定
+#   deploy-skills     部署技能（module_pack → workspace/skills）
 #   check-env         檢查環境相依工具
 #   fix-plugin        修復插件問題
 #   install-plugins   安裝 / 管理插件
@@ -21,6 +22,7 @@ usage() {
 
 子命令：
   init              初始化 .openclaw 目錄結構與插件設定
+  deploy-skills     部署技能（module_pack → workspace/skills）
   check-env         檢查環境相依工具
   fix-plugin        修復插件問題
   install-plugins   安裝 / 管理插件
@@ -36,6 +38,7 @@ cmd="$1"; shift
 
 case "$cmd" in
     init)             exec "$SCRIPTS_DIR/init-openclaw.sh" "$@" ;;
+    deploy-skills)    exec "$SCRIPTS_DIR/deploy-skills.sh" "$@" ;;
     check-env)        exec "$SCRIPTS_DIR/check-env.sh" "$@" ;;
     fix-plugin)       exec "$SCRIPTS_DIR/fix-plugin.sh" "$@" ;;
     install-plugins)  exec "$SCRIPTS_DIR/install-plugins.sh" "$@" ;;
