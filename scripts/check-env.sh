@@ -22,6 +22,20 @@ printf '\033[36m  OpenClaw 環境檢查工具\033[0m\n'
 printf '\033[36m========================================\033[0m\n'
 echo ""
 
+# ── 0. 修復腳本換行符號 ──────────────────────────────────────
+info "檢查並修復腳本檔案格式..."
+if command -v dos2unix >/dev/null 2>&1; then
+    dos2unix "$PROJECT_ROOT/openclaw.sh" "$PROJECT_ROOT/scripts/"*.sh >/dev/null 2>&1 || true
+    ok "腳本檔案格式已修復（Unix 格式）"
+else
+    # 使用 sed 作為替代方案
+    find "$PROJECT_ROOT" -maxdepth 1 -name "*.sh" -exec sed -i 's/\r$//' {} \; 2>/dev/null || true
+    find "$PROJECT_ROOT/scripts" -name "*.sh" -exec sed -i 's/\r$//' {} \; 2>/dev/null || true
+    ok "腳本檔案格式已修復（使用 sed）"
+fi
+
+echo ""
+
 # ── 1. 檢查 Docker ───────────────────────────────────────────
 info "檢查 Docker..."
 if docker_version=$(docker --version 2>&1) && [[ $? -eq 0 ]]; then

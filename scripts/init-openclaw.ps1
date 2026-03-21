@@ -1,56 +1,85 @@
 # ============================================================
-# init-openclaw.ps1 — 初始化 .openclaw 目錄結構與插件設定
+# init-openclaw.ps1 — 初始化 OpenClaw 環境
 #
 # 用法：.\scripts\init-openclaw.ps1
 #
 # 流程：
-#   1. 建立 .openclaw 目錄結構
-#   2. 產生 openclaw.json（Gateway 設定）
+#   1. 檢查 Docker
+#   2. 建立目錄結構與設定檔
 #   3. 啟動 Docker Compose
-#   4. 設定 API 金鑰（可多組，迴圈詢問）
-#   5. 啟用語音轉文字（OpenAI Whisper）
-#   6. 裝置配對
+#   4. 設定 API 金鑰（可多組）
+#   5. 語音轉文字（偵測 OpenAI 金鑰自動啟用）
+#   6. Dashboard 連線資訊與裝置配對
 # ============================================================
 
 . "$PSScriptRoot\common.ps1"
 
-# ════════════════════════════════════════════════════════════════
-# 主流程
-# ════════════════════════════════════════════════════════════════
+# ── 輔助函式 ──────────────────────────────────────────────────
 
-# 0. 檢查 Docker
-Write-Info "檢查 Docker 是否正在執行..."
-try {
-    $null = cmd /c "docker info >nul 2>&1"
-    if ($LASTEXITCODE -ne 0) { throw "Docker 未回應" }
-    Write-Ok "Docker 已啟動"
-} catch {
-    Write-Err "Docker 未啟動或未安裝。請先開啟 Docker Desktop 再執行此腳本。"
-    exit 1
+# 讀取 openclaw.json
+function Read-Config {
+    Get-Content -Path $ConfigFile -Raw | ConvertFrom-Json
 }
 
-# 1. 建立目錄結構
-Write-Info "開始初始化 .openclaw 目錄結構..."
-Write-Info "目標路徑：$OpenClawDir"
+# 寫入 openclaw.json
+function Save-Config {
+    param($Data)
+    $Data | ConvertTo-Json -Depth 10 | Set-Content -Path $ConfigFile -Encoding UTF8
+}
 
-$dirs = @(
-    $OpenClawDir
-    Join-Path $OpenClawDir "agents\main\agent"
-    Join-Path $OpenClawDir "workspace"
-    Join-Path $OpenClawDir "workspace\skills"
-)
-
-foreach ($dir in $dirs) {
-    $rel = $dir.Replace("$ProjectRoot\", "")
-    if (-not (Test-Path $dir)) {
-        New-Item -ItemType Directory -Path $dir -Force | Out-Null
-        Write-Ok "建立目錄：$rel"
+# 建立或覆寫 PSObject 屬性（相容 PowerShell 5.1）
+function Set-JsonProp {
+    param([PSObject]$Obj, [string]$Name, $Value, [switch]$OnlyIfMissing)
+    if ($Obj.PSObject.Properties[$Name]) {
+        if (-not $OnlyIfMissing) { $Obj.$Name = $Value }
     } else {
-        Write-Info "目錄已存在：$rel（略過）"
+        $Obj | Add-Member -NotePropertyName $Name -NotePropertyValue $Value
     }
 }
 
-# 2. 產生 openclaw.json
+# 顯示裝置配對手動指令
+function Show-PairingHint {
+    param([string]$Id)
+    if ($Id) {
+        Write-Host "  docker compose exec openclaw-gateway openclaw devices approve $Id" -ForegroundColor Yellow
+    } else {
+        Write-Host "  docker compose exec openclaw-gateway openclaw devices list" -ForegroundColor Yellow
+        Write-Host "  docker compose exec openclaw-gateway openclaw devices approve <ID>" -ForegroundColor Yellow
+    }
+}
+
+# ── 1. 檢查 Docker ───────────────────────────────────────────
+
+Write-Info "檢查 Docker..."
+try {
+    $null = docker info 2>&1
+    if ($LASTEXITCODE -ne 0) { throw }
+    Write-Ok "Docker 已啟動"
+} catch {
+    Write-Err "Docker 未啟動或未安裝，請先開啟 Docker Desktop。"
+    exit 1
+}
+
+# ── 2. 建立目錄結構與設定檔 ───────────────────────────────────
+
+Write-Info "初始化 .openclaw 目錄..."
+
+# 若 .openclaw 存在但不是目錄（例如誤建為檔案），先移除
+if ((Test-Path $OpenClawDir) -and -not (Test-Path $OpenClawDir -PathType Container)) {
+    Write-Warn ".openclaw 存在但不是目錄，將其移除後重新建立。"
+    Remove-Item -Path $OpenClawDir -Force
+}
+
+foreach ($dir in @(
+    "$OpenClawDir\agents\main\agent"
+    "$OpenClawDir\workspace\skills"
+)) {
+    if (-not (Test-Path $dir)) {
+        New-Item -ItemType Directory -Path $dir -Force | Out-Null
+        Write-Ok "建立目錄：$($dir.Replace("$ProjectRoot\", ''))"
+    }
+}
+
 if (-not (Test-Path $ConfigFile)) {
     @'
 {
@@ -61,181 +90,156 @@ if (-not (Test-Path $ConfigFile)) {
   }
 }
 '@ | Set-Content -Path $ConfigFile -Encoding UTF8
-    Write-Ok "建立設定檔：.openclaw\openclaw.json（mode=local, bind=0.0.0.0）"
-} else {
-    Write-Info "設定檔已存在：.openclaw\openclaw.json（略過）"
+    Write-Ok "建立 openclaw.json"
 }
 
 Write-Host ""
-Write-Ok "初始化完成！"
+Write-Ok "初始化完成"
 
-# 3. 啟動 Docker Compose
+# ── 3. 啟動 Docker Compose ───────────────────────────────────
+
 Write-Host ""
-Write-Info "正在啟動 Docker Compose 服務..."
-try {
-    docker compose up -d
-    if ($LASTEXITCODE -ne 0) { throw "docker compose up -d 失敗" }
-    Write-Ok "Docker Compose 服務已啟動"
-} catch {
-    Write-Err "無法啟動 Docker Compose 服務：$_"
+Write-Info "啟動 Docker Compose..."
+docker compose up -d
+if ($LASTEXITCODE -ne 0) {
+    Write-Err "Docker Compose 啟動失敗"
     exit 1
 }
+Write-Ok "Docker Compose 已啟動"
 
 Write-Host ""
 if (-not (Wait-Gateway -Label "等待 Gateway 啟動")) {
-    Write-Err "Gateway 未就緒，請手動檢查容器狀態。"
+    Write-Err "Gateway 未就緒，請檢查容器狀態。"
     exit 1
 }
 
-# 4. 設定 API 金鑰（迴圈，可設定多組）
+# ── 4. 設定 API 金鑰 ─────────────────────────────────────────
+
 do {
-    # 顯示目前已設定的 API 金鑰摘要
     Write-Host ""
+
+    # 顯示已設定的金鑰摘要
+    $keyCount = 0
     try {
-        $config = Get-Content -Path $ConfigFile -Raw | ConvertFrom-Json
-        if ($config.auth -and $config.auth.profiles) {
-            $providers = @($config.auth.profiles.PSObject.Properties)
-            if ($providers.Count -gt 0) {
-                Write-Ok "目前已設定 $($providers.Count) 組 API 金鑰："
-                foreach ($p in $providers) {
-                    $providerName = $p.Value.provider
-                    $mode         = $p.Value.mode
-                    Write-Host "  • $($p.Name) （Provider: $providerName, 模式: $mode）" -ForegroundColor Cyan
-                }
-            } else {
-                Write-Info "目前尚未設定任何 API 金鑰。"
-            }
-        } else {
-            Write-Info "目前尚未設定任何 API 金鑰。"
-        }
+        $profiles = @((Read-Config).auth.profiles.PSObject.Properties)
+        $keyCount = $profiles.Count
     } catch { }
 
-    Write-Host ""
-    if (-not (Confirm-YesNo "是否要設定 AI 模型的 API 金鑰？（如 Anthropic Claude、OpenAI 等）")) {
-        break
+    if ($keyCount -gt 0) {
+        Write-Ok "已設定 $keyCount 組 API 金鑰："
+        foreach ($p in $profiles) {
+            Write-Host "  * $($p.Name)（$($p.Value.provider), $($p.Value.mode)）" -ForegroundColor Cyan
+        }
+    } else {
+        Write-Info "尚未設定 API 金鑰。"
     }
 
     Write-Host ""
-    Write-Info "即將啟動 openclaw 內建設定精靈，請依照提示選擇 Provider 並完成設定。"
+    if (-not (Confirm-YesNo "是否要設定 API 金鑰？")) { break }
+
     Write-Host ""
-    # 不使用 Invoke-Gateway，因為其 2>&1 會捕獲輸出導致互動式精靈無法正常顯示
+    Write-Info "啟動設定精靈..."
+    Write-Host ""
+    # 不使用 Invoke-Gateway，其 2>&1 會導致互動式精靈無法正常顯示
     docker compose exec openclaw-gateway openclaw configure --section model
 } while ($true)
 
-# 5. 語音轉文字功能（偵測到 OpenAI API 金鑰時自動啟用）
+# ── 5. 語音轉文字（偵測 OpenAI 金鑰自動啟用）─────────────────
+
 Write-Host ""
-$authProfilesFile = Join-Path $OpenClawDir "agents\main\agent\auth-profiles.json"
+$authFile = Join-Path $OpenClawDir "agents\main\agent\auth-profiles.json"
 $openaiProfile = $null
-if (Test-Path $authProfilesFile) {
-    $authProfiles = Get-Content -Path $authProfilesFile -Raw | ConvertFrom-Json
-    $openaiProfile = $authProfiles.profiles.PSObject.Properties |
+if (Test-Path $authFile) {
+    $openaiProfile = (Get-Content $authFile -Raw | ConvertFrom-Json).profiles.PSObject.Properties |
         Where-Object { $_.Value.provider -eq "openai" } |
         Select-Object -First 1 -ExpandProperty Name
 }
-if (-not [string]::IsNullOrWhiteSpace($openaiProfile)) {
-    Write-Info "偵測到 OpenAI profile：$openaiProfile，自動啟用語音轉文字功能..."
+
+if ($openaiProfile) {
+    Write-Info "偵測到 OpenAI profile：$openaiProfile，啟用語音轉文字..."
     try {
-        $config = Get-Content -Path $ConfigFile -Raw | ConvertFrom-Json
-        if (-not $config.PSObject.Properties['tools']) {
-            $config | Add-Member -MemberType NoteProperty -Name 'tools' -Value ([PSCustomObject]@{})
-        }
-        $audioConfig = [PSCustomObject]@{
-            enabled        = $true
-            language        = "zh"
-            models          = @(
-                [PSCustomObject]@{
+        $config = Read-Config
+        Set-JsonProp $config 'tools' ([PSCustomObject]@{}) -OnlyIfMissing
+        Set-JsonProp $config.tools 'media' ([PSCustomObject]@{
+            audio = [PSCustomObject]@{
+                enabled        = $true
+                language       = "zh"
+                models         = @([PSCustomObject]@{
                     provider = "openai"
                     model    = "whisper-1"
                     profile  = $openaiProfile
-                }
-            )
-            echoTranscript = $true
-        }
-        $mediaConfig = [PSCustomObject]@{ audio = $audioConfig }
-        if ($config.tools.PSObject.Properties['media']) {
-            $config.tools.media = $mediaConfig
-        } else {
-            $config.tools | Add-Member -MemberType NoteProperty -Name 'media' -Value $mediaConfig
-        }
-        $config | ConvertTo-Json -Depth 10 | Set-Content -Path $ConfigFile -Encoding UTF8
-        Write-Ok "語音轉文字功能已啟用（language=zh, model=whisper-1, profile=$openaiProfile）"
+                })
+                echoTranscript = $true
+            }
+        })
+        Save-Config $config
+        Write-Ok "語音轉文字已啟用（profile=$openaiProfile）"
     } catch {
-        Write-Err "無法寫入語音設定：$_"
+        Write-Err "語音設定寫入失敗：$_"
     }
 } else {
-    Write-Info "未偵測到 OpenAI API 金鑰，略過語音轉文字功能。"
+    Write-Info "未偵測到 OpenAI 金鑰，略過語音轉文字。"
 }
 
-# 重啟以套用設定
+# 重啟套用設定
 if (-not (Restart-AndWait -Reason "套用設定")) {
-    Write-Err "Gateway 未就緒，請手動檢查容器狀態。"
+    Write-Err "Gateway 未就緒，請檢查容器狀態。"
     exit 1
 }
 
-# 讀取 Dashboard Token
+# ── 6. Dashboard 連線資訊與裝置配對 ──────────────────────────
+
 Write-Host ""
-Write-Info "正在讀取 Dashboard Token..."
-$dashboardToken = $null
+$token = $null
 try {
-    $config = Get-Content -Path $ConfigFile -Raw | ConvertFrom-Json
-    $dashboardToken = $config.gateway.auth.token
-    if ([string]::IsNullOrWhiteSpace($dashboardToken)) { throw "未找到 token" }
-    Write-Ok "Dashboard Token 已取得"
-} catch {
-    Write-Err "無法讀取 Token：$_"
-    Write-Warn "您可手動查看 .openclaw\openclaw.json 中的 gateway.auth.token 欄位。"
-}
+    $token = (Read-Config).gateway.auth.token
+    if ([string]::IsNullOrWhiteSpace($token)) { $token = $null }
+} catch { }
 
-
-# 6. 裝置配對
-Write-Host ""
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host "  Dashboard 連線資訊" -ForegroundColor Cyan
 Write-Host "============================================================" -ForegroundColor Cyan
-if ($dashboardToken) {
+if ($token) {
     Write-Host ""
     Write-Host "  URL  : http://127.0.0.1:18789/" -ForegroundColor Cyan
-    Write-Host "  Token: $dashboardToken" -ForegroundColor Cyan
+    Write-Host "  Token: $token" -ForegroundColor Cyan
     Write-Host ""
 } else {
-    Write-Warn "  Token 未取得，請手動查看 .openclaw\openclaw.json 中的 gateway.auth.token 欄位。"
+    Write-Warn "Token 未取得，請查看 openclaw.json 的 gateway.auth.token。"
     Write-Host ""
 }
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host ""
-Write-Info "裝置配對流程 — 由於 Gateway 綁定 0.0.0.0，瀏覽器首次連線需配對審批。"
-Write-Info "請在瀏覽器開啟上方 URL，並使用 Token 登入。"
+Write-Info "Gateway 綁定 0.0.0.0，瀏覽器首次連線需配對審批。"
 Write-Host ""
 
-if (Confirm-YesNo "是否要現在進行裝置配對？") {
-    Write-Info "等待瀏覽器連線產生配對請求..."
+if (Confirm-YesNo "是否要進行裝置配對？") {
+    Write-Info "等待瀏覽器連線..."
     $requestId = $null
     for ($w = 0; $w -lt 60; $w += 3) {
-        $listOutput = docker compose exec openclaw-gateway openclaw devices list 2>&1 | Out-String
-        if ($listOutput -match "Pending \((\d+)\)" -and [int]$Matches[1] -gt 0) {
-            if ($listOutput -match "([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})") {
+        $output = docker compose exec openclaw-gateway openclaw devices list 2>&1 | Out-String
+        if ($output -match "Pending \((\d+)\)" -and [int]$Matches[1] -gt 0) {
+            if ($output -match "([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})") {
                 $requestId = $Matches[1]; break
             }
         }
         Start-Sleep -Seconds 3
-        if ($w % 15 -eq 0 -and $w -gt 0) { Write-Info "仍在等待瀏覽器連線...（已等待 ${w} 秒）" }
+        if ($w % 15 -eq 0 -and $w -gt 0) { Write-Info "等待中...（${w} 秒）" }
     }
 
     if ($requestId) {
-        Write-Info "偵測到配對請求：$requestId"
+        Write-Info "配對請求：$requestId"
         if (Invoke-Gateway devices, approve, $requestId) {
-            Write-Ok "裝置配對完成！請重新整理瀏覽器頁面。"
+            Write-Ok "配對完成！請重新整理瀏覽器。"
         } else {
-            Write-Err "配對審批失敗，請手動執行："
-            Write-Host "  docker compose exec openclaw-gateway openclaw devices approve $requestId" -ForegroundColor Yellow
+            Write-Err "配對失敗，請手動執行："
+            Show-PairingHint $requestId
         }
     } else {
-        Write-Warn "等待逾時，未偵測到配對請求。您可稍後手動執行："
-        Write-Host "  docker compose exec openclaw-gateway openclaw devices list" -ForegroundColor Yellow
-        Write-Host "  docker compose exec openclaw-gateway openclaw devices approve <Request ID>" -ForegroundColor Yellow
+        Write-Warn "等待逾時，請手動執行："
+        Show-PairingHint
     }
 } else {
-    Write-Info "略過裝置配對。您可稍後手動執行："
-    Write-Host "  docker compose exec openclaw-gateway openclaw devices list" -ForegroundColor Yellow
-    Write-Host "  docker compose exec openclaw-gateway openclaw devices approve <Request ID>" -ForegroundColor Yellow
+    Write-Info "略過配對。稍後可手動執行："
+    Show-PairingHint
 }
