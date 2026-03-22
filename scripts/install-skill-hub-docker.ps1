@@ -1,7 +1,7 @@
 # ============================================================
 # install-skill-hub-docker.ps1 — 互動式安裝 skill_hub 擴充技能 (Docker)
 #
-# 用法：.\scripts-docker\install-skill-hub-docker.ps1
+# 用法：.\scripts\install-skill-hub-docker.ps1
 #
 # 此腳本會：
 #   1. 掃描 skill_hub/ 中含 SKILL.md 的技能目錄

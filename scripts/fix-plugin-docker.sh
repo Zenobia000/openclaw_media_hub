@@ -3,11 +3,11 @@
 # fix-plugin-docker.sh — 修復指定插件路徑不存在的問題（通用型）(Docker)
 #
 # 用法：
-#   ./scripts-docker/fix-plugin-docker.sh <plugin_name> [plugin_name2 ...]
-#   ./scripts-docker/fix-plugin-docker.sh notion
-#   ./scripts-docker/fix-plugin-docker.sh notion slack google-calendar
-#   ./scripts-docker/fix-plugin-docker.sh --list                          # 列出已安裝的插件
-#   ./scripts-docker/fix-plugin-docker.sh --dry-run notion                # 預覽變更但不實際修改
+#   ./scripts/fix-plugin-docker.sh <plugin_name> [plugin_name2 ...]
+#   ./scripts/fix-plugin-docker.sh notion
+#   ./scripts/fix-plugin-docker.sh notion slack google-calendar
+#   ./scripts/fix-plugin-docker.sh --list                          # 列出已安裝的插件
+#   ./scripts/fix-plugin-docker.sh --dry-run notion                # 預覽變更但不實際修改
 #
 # 此腳本會：
 #   1. 從 openclaw.json 移除指定插件的設定

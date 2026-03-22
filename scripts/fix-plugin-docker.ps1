@@ -2,11 +2,11 @@
 # fix-plugin-docker.ps1 — 修復指定插件路徑不存在的問題（通用型）(Docker)
 #
 # 用法：
-#   .\scripts-docker\fix-plugin-docker.ps1 <plugin_name> [plugin_name2 ...]
-#   .\scripts-docker\fix-plugin-docker.ps1 notion
-#   .\scripts-docker\fix-plugin-docker.ps1 notion slack google-calendar
-#   .\scripts-docker\fix-plugin-docker.ps1 -List                          # 列出已安裝的插件
-#   .\scripts-docker\fix-plugin-docker.ps1 -DryRun notion                 # 預覽變更但不實際修改
+#   .\scripts\fix-plugin-docker.ps1 <plugin_name> [plugin_name2 ...]
+#   .\scripts\fix-plugin-docker.ps1 notion
+#   .\scripts\fix-plugin-docker.ps1 notion slack google-calendar
+#   .\scripts\fix-plugin-docker.ps1 -List                          # 列出已安裝的插件
+#   .\scripts\fix-plugin-docker.ps1 -DryRun notion                 # 預覽變更但不實際修改
 #
 # 此腳本會：
 #   1. 從 openclaw.json 移除指定插件的設定
@@ -79,7 +79,7 @@ if ($List) {
 
 # -- 檢查參數 -------------------------------------------------
 if (-not $PluginNames -or $PluginNames.Count -eq 0) {
-    Write-Err "請提供至少一個插件名稱。用法：.\scripts-docker\fix-plugin-docker.ps1 <plugin_name> [...]"
+    Write-Err "請提供至少一個插件名稱。用法：.\scripts\fix-plugin-docker.ps1 <plugin_name> [...]"
     Write-Info "使用 -List 查看已安裝的插件。"
     exit 1
 }

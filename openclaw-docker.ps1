@@ -20,7 +20,7 @@ param(
     [string[]]$Rest
 )
 
-$ScriptsDir = Join-Path $PSScriptRoot "scripts-docker"
+$ScriptsDir = Join-Path $PSScriptRoot "scripts"
 
 function Show-Usage {
     Write-Host @"

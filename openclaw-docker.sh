@@ -14,7 +14,7 @@
 
 set -euo pipefail
 
-SCRIPTS_DIR="$(cd "$(dirname "$0")/scripts-docker" && pwd)"
+SCRIPTS_DIR="$(cd "$(dirname "$0")/scripts" && pwd)"
 
 usage() {
     cat <<'USAGE'

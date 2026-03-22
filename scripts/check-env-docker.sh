@@ -2,7 +2,7 @@
 # ============================================================
 # check-env-docker.sh — 環境檢查腳本 (Docker)
 #
-# 用法：./scripts-docker/check-env-docker.sh
+# 用法：./scripts/check-env-docker.sh
 #
 # 此腳本會檢查以下項目：
 #   1. Docker
@@ -25,12 +25,12 @@ echo ""
 # ── 0. 修復腳本換行符號 ──────────────────────────────────────
 info "檢查並修復腳本檔案格式..."
 if command -v dos2unix >/dev/null 2>&1; then
-    dos2unix "$PROJECT_ROOT/openclaw-docker.sh" "$PROJECT_ROOT/scripts-docker/"*.sh >/dev/null 2>&1 || true
+    dos2unix "$PROJECT_ROOT/openclaw-docker.sh" "$PROJECT_ROOT/scripts/"*.sh >/dev/null 2>&1 || true
     ok "腳本檔案格式已修復（Unix 格式）"
 else
     # 使用 sed 作為替代方案
     find "$PROJECT_ROOT" -maxdepth 1 -name "*.sh" -exec sed -i 's/\r$//' {} \; 2>/dev/null || true
-    find "$PROJECT_ROOT/scripts-docker" -name "*.sh" -exec sed -i 's/\r$//' {} \; 2>/dev/null || true
+    find "$PROJECT_ROOT/scripts" -name "*.sh" -exec sed -i 's/\r$//' {} \; 2>/dev/null || true
     ok "腳本檔案格式已修復（使用 sed）"
 fi
 

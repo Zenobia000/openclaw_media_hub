@@ -1,7 +1,7 @@
 # ============================================================
 # init-openclaw-docker.ps1 — 初始化 OpenClaw 環境 (Docker)
 #
-# 用法：.\scripts-docker\init-openclaw-docker.ps1
+# 用法：.\scripts\init-openclaw-docker.ps1
 #
 # 流程：
 #   1. 檢查 Docker
