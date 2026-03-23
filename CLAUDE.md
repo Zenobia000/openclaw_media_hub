@@ -6,7 +6,7 @@
 > **目標**：圖形化介面取代命令列腳本，單一可執行檔部署
 > **架構**：PyWebView Bridge 模式 + Tailwind CSS 前端
 > **模式**：人類駕駛，AI 協助
-> **工具**：PyWebView, PyInstaller, Tailwind CSS, keyring
+> **工具**：PyWebView, PyInstaller, Tailwind CSS, keyring, uv
 
 ---
 
@@ -158,7 +158,8 @@ openclaw/                            # 專案根目錄
 ├── openclaw-docker.sh               # Docker 版統一入口腳本 (Linux)
 ├── openclaw.sh                      # Native 版統一入口腳本 (Linux)
 ├── build.py                         # PyInstaller 打包腳本
-├── requirements.txt                 # Python 依賴清單
+├── pyproject.toml                   # Python 專案設定與依賴宣告 (PEP 621)
+├── uv.lock                          # uv 依賴鎖定檔 (確定性建置)
 ├── docker-compose.yml               # Docker Compose 配置
 ├── .env / .env.example              # 環境變數範本
 ├── openclaw/                        # OpenClaw 核心程式 (Git Submodule，不修改)
@@ -199,6 +200,7 @@ openclaw/                            # 專案根目錄
 | **桌面框架**     | PyWebView                   | 輕量級 GUI，Web 技術 + Python 結合           |
 | **前端樣式**     | Tailwind CSS                | 現代化 UI 樣式，無需複雜編譯流程             |
 | **後端語言**     | Python 3                    | subprocess 呼叫、非同步 I/O、跨平台處理      |
+| **套件管理**     | uv                          | Python 版本管理 + 虛擬環境 + 依賴鎖定 (All-in-one) |
 | **打包工具**     | PyInstaller                 | 編譯為獨立執行檔，零依賴部署                 |
 | **金鑰儲存**     | keyring                     | 跨平台安全儲存 (DPAPI / libsecret)          |
 | **容器管理**     | Docker Compose              | Docker 環境下的服務編排                      |
