@@ -21,6 +21,12 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+.venv/
+
+# PyInstaller
+build/
+dist/
+*.spec
 
 .claude/
 .mcp.json
