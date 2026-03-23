@@ -231,8 +231,12 @@
       "name": "Component/NavItem/Active",
       "reusable": true,
       "width": "fill_container(220)",
-      "fill": "$bg-card",
+      "fill": "#1f1318",
       "cornerRadius": "$radius-sm",
+      "stroke": {
+        "thickness": 1,
+        "fill": "#ff5c5c30"
+      },
       "gap": 12,
       "padding": [
         10,
@@ -269,7 +273,7 @@
       "y": 240,
       "name": "Component/StatusBadge",
       "reusable": true,
-      "fill": "#1A2E1A",
+      "fill": "#121a13",
       "cornerRadius": 12,
       "gap": 6,
       "padding": [
@@ -437,7 +441,7 @@
               "name": "icon-bg",
               "width": 40,
               "height": 40,
-              "fill": "#0D2F33",
+              "fill": "#1f1416",
               "cornerRadius": "$radius-sm",
               "justifyContent": "center",
               "alignItems": "center",
@@ -460,7 +464,19 @@
               "ref": "btQfm",
               "name": "statBadge",
               "x": 118,
-              "y": 8.5
+              "y": 8.5,
+              "width": "fit_content",
+              "height": "fit_content",
+              "descendants": {
+                "zpMzA": {
+                  "x": 10,
+                  "y": 7.5
+                },
+                "rR0JU": {
+                  "x": 24,
+                  "y": 4
+                }
+              }
             }
           ]
         },
@@ -495,8 +511,8 @@
       "clip": true,
       "width": 1280,
       "height": 800,
-      "fill": "$bg-primary",
-      "cornerRadius": "$radius-lg",
+      "fill": "#0e1015",
+      "cornerRadius": 14,
       "children": [
         {
           "type": "frame",
@@ -504,12 +520,12 @@
           "name": "sidebar",
           "width": 260,
           "height": "fill_container",
-          "fill": "$bg-sidebar",
+          "fill": "#0e1015",
           "stroke": {
             "thickness": {
               "right": 1
             },
-            "fill": "$border-default"
+            "fill": "#1e2028"
           },
           "layout": "vertical",
           "padding": [
@@ -537,7 +553,7 @@
                   "name": "logo-icon",
                   "width": 36,
                   "height": 36,
-                  "fill": "$accent-primary",
+                  "fill": "#ff5c5c",
                   "cornerRadius": "$radius-sm",
                   "justifyContent": "center",
                   "alignItems": "center",
@@ -558,7 +574,7 @@
                   "type": "text",
                   "id": "J17hZ",
                   "name": "logoTitle",
-                  "fill": "$text-primary",
+                  "fill": "#f4f4f5",
                   "content": "OpenClaw",
                   "fontFamily": "Inter",
                   "fontSize": 20,
@@ -584,7 +600,7 @@
                   "type": "text",
                   "id": "meJyc",
                   "name": "navSectionLabel",
-                  "fill": "$text-muted",
+                  "fill": "#838387",
                   "content": "MAIN",
                   "fontFamily": "Inter",
                   "fontSize": 10,
@@ -606,12 +622,17 @@
                   "name": "nav1",
                   "x": 0,
                   "y": 40,
+                  "height": "fit_content",
                   "descendants": {
                     "gmsgT": {
-                      "iconFontName": "layout-dashboard"
+                      "iconFontName": "layout-dashboard",
+                      "x": 16,
+                      "y": 10
                     },
                     "PSFGx": {
-                      "content": "Dashboard"
+                      "content": "Dashboard",
+                      "x": 48,
+                      "y": 11.5
                     }
                   }
                 },
@@ -623,12 +644,17 @@
                   "name": "nav2",
                   "x": 0,
                   "y": 82,
+                  "height": "fit_content",
                   "descendants": {
                     "XeoeR": {
-                      "iconFontName": "settings"
+                      "iconFontName": "settings",
+                      "x": 16,
+                      "y": 10
                     },
                     "cGJxO": {
-                      "content": "Configuration"
+                      "content": "Configuration",
+                      "x": 48,
+                      "y": 11.5
                     }
                   }
                 },
@@ -640,12 +666,17 @@
                   "name": "nav3",
                   "x": 0,
                   "y": 124,
+                  "height": "fit_content",
                   "descendants": {
                     "XeoeR": {
-                      "iconFontName": "monitor-check"
+                      "iconFontName": "monitor-check",
+                      "x": 16,
+                      "y": 10
                     },
                     "cGJxO": {
-                      "content": "Environment"
+                      "content": "Environment",
+                      "x": 48,
+                      "y": 11.5
                     }
                   }
                 }
@@ -669,7 +700,7 @@
                   "type": "text",
                   "id": "93zUz",
                   "name": "opsLabel",
-                  "fill": "$text-muted",
+                  "fill": "#838387",
                   "content": "OPERATIONS",
                   "fontFamily": "Inter",
                   "fontSize": 10,
@@ -691,12 +722,17 @@
                   "name": "nav4",
                   "x": 0,
                   "y": 44,
+                  "height": "fit_content",
                   "descendants": {
                     "XeoeR": {
-                      "iconFontName": "rocket"
+                      "iconFontName": "rocket",
+                      "x": 16,
+                      "y": 10
                     },
                     "cGJxO": {
-                      "content": "Deploy Skills"
+                      "content": "Deploy Skills",
+                      "x": 48,
+                      "y": 11.5
                     }
                   }
                 },
@@ -708,12 +744,17 @@
                   "name": "nav5",
                   "x": 0,
                   "y": 86,
+                  "height": "fit_content",
                   "descendants": {
                     "XeoeR": {
-                      "iconFontName": "puzzle"
+                      "iconFontName": "puzzle",
+                      "x": 16,
+                      "y": 10
                     },
                     "cGJxO": {
-                      "content": "Install Plugins"
+                      "content": "Install Plugins",
+                      "x": 48,
+                      "y": 11.5
                     }
                   }
                 },
@@ -725,12 +766,17 @@
                   "name": "nav6",
                   "x": 0,
                   "y": 128,
+                  "height": "fit_content",
                   "descendants": {
                     "XeoeR": {
-                      "iconFontName": "wrench"
+                      "iconFontName": "wrench",
+                      "x": 16,
+                      "y": 10
                     },
                     "cGJxO": {
-                      "content": "Fix Plugins"
+                      "content": "Fix Plugins",
+                      "x": 48,
+                      "y": 11.5
                     }
                   }
                 }
@@ -752,7 +798,7 @@
                 "thickness": {
                   "top": 1
                 },
-                "fill": "$border-default"
+                "fill": "#1e2028"
               },
               "layout": "vertical",
               "gap": 4,
@@ -767,7 +813,7 @@
                   "type": "text",
                   "id": "ghPbl",
                   "name": "versionText",
-                  "fill": "$text-muted",
+                  "fill": "#838387",
                   "content": "OpenClaw v1.0.0",
                   "fontFamily": "Inter",
                   "fontSize": 11,
@@ -777,7 +823,7 @@
                   "type": "text",
                   "id": "ZbYFq",
                   "name": "envText",
-                  "fill": "$text-muted",
+                  "fill": "#838387",
                   "content": "Docker · Windows 11",
                   "fontFamily": "Inter",
                   "fontSize": 11,
@@ -793,6 +839,7 @@
           "name": "main-content",
           "width": "fill_container",
           "height": "fill_container",
+          "fill": "#0e1015",
           "layout": "vertical",
           "gap": 28,
           "padding": 32,
@@ -848,9 +895,17 @@
                       "name": "headerStatus",
                       "x": 0,
                       "y": 7,
+                      "width": "fit_content",
+                      "height": "fit_content",
                       "descendants": {
+                        "zpMzA": {
+                          "x": 10,
+                          "y": 7.5
+                        },
                         "rR0JU": {
-                          "content": "Healthy"
+                          "content": "Healthy",
+                          "x": 24,
+                          "y": 4
                         }
                       }
                     },
@@ -861,12 +916,18 @@
                       "name": "refreshBtn",
                       "x": 91,
                       "y": 0,
+                      "width": "fit_content",
+                      "height": "fit_content",
                       "descendants": {
                         "DuS3b": {
-                          "iconFontName": "refresh-cw"
+                          "iconFontName": "refresh-cw",
+                          "x": 20,
+                          "y": 10.5
                         },
                         "SyVuU": {
-                          "content": "Refresh"
+                          "content": "Refresh",
+                          "x": 44,
+                          "y": 10
                         }
                       }
                     }
@@ -889,21 +950,46 @@
                   "name": "card1",
                   "x": 0,
                   "y": 0,
+                  "height": "fit_content",
                   "descendants": {
                     "To9AJ": {
-                      "width": "fill_container"
+                      "width": "fill_container",
+                      "height": "fit_content",
+                      "x": 20,
+                      "y": 20
+                    },
+                    "Seg1R": {
+                      "fill": "#1f1416"
                     },
                     "1nI1H": {
-                      "iconFontName": "server"
+                      "iconFontName": "server",
+                      "x": 10,
+                      "y": 10,
+                      "fill": "#ff5c5c"
                     },
                     "sRKGA": {
-                      "x": 183.33333333333331
+                      "x": 183.33333333333331,
+                      "width": "fit_content",
+                      "height": "fit_content",
+                      "y": 8.5
+                    },
+                    "sRKGA/zpMzA": {
+                      "x": 10,
+                      "y": 7.5
+                    },
+                    "sRKGA/rR0JU": {
+                      "x": 24,
+                      "y": 4
                     },
                     "UbpVX": {
-                      "content": "3 / 3"
+                      "content": "3 / 3",
+                      "x": 20,
+                      "y": 72
                     },
                     "wEADn": {
-                      "content": "Services Running"
+                      "content": "Services Running",
+                      "x": 20,
+                      "y": 118
                     }
                   }
                 },
@@ -915,25 +1001,46 @@
                   "name": "card2",
                   "x": 325.3333333333333,
                   "y": 0,
+                  "height": "fit_content",
                   "descendants": {
                     "To9AJ": {
-                      "width": "fill_container"
+                      "width": "fill_container",
+                      "height": "fit_content",
+                      "x": 20,
+                      "y": 20
                     },
                     "Seg1R": {
-                      "fill": "#1A1A2E"
+                      "fill": "#141a1f"
                     },
                     "1nI1H": {
                       "iconFontName": "hard-drive",
-                      "fill": "$accent-secondary"
+                      "fill": "#14b8a6",
+                      "x": 10,
+                      "y": 10
                     },
                     "sRKGA": {
-                      "x": 183.33333333333331
+                      "x": 183.33333333333331,
+                      "width": "fit_content",
+                      "height": "fit_content",
+                      "y": 8.5
+                    },
+                    "sRKGA/zpMzA": {
+                      "x": 10,
+                      "y": 7.5
+                    },
+                    "sRKGA/rR0JU": {
+                      "x": 24,
+                      "y": 4
                     },
                     "UbpVX": {
-                      "content": "42.5 GB"
+                      "content": "42.5 GB",
+                      "x": 20,
+                      "y": 72
                     },
                     "wEADn": {
-                      "content": "Disk Available"
+                      "content": "Disk Available",
+                      "x": 20,
+                      "y": 118
                     }
                   }
                 },
@@ -945,25 +1052,46 @@
                   "name": "card3",
                   "x": 650.6666666666666,
                   "y": 0,
+                  "height": "fit_content",
                   "descendants": {
                     "To9AJ": {
-                      "width": "fill_container"
+                      "width": "fill_container",
+                      "height": "fit_content",
+                      "x": 20,
+                      "y": 20
                     },
                     "Seg1R": {
-                      "fill": "#2E1A1A"
+                      "fill": "#1f1b14"
                     },
                     "1nI1H": {
                       "iconFontName": "cpu",
-                      "fill": "$status-warning"
+                      "fill": "#f59e0b",
+                      "x": 10,
+                      "y": 10
                     },
                     "sRKGA": {
-                      "x": 183.33333333333331
+                      "x": 183.33333333333331,
+                      "width": "fit_content",
+                      "height": "fit_content",
+                      "y": 8.5
+                    },
+                    "sRKGA/zpMzA": {
+                      "x": 10,
+                      "y": 7.5
+                    },
+                    "sRKGA/rR0JU": {
+                      "x": 24,
+                      "y": 4
                     },
                     "UbpVX": {
-                      "content": "23%"
+                      "content": "23%",
+                      "x": 20,
+                      "y": 72
                     },
                     "wEADn": {
-                      "content": "CPU Usage"
+                      "content": "CPU Usage",
+                      "x": 20,
+                      "y": 118
                     }
                   }
                 }
@@ -984,11 +1112,11 @@
                   "clip": true,
                   "width": "fill_container",
                   "height": "fill_container",
-                  "fill": "$bg-card",
+                  "fill": "#161920",
                   "cornerRadius": "$radius-md",
                   "stroke": {
                     "thickness": 1,
-                    "fill": "$border-default"
+                    "fill": "#1e2028"
                   },
                   "layout": "vertical",
                   "gap": 16,
@@ -1023,12 +1151,18 @@
                               "type": "ref",
                               "ref": "huebY",
                               "name": "startBtn",
+                              "width": "fit_content",
+                              "height": "fit_content",
                               "descendants": {
                                 "nDX2c": {
-                                  "iconFontName": "play"
+                                  "iconFontName": "play",
+                                  "x": 20,
+                                  "y": 10.5
                                 },
                                 "zppCu": {
-                                  "content": "Start"
+                                  "content": "Start",
+                                  "x": 44,
+                                  "y": 10
                                 }
                               }
                             },
@@ -1039,12 +1173,18 @@
                               "name": "stopBtn",
                               "x": 105,
                               "y": 0,
+                              "width": "fit_content",
+                              "height": "fit_content",
                               "descendants": {
                                 "oTiXX": {
-                                  "iconFontName": "square"
+                                  "iconFontName": "square",
+                                  "x": 20,
+                                  "y": 10.5
                                 },
                                 "WLO9L": {
-                                  "content": "Stop"
+                                  "content": "Stop",
+                                  "x": 44,
+                                  "y": 10
                                 }
                               }
                             }
@@ -1233,30 +1373,43 @@
                   "x": 488,
                   "descendants": {
                     "xZBF6": {
-                      "width": "fill_container"
+                      "width": "fill_container",
+                      "height": "fit_content"
                     },
                     "FVcfu": {
-                      "content": "Live Logs"
+                      "content": "Live Logs",
+                      "x": 12,
+                      "y": 8
                     },
                     "qNspK": {
-                      "x": 428
+                      "x": 428,
+                      "y": 9
                     },
                     "sAfiL": {
                       "width": "fill_container",
-                      "height": "fill_container"
+                      "height": "fill_container",
+                      "y": 31
                     },
                     "kg6zY": {
-                      "content": "$ docker-compose up -d"
+                      "content": "$ docker-compose up -d",
+                      "x": 12,
+                      "y": 12
                     },
                     "qbKrG": {
-                      "content": "[+] Running 3/3"
+                      "content": "[+] Running 3/3",
+                      "x": 12,
+                      "y": 30
                     },
                     "DEVmL": {
-                      "content": "  Container openclaw-app    Started"
+                      "content": "  Container openclaw-app    Started",
+                      "x": 12,
+                      "y": 48
                     },
                     "SWxvK": {
                       "content": "  Container openclaw-db     Started",
-                      "fill": "$text-secondary"
+                      "fill": "$text-secondary",
+                      "x": 12,
+                      "y": 66
                     }
                   }
                 }
@@ -1275,8 +1428,8 @@
       "clip": true,
       "width": 1280,
       "height": 800,
-      "fill": "$bg-primary",
-      "cornerRadius": "$radius-lg",
+      "fill": "#0e1015",
+      "cornerRadius": 14,
       "children": [
         {
           "type": "frame",
@@ -1284,12 +1437,12 @@
           "name": "sidebar",
           "width": 260,
           "height": "fill_container",
-          "fill": "$bg-sidebar",
+          "fill": "#0e1015",
           "stroke": {
             "thickness": {
               "right": 1
             },
-            "fill": "$border-default"
+            "fill": "#1e2028"
           },
           "layout": "vertical",
           "padding": [
@@ -1317,7 +1470,7 @@
                   "name": "logo-icon",
                   "width": 36,
                   "height": 36,
-                  "fill": "$accent-primary",
+                  "fill": "#ff5c5c",
                   "cornerRadius": "$radius-sm",
                   "justifyContent": "center",
                   "alignItems": "center",
@@ -1338,7 +1491,7 @@
                   "type": "text",
                   "id": "CUEm7",
                   "name": "logoTitle",
-                  "fill": "$text-primary",
+                  "fill": "#f4f4f5",
                   "content": "OpenClaw",
                   "fontFamily": "Inter",
                   "fontSize": 20,
@@ -1364,7 +1517,7 @@
                   "type": "text",
                   "id": "jm9z9",
                   "name": "navSectionLabel",
-                  "fill": "$text-muted",
+                  "fill": "#838387",
                   "content": "MAIN",
                   "fontFamily": "Inter",
                   "fontSize": 10,
@@ -1386,12 +1539,17 @@
                   "name": "newNav1",
                   "x": 0,
                   "y": 40,
+                  "height": "fit_content",
                   "descendants": {
                     "XeoeR": {
-                      "iconFontName": "layout-dashboard"
+                      "iconFontName": "layout-dashboard",
+                      "x": 16,
+                      "y": 10
                     },
                     "cGJxO": {
-                      "content": "Dashboard"
+                      "content": "Dashboard",
+                      "x": 48,
+                      "y": 11.5
                     }
                   }
                 },
@@ -1403,12 +1561,17 @@
                   "name": "newNav2",
                   "x": 0,
                   "y": 82,
+                  "height": "fit_content",
                   "descendants": {
                     "gmsgT": {
-                      "iconFontName": "settings"
+                      "iconFontName": "settings",
+                      "x": 16,
+                      "y": 10
                     },
                     "PSFGx": {
-                      "content": "Configuration"
+                      "content": "Configuration",
+                      "x": 48,
+                      "y": 11.5
                     }
                   }
                 },
@@ -1420,12 +1583,17 @@
                   "name": "nav3",
                   "x": 0,
                   "y": 124,
+                  "height": "fit_content",
                   "descendants": {
                     "XeoeR": {
-                      "iconFontName": "monitor-check"
+                      "iconFontName": "monitor-check",
+                      "x": 16,
+                      "y": 10
                     },
                     "cGJxO": {
-                      "content": "Environment"
+                      "content": "Environment",
+                      "x": 48,
+                      "y": 11.5
                     }
                   }
                 }
@@ -1449,7 +1617,7 @@
                   "type": "text",
                   "id": "Ln1Yk",
                   "name": "opsLabel",
-                  "fill": "$text-muted",
+                  "fill": "#838387",
                   "content": "OPERATIONS",
                   "fontFamily": "Inter",
                   "fontSize": 10,
@@ -1471,12 +1639,17 @@
                   "name": "nav4",
                   "x": 0,
                   "y": 44,
+                  "height": "fit_content",
                   "descendants": {
                     "XeoeR": {
-                      "iconFontName": "rocket"
+                      "iconFontName": "rocket",
+                      "x": 16,
+                      "y": 10
                     },
                     "cGJxO": {
-                      "content": "Deploy Skills"
+                      "content": "Deploy Skills",
+                      "x": 48,
+                      "y": 11.5
                     }
                   }
                 },
@@ -1488,12 +1661,17 @@
                   "name": "nav5",
                   "x": 0,
                   "y": 86,
+                  "height": "fit_content",
                   "descendants": {
                     "XeoeR": {
-                      "iconFontName": "puzzle"
+                      "iconFontName": "puzzle",
+                      "x": 16,
+                      "y": 10
                     },
                     "cGJxO": {
-                      "content": "Install Plugins"
+                      "content": "Install Plugins",
+                      "x": 48,
+                      "y": 11.5
                     }
                   }
                 },
@@ -1505,12 +1683,17 @@
                   "name": "nav6",
                   "x": 0,
                   "y": 128,
+                  "height": "fit_content",
                   "descendants": {
                     "XeoeR": {
-                      "iconFontName": "wrench"
+                      "iconFontName": "wrench",
+                      "x": 16,
+                      "y": 10
                     },
                     "cGJxO": {
-                      "content": "Fix Plugins"
+                      "content": "Fix Plugins",
+                      "x": 48,
+                      "y": 11.5
                     }
                   }
                 }
@@ -1532,7 +1715,7 @@
                 "thickness": {
                   "top": 1
                 },
-                "fill": "$border-default"
+                "fill": "#1e2028"
               },
               "layout": "vertical",
               "gap": 4,
@@ -1547,7 +1730,7 @@
                   "type": "text",
                   "id": "knJcS",
                   "name": "versionText",
-                  "fill": "$text-muted",
+                  "fill": "#838387",
                   "content": "OpenClaw v1.0.0",
                   "fontFamily": "Inter",
                   "fontSize": 11,
@@ -1557,7 +1740,7 @@
                   "type": "text",
                   "id": "equjx",
                   "name": "envText",
-                  "fill": "$text-muted",
+                  "fill": "#838387",
                   "content": "Docker · Windows 11",
                   "fontFamily": "Inter",
                   "fontSize": 11,
@@ -1573,6 +1756,7 @@
           "name": "main-content",
           "width": "fill_container",
           "height": "fill_container",
+          "fill": "#0e1015",
           "layout": "vertical",
           "gap": 28,
           "padding": 32,
@@ -1626,12 +1810,18 @@
                       "type": "ref",
                       "ref": "huebY",
                       "name": "saveBtnRef",
+                      "width": "fit_content",
+                      "height": "fit_content",
                       "descendants": {
                         "nDX2c": {
-                          "iconFontName": "save"
+                          "iconFontName": "save",
+                          "x": 20,
+                          "y": 10.5
                         },
                         "zppCu": {
-                          "content": "Save All"
+                          "content": "Save All",
+                          "x": 44,
+                          "y": 10
                         }
                       }
                     }
@@ -1653,11 +1843,11 @@
                   "id": "Tp6ct",
                   "name": "env-section",
                   "width": "fill_container",
-                  "fill": "$bg-card",
-                  "cornerRadius": "$radius-md",
+                  "fill": "#161920",
+                  "cornerRadius": 10,
                   "stroke": {
                     "thickness": 1,
-                    "fill": "$border-default"
+                    "fill": "#1e2028"
                   },
                   "layout": "vertical",
                   "gap": 20,
@@ -1677,7 +1867,7 @@
                           "name": "envIcon",
                           "width": 32,
                           "height": 32,
-                          "fill": "#0D2F33",
+                          "fill": "#1f1416",
                           "cornerRadius": "$radius-sm",
                           "justifyContent": "center",
                           "alignItems": "center",
@@ -1739,18 +1929,25 @@
                           "width": "fill_container",
                           "name": "envField1",
                           "x": 0,
+                          "height": "fit_content",
                           "descendants": {
                             "cpUF3": {
                               "content": "Deployment Mode"
                             },
                             "KXiEV": {
-                              "width": "fill_container"
+                              "width": "fill_container",
+                              "height": "fit_content",
+                              "y": 21
                             },
                             "HexHM": {
-                              "iconFontName": "container"
+                              "iconFontName": "container",
+                              "x": 12,
+                              "y": 10.5
                             },
                             "BBH3O": {
-                              "content": "Docker"
+                              "content": "Docker",
+                              "x": 36,
+                              "y": 10
                             }
                           }
                         },
@@ -1761,18 +1958,25 @@
                           "width": "fill_container",
                           "name": "envField2",
                           "x": 462,
+                          "height": "fit_content",
                           "descendants": {
                             "cpUF3": {
                               "content": "Working Directory"
                             },
                             "KXiEV": {
-                              "width": "fill_container"
+                              "width": "fill_container",
+                              "height": "fit_content",
+                              "y": 21
                             },
                             "HexHM": {
-                              "iconFontName": "folder"
+                              "iconFontName": "folder",
+                              "x": 12,
+                              "y": 10.5
                             },
                             "BBH3O": {
-                              "content": "/opt/openclaw"
+                              "content": "/opt/openclaw",
+                              "x": 36,
+                              "y": 10
                             }
                           }
                         }
@@ -1785,11 +1989,11 @@
                   "id": "we9Pa",
                   "name": "keys-section",
                   "width": "fill_container",
-                  "fill": "$bg-card",
-                  "cornerRadius": "$radius-md",
+                  "fill": "#161920",
+                  "cornerRadius": 10,
                   "stroke": {
                     "thickness": 1,
-                    "fill": "$border-default"
+                    "fill": "#1e2028"
                   },
                   "layout": "vertical",
                   "gap": 20,
@@ -1809,7 +2013,7 @@
                           "name": "keysIconBg",
                           "width": 32,
                           "height": 32,
-                          "fill": "#1A1A2E",
+                          "fill": "#141a1f",
                           "cornerRadius": "$radius-sm",
                           "justifyContent": "center",
                           "alignItems": "center",
@@ -1871,18 +2075,25 @@
                           "width": "fill_container",
                           "name": "lineKey",
                           "x": 0,
+                          "height": "fit_content",
                           "descendants": {
                             "cpUF3": {
                               "content": "LINE Channel Access Token"
                             },
                             "KXiEV": {
-                              "width": "fill_container"
+                              "width": "fill_container",
+                              "height": "fit_content",
+                              "y": 21
                             },
                             "HexHM": {
-                              "iconFontName": "lock"
+                              "iconFontName": "lock",
+                              "x": 12,
+                              "y": 10.5
                             },
                             "BBH3O": {
-                              "content": "••••••••••••••••"
+                              "content": "••••••••••••••••",
+                              "x": 36,
+                              "y": 10
                             }
                           }
                         },
@@ -1893,18 +2104,25 @@
                           "width": "fill_container",
                           "name": "lineSecret",
                           "x": 462,
+                          "height": "fit_content",
                           "descendants": {
                             "cpUF3": {
                               "content": "LINE Channel Secret"
                             },
                             "KXiEV": {
-                              "width": "fill_container"
+                              "width": "fill_container",
+                              "height": "fit_content",
+                              "y": 21
                             },
                             "HexHM": {
-                              "iconFontName": "lock"
+                              "iconFontName": "lock",
+                              "x": 12,
+                              "y": 10.5
                             },
                             "BBH3O": {
-                              "content": "••••••••••••••••"
+                              "content": "••••••••••••••••",
+                              "x": 36,
+                              "y": 10
                             }
                           }
                         }
@@ -1924,18 +2142,25 @@
                           "width": "fill_container",
                           "name": "discordKey",
                           "x": 0,
+                          "height": "fit_content",
                           "descendants": {
                             "cpUF3": {
                               "content": "Discord Bot Token"
                             },
                             "KXiEV": {
-                              "width": "fill_container"
+                              "width": "fill_container",
+                              "height": "fit_content",
+                              "y": 21
                             },
                             "HexHM": {
-                              "iconFontName": "lock"
+                              "iconFontName": "lock",
+                              "x": 12,
+                              "y": 10.5
                             },
                             "BBH3O": {
-                              "content": "••••••••••••••••"
+                              "content": "••••••••••••••••",
+                              "x": 36,
+                              "y": 10
                             }
                           }
                         },
@@ -1946,18 +2171,25 @@
                           "width": "fill_container",
                           "name": "openaiKey",
                           "x": 462,
+                          "height": "fit_content",
                           "descendants": {
                             "cpUF3": {
                               "content": "OpenAI API Key"
                             },
                             "KXiEV": {
-                              "width": "fill_container"
+                              "width": "fill_container",
+                              "height": "fit_content",
+                              "y": 21
                             },
                             "HexHM": {
-                              "iconFontName": "lock"
+                              "iconFontName": "lock",
+                              "x": 12,
+                              "y": 10.5
                             },
                             "BBH3O": {
-                              "content": "sk-••••••••••••"
+                              "content": "sk-••••••••••••",
+                              "x": 36,
+                              "y": 10
                             }
                           }
                         }
@@ -1977,18 +2209,25 @@
                           "width": "fill_container",
                           "name": "dbUrl",
                           "x": 0,
+                          "height": "fit_content",
                           "descendants": {
                             "cpUF3": {
                               "content": "Database URL"
                             },
                             "KXiEV": {
-                              "width": "fill_container"
+                              "width": "fill_container",
+                              "height": "fit_content",
+                              "y": 21
                             },
                             "HexHM": {
-                              "iconFontName": "database"
+                              "iconFontName": "database",
+                              "x": 12,
+                              "y": 10.5
                             },
                             "BBH3O": {
-                              "content": "postgresql://localhost:5432/openclaw"
+                              "content": "postgresql://localhost:5432/openclaw",
+                              "x": 36,
+                              "y": 10
                             }
                           }
                         },
@@ -1999,18 +2238,25 @@
                           "width": "fill_container",
                           "name": "redisUrl",
                           "x": 462,
+                          "height": "fit_content",
                           "descendants": {
                             "cpUF3": {
                               "content": "Redis URL"
                             },
                             "KXiEV": {
-                              "width": "fill_container"
+                              "width": "fill_container",
+                              "height": "fit_content",
+                              "y": 21
                             },
                             "HexHM": {
-                              "iconFontName": "database"
+                              "iconFontName": "database",
+                              "x": 12,
+                              "y": 10.5
                             },
                             "BBH3O": {
-                              "content": "redis://localhost:6379"
+                              "content": "redis://localhost:6379",
+                              "x": 36,
+                              "y": 10
                             }
                           }
                         }
@@ -2023,11 +2269,11 @@
                   "id": "dn3UO",
                   "name": "security-note",
                   "width": "fill_container",
-                  "fill": "#111A24",
+                  "fill": "#13151b",
                   "cornerRadius": "$radius-sm",
                   "stroke": {
                     "thickness": 1,
-                    "fill": "$border-default"
+                    "fill": "#1e2028"
                   },
                   "gap": 10,
                   "padding": [
@@ -2075,8 +2321,8 @@
       "clip": true,
       "width": 1280,
       "height": 800,
-      "fill": "$bg-primary",
-      "cornerRadius": "$radius-lg",
+      "fill": "#0e1015",
+      "cornerRadius": 14,
       "children": [
         {
           "type": "frame",
@@ -2084,12 +2330,12 @@
           "name": "sidebar",
           "width": 260,
           "height": "fill_container",
-          "fill": "$bg-sidebar",
+          "fill": "#0e1015",
           "stroke": {
             "thickness": {
               "right": 1
             },
-            "fill": "$border-default"
+            "fill": "#1e2028"
           },
           "layout": "vertical",
           "padding": [
@@ -2117,7 +2363,7 @@
                   "name": "logo-icon",
                   "width": 36,
                   "height": 36,
-                  "fill": "$accent-primary",
+                  "fill": "#ff5c5c",
                   "cornerRadius": "$radius-sm",
                   "justifyContent": "center",
                   "alignItems": "center",
@@ -2138,7 +2384,7 @@
                   "type": "text",
                   "id": "qDJIN",
                   "name": "logoTitle",
-                  "fill": "$text-primary",
+                  "fill": "#f4f4f5",
                   "content": "OpenClaw",
                   "fontFamily": "Inter",
                   "fontSize": 20,
@@ -2164,7 +2410,7 @@
                   "type": "text",
                   "id": "fI6Mz",
                   "name": "navSectionLabel",
-                  "fill": "$text-muted",
+                  "fill": "#838387",
                   "content": "MAIN",
                   "fontFamily": "Inter",
                   "fontSize": 10,
@@ -2186,12 +2432,17 @@
                   "name": "newDash",
                   "x": 0,
                   "y": 40,
+                  "height": "fit_content",
                   "descendants": {
                     "XeoeR": {
-                      "iconFontName": "layout-dashboard"
+                      "iconFontName": "layout-dashboard",
+                      "x": 16,
+                      "y": 10
                     },
                     "cGJxO": {
-                      "content": "Dashboard"
+                      "content": "Dashboard",
+                      "x": 48,
+                      "y": 11.5
                     }
                   }
                 },
@@ -2203,12 +2454,17 @@
                   "name": "nav2",
                   "x": 0,
                   "y": 82,
+                  "height": "fit_content",
                   "descendants": {
                     "XeoeR": {
-                      "iconFontName": "settings"
+                      "iconFontName": "settings",
+                      "x": 16,
+                      "y": 10
                     },
                     "cGJxO": {
-                      "content": "Configuration"
+                      "content": "Configuration",
+                      "x": 48,
+                      "y": 11.5
                     }
                   }
                 },
@@ -2220,12 +2476,17 @@
                   "name": "nav3",
                   "x": 0,
                   "y": 124,
+                  "height": "fit_content",
                   "descendants": {
                     "XeoeR": {
-                      "iconFontName": "monitor-check"
+                      "iconFontName": "monitor-check",
+                      "x": 16,
+                      "y": 10
                     },
                     "cGJxO": {
-                      "content": "Environment"
+                      "content": "Environment",
+                      "x": 48,
+                      "y": 11.5
                     }
                   }
                 }
@@ -2249,7 +2510,7 @@
                   "type": "text",
                   "id": "GeVv4",
                   "name": "opsLabel",
-                  "fill": "$text-muted",
+                  "fill": "#838387",
                   "content": "OPERATIONS",
                   "fontFamily": "Inter",
                   "fontSize": 10,
@@ -2271,12 +2532,17 @@
                   "name": "newDeploy",
                   "x": 0,
                   "y": 44,
+                  "height": "fit_content",
                   "descendants": {
                     "gmsgT": {
-                      "iconFontName": "rocket"
+                      "iconFontName": "rocket",
+                      "x": 16,
+                      "y": 10
                     },
                     "PSFGx": {
-                      "content": "Deploy Skills"
+                      "content": "Deploy Skills",
+                      "x": 48,
+                      "y": 11.5
                     }
                   }
                 },
@@ -2288,12 +2554,17 @@
                   "name": "nav5",
                   "x": 0,
                   "y": 86,
+                  "height": "fit_content",
                   "descendants": {
                     "XeoeR": {
-                      "iconFontName": "puzzle"
+                      "iconFontName": "puzzle",
+                      "x": 16,
+                      "y": 10
                     },
                     "cGJxO": {
-                      "content": "Install Plugins"
+                      "content": "Install Plugins",
+                      "x": 48,
+                      "y": 11.5
                     }
                   }
                 },
@@ -2305,12 +2576,17 @@
                   "name": "nav6",
                   "x": 0,
                   "y": 128,
+                  "height": "fit_content",
                   "descendants": {
                     "XeoeR": {
-                      "iconFontName": "wrench"
+                      "iconFontName": "wrench",
+                      "x": 16,
+                      "y": 10
                     },
                     "cGJxO": {
-                      "content": "Fix Plugins"
+                      "content": "Fix Plugins",
+                      "x": 48,
+                      "y": 11.5
                     }
                   }
                 }
@@ -2332,7 +2608,7 @@
                 "thickness": {
                   "top": 1
                 },
-                "fill": "$border-default"
+                "fill": "#1e2028"
               },
               "layout": "vertical",
               "gap": 4,
@@ -2347,7 +2623,7 @@
                   "type": "text",
                   "id": "fyBcH",
                   "name": "versionText",
-                  "fill": "$text-muted",
+                  "fill": "#838387",
                   "content": "OpenClaw v1.0.0",
                   "fontFamily": "Inter",
                   "fontSize": 11,
@@ -2357,7 +2633,7 @@
                   "type": "text",
                   "id": "CurlX",
                   "name": "envText",
-                  "fill": "$text-muted",
+                  "fill": "#838387",
                   "content": "Docker · Windows 11",
                   "fontFamily": "Inter",
                   "fontSize": 11,
@@ -2373,6 +2649,7 @@
           "name": "main-content",
           "width": "fill_container",
           "height": "fill_container",
+          "fill": "#0e1015",
           "layout": "vertical",
           "gap": 28,
           "padding": 32,
@@ -2425,7 +2702,7 @@
                       "type": "frame",
                       "id": "xp2O3",
                       "name": "envBadge",
-                      "fill": "#111A24",
+                      "fill": "#13151b",
                       "cornerRadius": 12,
                       "stroke": {
                         "thickness": 1,
@@ -2476,11 +2753,11 @@
                   "id": "BA82p",
                   "name": "deploy-card",
                   "width": "fill_container",
-                  "fill": "$bg-card",
-                  "cornerRadius": "$radius-md",
+                  "fill": "#161920",
+                  "cornerRadius": 10,
                   "stroke": {
                     "thickness": 1,
-                    "fill": "$border-default"
+                    "fill": "#1e2028"
                   },
                   "layout": "vertical",
                   "gap": 16,
@@ -2500,7 +2777,7 @@
                           "name": "dcIconBg",
                           "width": 40,
                           "height": 40,
-                          "fill": "#0D2F33",
+                          "fill": "#1f1416",
                           "cornerRadius": "$radius-sm",
                           "justifyContent": "center",
                           "alignItems": "center",
@@ -2556,14 +2833,17 @@
                       "name": "dcBtn",
                       "x": 24,
                       "y": 80,
+                      "height": "fit_content",
                       "descendants": {
                         "nDX2c": {
                           "x": 73.16666666666666,
-                          "iconFontName": "rocket"
+                          "iconFontName": "rocket",
+                          "y": 10.5
                         },
                         "zppCu": {
                           "x": 97.16666666666666,
-                          "content": "Deploy Skills"
+                          "content": "Deploy Skills",
+                          "y": 10
                         }
                       }
                     }
@@ -2574,11 +2854,11 @@
                   "id": "qI7o5",
                   "name": "plugin-card",
                   "width": "fill_container",
-                  "fill": "$bg-card",
-                  "cornerRadius": "$radius-md",
+                  "fill": "#161920",
+                  "cornerRadius": 10,
                   "stroke": {
                     "thickness": 1,
-                    "fill": "$border-default"
+                    "fill": "#1e2028"
                   },
                   "layout": "vertical",
                   "gap": 16,
@@ -2598,7 +2878,7 @@
                           "name": "pcIconBg",
                           "width": 40,
                           "height": 40,
-                          "fill": "#1A1A2E",
+                          "fill": "#141a1f",
                           "cornerRadius": "$radius-sm",
                           "justifyContent": "center",
                           "alignItems": "center",
@@ -2653,14 +2933,17 @@
                       "width": "fill_container",
                       "name": "pcBtn",
                       "x": 24,
+                      "height": "fit_content",
                       "descendants": {
                         "DuS3b": {
                           "x": 70.16666666666666,
-                          "iconFontName": "puzzle"
+                          "iconFontName": "puzzle",
+                          "y": 10.5
                         },
                         "SyVuU": {
                           "x": 94.16666666666666,
-                          "content": "Install Plugins"
+                          "content": "Install Plugins",
+                          "y": 10
                         }
                       }
                     }
@@ -2671,11 +2954,11 @@
                   "id": "PXmgQ",
                   "name": "fix-card",
                   "width": "fill_container",
-                  "fill": "$bg-card",
-                  "cornerRadius": "$radius-md",
+                  "fill": "#161920",
+                  "cornerRadius": 10,
                   "stroke": {
                     "thickness": 1,
-                    "fill": "$border-default"
+                    "fill": "#1e2028"
                   },
                   "layout": "vertical",
                   "gap": 16,
@@ -2695,7 +2978,7 @@
                           "name": "fcIconBg",
                           "width": 40,
                           "height": 40,
-                          "fill": "#2E1A1A",
+                          "fill": "#1f1b14",
                           "cornerRadius": "$radius-sm",
                           "justifyContent": "center",
                           "alignItems": "center",
@@ -2750,14 +3033,17 @@
                       "width": "fill_container",
                       "name": "fcBtn",
                       "x": 24,
+                      "height": "fit_content",
                       "descendants": {
                         "DuS3b": {
                           "x": 80.16666666666666,
-                          "iconFontName": "wrench"
+                          "iconFontName": "wrench",
+                          "y": 10.5
                         },
                         "SyVuU": {
                           "x": 104.16666666666666,
-                          "content": "Fix Plugins"
+                          "content": "Fix Plugins",
+                          "y": 10
                         }
                       }
                     }
@@ -2776,30 +3062,43 @@
               "y": 281,
               "descendants": {
                 "xZBF6": {
-                  "width": "fill_container"
+                  "width": "fill_container",
+                  "height": "fit_content"
                 },
                 "FVcfu": {
-                  "content": "Operation Log"
+                  "content": "Operation Log",
+                  "x": 12,
+                  "y": 8
                 },
                 "qNspK": {
-                  "x": 916
+                  "x": 916,
+                  "y": 9
                 },
                 "sAfiL": {
                   "width": "fill_container",
-                  "height": "fill_container"
+                  "height": "fill_container",
+                  "y": 31
                 },
                 "kg6zY": {
-                  "content": "$ deploy-skills --env docker"
+                  "content": "$ deploy-skills --env docker",
+                  "x": 12,
+                  "y": 12
                 },
                 "qbKrG": {
-                  "content": "[INFO] Deploying skill: weather-forecast..."
+                  "content": "[INFO] Deploying skill: weather-forecast...",
+                  "x": 12,
+                  "y": 30
                 },
                 "DEVmL": {
-                  "content": "[OK] weather-forecast deployed successfully"
+                  "content": "[OK] weather-forecast deployed successfully",
+                  "x": 12,
+                  "y": 48
                 },
                 "SWxvK": {
                   "content": "[INFO] Deploying skill: news-reader...",
-                  "fill": "$status-info"
+                  "fill": "$status-info",
+                  "x": 12,
+                  "y": 66
                 }
               }
             }
@@ -2811,55 +3110,146 @@
   "variables": {
     "accent-primary": {
       "type": "color",
-      "value": "#00BCD4"
+      "value": [
+        {
+          "value": "#00BCD4"
+        },
+        {
+          "value": "#ff5c5c"
+        }
+      ]
     },
     "accent-primary-hover": {
       "type": "color",
-      "value": "#00ACC1"
+      "value": [
+        {
+          "value": "#00ACC1"
+        },
+        {
+          "value": "#ff7070"
+        }
+      ]
     },
     "accent-secondary": {
       "type": "color",
-      "value": "#7C4DFF"
+      "value": [
+        {
+          "value": "#7C4DFF"
+        },
+        {
+          "value": "#14b8a6"
+        }
+      ]
     },
     "bg-card": {
       "type": "color",
-      "value": "#1A2028"
+      "value": [
+        {
+          "value": "#1A2028"
+        },
+        {
+          "value": "#161920"
+        }
+      ]
     },
     "bg-card-hover": {
       "type": "color",
-      "value": "#222A34"
+      "value": [
+        {
+          "value": "#222A34"
+        },
+        {
+          "value": "#1f2330"
+        }
+      ]
     },
     "bg-input": {
       "type": "color",
-      "value": "#141A22"
+      "value": [
+        {
+          "value": "#141A22"
+        },
+        {
+          "value": "#1e2028"
+        }
+      ]
     },
     "bg-primary": {
       "type": "color",
-      "value": "#0F1419"
+      "value": [
+        {
+          "value": "#0F1419"
+        },
+        {
+          "value": "#0e1015"
+        }
+      ]
     },
     "bg-sidebar": {
       "type": "color",
-      "value": "#0A0E12"
+      "value": [
+        {
+          "value": "#0A0E12"
+        },
+        {
+          "value": "#0e1015"
+        }
+      ]
     },
     "bg-terminal": {
       "type": "color",
-      "value": "#0A0E12"
+      "value": [
+        {
+          "value": "#0A0E12"
+        },
+        {
+          "value": "#0e1015"
+        }
+      ]
     },
     "border-default": {
       "type": "color",
-      "value": "#2A3240"
+      "value": [
+        {
+          "value": "#2A3240"
+        },
+        {
+          "value": "#1e2028"
+        }
+      ]
     },
     "border-focus": {
       "type": "color",
-      "value": "#00BCD4"
+      "value": [
+        {
+          "value": "#00BCD4"
+        },
+        {
+          "value": "#ff5c5c"
+        }
+      ]
     },
     "radius-lg": {
       "type": "number",
-      "value": 12
+      "value": [
+        {
+          "value": 12
+        },
+        {
+          "value": 14
+        }
+      ]
     },
     "radius-md": {
       "type": "number",
-      "value": 8
+      "value": [
+        {
+          "value": 8
+        },
+        {
+          "value": 10
+        }
+      ]
     },
     "radius-sm": {
       "type": "number",
@@ -2887,23 +3277,58 @@
     },
     "status-error": {
       "type": "color",
-      "value": "#F44336"
+      "value": [
+        {
+          "value": "#F44336"
+        },
+        {
+          "value": "#ef4444"
+        }
+      ]
     },
     "status-info": {
       "type": "color",
-      "value": "#2196F3"
+      "value": [
+        {
+          "value": "#2196F3"
+        },
+        {
+          "value": "#3b82f6"
+        }
+      ]
     },
     "status-success": {
       "type": "color",
-      "value": "#4CAF50"
+      "value": [
+        {
+          "value": "#4CAF50"
+        },
+        {
+          "value": "#22c55e"
+        }
+      ]
     },
     "status-warning": {
       "type": "color",
-      "value": "#FF9800"
+      "value": [
+        {
+          "value": "#FF9800"
+        },
+        {
+          "value": "#f59e0b"
+        }
+      ]
     },
     "text-muted": {
       "type": "color",
-      "value": "#556677"
+      "value": [
+        {
+          "value": "#556677"
+        },
+        {
+          "value": "#838387"
+        }
+      ]
     },
     "text-on-accent": {
       "type": "color",
@@ -2911,11 +3336,25 @@
     },
     "text-primary": {
       "type": "color",
-      "value": "#E8ECF0"
+      "value": [
+        {
+          "value": "#E8ECF0"
+        },
+        {
+          "value": "#f4f4f5"
+        }
+      ]
     },
     "text-secondary": {
       "type": "color",
-      "value": "#8899AA"
+      "value": [
+        {
+          "value": "#8899AA"
+        },
+        {
+          "value": "#d4d4d8"
+        }
+      ]
     }
   }
 }
