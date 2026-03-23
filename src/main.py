@@ -1,4 +1,4 @@
-"""OpenClaw GUI - PyWebView entry point."""
+"""OpenClaw GUI — PyWebView 入口點。"""
 
 import webview
 from pathlib import Path

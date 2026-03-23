@@ -1,20 +1,23 @@
-"""Env Checker - Python native environment detection (ADR-003).
+"""環境檢查器 — 以 Python 原生偵測系統環境 (ADR-003)。
 
-Detects required software via shutil.which() and subprocess.run(),
-returns structured results for the frontend to render as status cards.
+透過 shutil.which() 與 subprocess.run() 偵測必要軟體，
+回傳結構化結果供前端渲染為狀態卡片。
 """
 
+import re
 import shutil
 import subprocess
-import re
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from src.platform_utils import EnvType, OSType, detect_env_type, detect_os, get_project_root
 
+# ── 資料結構 ──
+
 
 @dataclass
 class CheckResult:
+    """單項檢查結果。"""
     name: str
     key: str
     installed: bool
@@ -23,364 +26,208 @@ class CheckResult:
     required: bool = True
 
 
-def _run_version(command: list[str], timeout: int = 10) -> str | None:
-    """Run a command and return stdout, or None on failure.
+# ── 工具檢查規格（宣告式） ──
 
-    Resolves the executable via shutil.which() so that .CMD/.BAT wrappers
-    on Windows are found correctly by subprocess.
+@dataclass
+class ToolSpec:
+    """工具檢查規格：名稱、指令、版本參數、安裝提示。"""
+    name: str
+    key: str
+    cmd: str
+    version_args: list[str]
+    install_hint: str
+    required: bool = True
+    min_major: int | None = None  # 最低主版本要求
+
+
+# 所有工具的宣告式檢查規格
+TOOL_SPECS: list[ToolSpec] = [
+    ToolSpec("Docker", "docker", "docker",
+             ["--version"], "Docker 未安裝。請安裝 Docker Desktop。"),
+    ToolSpec("VS Code", "vscode", "code",
+             ["--version"], "VS Code 未安裝。請至 https://code.visualstudio.com/ 下載安裝。"),
+    ToolSpec("ngrok", "ngrok", "ngrok",
+             ["version"], "ngrok 未安裝。請至 https://ngrok.com/download 下載安裝。"),
+    ToolSpec("Node.js", "nodejs", "node",
+             ["--version"], "Node.js 未安裝。請安裝 Node.js >= 18。",
+             min_major=18),
+    ToolSpec("openclaw CLI", "openclaw", "openclaw",
+             ["--version"], "openclaw CLI 未安裝或不在 PATH 中。"),
+    ToolSpec("jq", "jq", "jq",
+             ["--version"], "jq 未安裝。請執行：sudo apt-get install -y jq"),
+]
+
+
+# ── 內部工具函式 ──
+
+
+def _run_cmd(command: list[str], timeout: int = 10) -> str | None:
+    """執行指令並回傳 stdout，失敗則回傳 None。
+
+    透過 shutil.which() 解析執行檔路徑，
+    確保 Windows 上的 .CMD/.BAT 包裝器能正確找到。
     """
-    try:
-        resolved = shutil.which(command[0])
-        if resolved is None:
-            return None
-        cmd = [resolved] + command[1:]
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-        )
-        if result.returncode == 0:
-            return result.stdout.strip()
+    resolved = shutil.which(command[0])
+    if resolved is None:
         return None
+    try:
+        result = subprocess.run(
+            [resolved, *command[1:]],
+            capture_output=True, text=True, timeout=timeout,
+        )
+        return result.stdout.strip() if result.returncode == 0 else None
     except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
         return None
 
 
 def _extract_version(text: str, pattern: str = r"(\d+\.\d+[\.\d]*)") -> str:
-    """Extract version number from text using regex."""
+    """從文字中以正規表達式擷取版本號。"""
     match = re.search(pattern, text)
     return match.group(1) if match else text.split("\n")[0]
 
 
-def check_docker_install() -> CheckResult:
-    """Check Docker installation."""
+# ── 通用工具檢查 ──
+
+
+def _check_tool(spec: ToolSpec) -> CheckResult:
+    """依照 ToolSpec 執行單項工具檢查。"""
+    if not shutil.which(spec.cmd):
+        return CheckResult(
+            spec.name, spec.key, False, "", spec.install_hint, spec.required,
+        )
+
+    output = _run_cmd([spec.cmd, *spec.version_args])
+    if output is None:
+        return CheckResult(
+            spec.name, spec.key, True, "",
+            f"{spec.name} 已安裝但無法取得版本。", spec.required,
+        )
+
+    version = _extract_version(output.split("\n")[0])
+
+    # 版本下限檢查
+    if spec.min_major is not None:
+        major = re.match(r"(\d+)", version)
+        if major and int(major.group(1)) < spec.min_major:
+            return CheckResult(
+                spec.name, spec.key, True, version,
+                f"{spec.name} {version} 版本過舊，建議升級至 >= {spec.min_major}。",
+                spec.required,
+            )
+
+    return CheckResult(
+        spec.name, spec.key, True, version,
+        f"{spec.name} {version} 已安裝。", spec.required,
+    )
+
+
+# ── 特殊檢查（無法用通用模式處理） ──
+
+
+def _check_docker_running() -> CheckResult:
+    """檢查 Docker 引擎是否正在執行。"""
     if not shutil.which("docker"):
         return CheckResult(
-            name="Docker",
-            key="docker",
-            installed=False,
-            version="",
-            message="Docker 未安裝。請安裝 Docker Desktop。",
+            "Docker Desktop", "docker_running", False, "",
+            "Docker 未安裝，無法檢查執行狀態。",
         )
-
-    output = _run_version(["docker", "--version"])
-    if output is None:
+    if _run_cmd(["docker", "info"]) is None:
         return CheckResult(
-            name="Docker",
-            key="docker",
-            installed=False,
-            version="",
-            message="Docker 指令執行失敗。",
+            "Docker Desktop", "docker_running", False, "",
+            "Docker 未啟動，請開啟 Docker Desktop。",
         )
-
-    version = _extract_version(output)
     return CheckResult(
-        name="Docker",
-        key="docker",
-        installed=True,
-        version=version,
-        message=f"Docker {version} 已安裝。",
+        "Docker Desktop", "docker_running", True, "",
+        "Docker 引擎運作中。",
     )
 
 
-def check_docker_running() -> CheckResult:
-    """Check if Docker daemon is running."""
-    if not shutil.which("docker"):
-        return CheckResult(
-            name="Docker Desktop",
-            key="docker_running",
-            installed=False,
-            version="",
-            message="Docker 未安裝，無法檢查執行狀態。",
-        )
-
-    info = _run_version(["docker", "info"])
-    if info is None:
-        return CheckResult(
-            name="Docker Desktop",
-            key="docker_running",
-            installed=False,
-            version="",
-            message="Docker 未啟動，請開啟 Docker Desktop。",
-        )
-
-    return CheckResult(
-        name="Docker Desktop",
-        key="docker_running",
-        installed=True,
-        version="",
-        message="Engine is running",
-    )
-
-
-def check_vscode() -> CheckResult:
-    """Check VS Code installation."""
-    if not shutil.which("code"):
-        return CheckResult(
-            name="VS Code",
-            key="vscode",
-            installed=False,
-            version="",
-            message="VS Code 未安裝。請至 https://code.visualstudio.com/ 下載安裝。",
-        )
-
-    output = _run_version(["code", "--version"])
-    if output is None:
-        return CheckResult(
-            name="VS Code",
-            key="vscode",
-            installed=True,
-            version="",
-            message="VS Code 已安裝但無法取得版本。",
-        )
-
-    # code --version returns version on first line
-    first_line = output.split("\n")[0]
-    version = _extract_version(first_line)
-
-    return CheckResult(
-        name="VS Code",
-        key="vscode",
-        installed=True,
-        version=version,
-        message=f"VS Code {version} 已安裝。",
-    )
-
-
-def check_ngrok() -> CheckResult:
-    """Check ngrok installation."""
-    if not shutil.which("ngrok"):
-        return CheckResult(
-            name="ngrok",
-            key="ngrok",
-            installed=False,
-            version="",
-            message="ngrok 未安裝。請至 https://ngrok.com/download 下載安裝。",
-        )
-
-    output = _run_version(["ngrok", "version"])
-    if output is None:
-        return CheckResult(
-            name="ngrok",
-            key="ngrok",
-            installed=True,
-            version="",
-            message="ngrok 已安裝但無法取得版本。",
-        )
-
-    version = _extract_version(output)
-    return CheckResult(
-        name="ngrok",
-        key="ngrok",
-        installed=True,
-        version=version,
-        message=f"ngrok {version} 已安裝。",
-    )
-
-
-def check_nodejs() -> CheckResult:
-    """Check Node.js installation (native env, requires >= 18)."""
-    if not shutil.which("node"):
-        return CheckResult(
-            name="Node.js",
-            key="nodejs",
-            installed=False,
-            version="",
-            message="Node.js 未安裝。請安裝 Node.js >= 18。",
-        )
-
-    output = _run_version(["node", "--version"])
-    if output is None:
-        return CheckResult(
-            name="Node.js",
-            key="nodejs",
-            installed=True,
-            version="",
-            message="Node.js 已安裝但無法取得版本。",
-        )
-
-    version = _extract_version(output)
-    major_match = re.match(r"(\d+)", version)
-    if major_match and int(major_match.group(1)) < 18:
-        return CheckResult(
-            name="Node.js",
-            key="nodejs",
-            installed=True,
-            version=version,
-            message=f"Node.js {version} 版本過舊，建議升級至 >= 18。",
-        )
-
-    return CheckResult(
-        name="Node.js",
-        key="nodejs",
-        installed=True,
-        version=version,
-        message=f"Node.js {version} 已安裝。",
-    )
-
-
-def check_openclaw_cli() -> CheckResult:
-    """Check openclaw CLI installation (native env)."""
-    if not shutil.which("openclaw"):
-        return CheckResult(
-            name="openclaw CLI",
-            key="openclaw",
-            installed=False,
-            version="",
-            message="openclaw CLI 未安裝或不在 PATH 中。",
-        )
-
-    output = _run_version(["openclaw", "--version"])
-    version = _extract_version(output) if output else ""
-
-    return CheckResult(
-        name="openclaw CLI",
-        key="openclaw",
-        installed=True,
-        version=version,
-        message=f"openclaw CLI {version} 已安裝。" if version else "openclaw CLI 已安裝。",
-    )
-
-
-def check_jq() -> CheckResult:
-    """Check jq installation (native env)."""
-    if not shutil.which("jq"):
-        return CheckResult(
-            name="jq",
-            key="jq",
-            installed=False,
-            version="",
-            message="jq 未安裝。請執行：sudo apt-get install -y jq",
-        )
-
-    output = _run_version(["jq", "--version"])
-    version = _extract_version(output) if output else ""
-
-    return CheckResult(
-        name="jq",
-        key="jq",
-        installed=True,
-        version=version,
-        message=f"jq {version} 已安裝。" if version else "jq 已安裝。",
-    )
-
-
-def check_systemd_service() -> CheckResult:
-    """Check openclaw-gateway systemd service (native Linux env)."""
-    service_name = "openclaw-gateway"
+def _check_systemd_service() -> CheckResult:
+    """檢查 openclaw-gateway systemd 服務狀態（僅限 Linux 原生環境）。"""
+    service = "openclaw-gateway"
 
     if not shutil.which("systemctl"):
         return CheckResult(
-            name="systemd 服務",
-            key="systemd",
-            installed=False,
-            version="",
-            message="systemctl 不可用。",
-            required=False,
+            "systemd 服務", "systemd", False, "",
+            "systemctl 不可用。", required=False,
         )
 
-    result = _run_version(["systemctl", "is-active", service_name])
-    if result is None:
+    output = _run_cmd(["systemctl", "is-active", service])
+    if output is None:
         return CheckResult(
-            name="systemd 服務",
-            key="systemd",
-            installed=False,
-            version="",
-            message=f"{service_name} 服務尚未設定（可稍後透過 init 建立）。",
-            required=False,
+            "systemd 服務", "systemd", False, "",
+            f"{service} 服務尚未設定（可稍後透過 init 建立）。", required=False,
         )
 
-    state = result.strip()
-    if state == "active":
-        return CheckResult(
-            name="systemd 服務",
-            key="systemd",
-            installed=True,
-            version="",
-            message=f"{service_name} 服務已設定且正在執行。",
-            required=False,
-        )
-
-    return CheckResult(
-        name="systemd 服務",
-        key="systemd",
-        installed=True,
-        version="",
-        message=f"{service_name} 服務狀態：{state}。",
-        required=False,
-    )
+    state = output.strip()
+    is_active = state == "active"
+    msg = f"{service} 服務已設定且正在執行。" if is_active else f"{service} 服務狀態：{state}。"
+    return CheckResult("systemd 服務", "systemd", is_active, "", msg, required=False)
 
 
-def check_env_file() -> CheckResult:
-    """Check if .env file exists, copy from .env.example if needed."""
+def _check_env_file() -> CheckResult:
+    """檢查 .env 檔案是否存在，必要時從 .env.example 複製。"""
     project_root = get_project_root()
     env_file = project_root / ".env"
     env_example = project_root / ".env.example"
 
     if env_file.exists():
+        return CheckResult(".env 檔案", "env_file", True, "", ".env 檔案已存在。")
+
+    if not env_example.exists():
         return CheckResult(
-            name=".env 檔案",
-            key="env_file",
-            installed=True,
-            version="",
-            message=".env 檔案已存在。",
+            ".env 檔案", "env_file", False, "",
+            ".env.example 不存在，請手動建立 .env 檔案。",
         )
 
-    if env_example.exists():
-        try:
-            shutil.copy2(env_example, env_file)
-            return CheckResult(
-                name=".env 檔案",
-                key="env_file",
-                installed=True,
-                version="",
-                message="已從 .env.example 複製建立 .env。",
-            )
-        except OSError as e:
-            return CheckResult(
-                name=".env 檔案",
-                key="env_file",
-                installed=False,
-                version="",
-                message=f"複製 .env.example 失敗：{e}",
-            )
+    try:
+        shutil.copy2(env_example, env_file)
+        return CheckResult(
+            ".env 檔案", "env_file", True, "",
+            "已從 .env.example 複製建立 .env。",
+        )
+    except OSError as e:
+        return CheckResult(
+            ".env 檔案", "env_file", False, "",
+            f"複製 .env.example 失敗：{e}",
+        )
 
-    return CheckResult(
-        name=".env 檔案",
-        key="env_file",
-        installed=False,
-        version="",
-        message=".env.example 不存在，請手動建立 .env 檔案。",
-    )
+
+# ── 檢查規格查詢 ──
+
+
+def _get_spec(key: str) -> ToolSpec | None:
+    """依 key 取得工具規格。"""
+    return next((s for s in TOOL_SPECS if s.key == key), None)
+
+
+# ── 環境檢查組合（依 OS 與環境類型） ──
+
+# 各環境需檢查的工具 key 清單
+_DOCKER_CHECKS = ["docker", "vscode", "ngrok"]
+_NATIVE_CHECKS = ["nodejs", "openclaw", "jq", "vscode", "ngrok"]
 
 
 def run_all_checks() -> list[dict]:
-    """Run all environment checks based on detected OS and environment type.
-
-    Returns a list of structured check results.
-    """
+    """依偵測到的作業系統與環境類型執行所有檢查。"""
     os_type = detect_os()
     env_type = detect_env_type()
 
     results: list[CheckResult] = []
 
     if env_type == EnvType.DOCKER:
-        # Docker environment: Docker, Docker Desktop, VS Code, ngrok, .env
-        results.append(check_docker_install())
-        results.append(check_docker_running())
-        results.append(check_vscode())
-        results.append(check_ngrok())
+        for key in _DOCKER_CHECKS:
+            spec = _get_spec(key)
+            if spec:
+                results.append(_check_tool(spec))
+        results.append(_check_docker_running())
     else:
-        # Native environment: Node.js, openclaw CLI, jq, VS Code, ngrok
-        results.append(check_nodejs())
-        results.append(check_openclaw_cli())
-        results.append(check_jq())
-        results.append(check_vscode())
-        results.append(check_ngrok())
+        for key in _NATIVE_CHECKS:
+            spec = _get_spec(key)
+            if spec:
+                results.append(_check_tool(spec))
         if os_type == OSType.LINUX:
-            results.append(check_systemd_service())
+            results.append(_check_systemd_service())
 
-    results.append(check_env_file())
-
+    results.append(_check_env_file())
     return [asdict(r) for r in results]

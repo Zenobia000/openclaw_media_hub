@@ -1,6 +1,20 @@
-/* OpenClaw GUI - Frontend Logic (Structured UI, no terminal) */
+/* OpenClaw GUI — 前端互動邏輯（結構化 UI） */
 
-// ── Card icon/color mapping ──
+// ── 工具函式 ──
+
+function $(id) { return document.getElementById(id); }
+
+function escapeHtml(text) {
+    var div = document.createElement("div");
+    div.appendChild(document.createTextNode(text));
+    return div.innerHTML;
+}
+
+function refreshIcons() {
+    if (window.lucide) lucide.createIcons();
+}
+
+// ── 檢查卡片圖示/色彩對應 ──
 
 var checkMeta = {
     docker:         { icon: "container",  colorClass: "blue" },
@@ -19,14 +33,13 @@ function getCheckMeta(key) {
     return checkMeta[key] || checkMeta._default;
 }
 
-// ── Global callbacks (called from Python Bridge) ──
+// ── 環境檢查回呼（由 Python Bridge 呼叫） ──
 
 window.onCheckEnvResults = function (results) {
-    var grid = document.getElementById("check-results");
-    var banner = document.getElementById("summary-banner");
-    var loading = document.getElementById("check-loading");
-    var envFileRow = document.getElementById("env-file-check");
-    var errorGuidance = document.getElementById("error-guidance");
+    var grid = $("check-results");
+    var loading = $("check-loading");
+    var envFileRow = $("env-file-check");
+    var errorGuidance = $("error-guidance");
 
     loading.style.display = "none";
     grid.innerHTML = "";
@@ -42,7 +55,6 @@ window.onCheckEnvResults = function (results) {
     for (var i = 0; i < results.length; i++) {
         var item = results[i];
 
-        // Handle .env file check separately
         if (item.key === "env_file") {
             renderEnvFileCheck(item);
             if (item.installed) passCount++;
@@ -53,16 +65,12 @@ window.onCheckEnvResults = function (results) {
         var isPassed = item.installed;
         var isWarn = !item.required && !item.installed;
 
-        var card = document.createElement("div");
-        card.className = "check-card";
-
-        // Determine badge state
+        // 判斷徽章狀態
         var badgeClass, badgeIcon, badgeText;
         if (isPassed) {
             badgeClass = "pass";
             badgeIcon = "check";
-            badgeText = item.key === "docker_running" || item.key === "docker_desktop"
-                ? "Running" : "Installed";
+            badgeText = (item.key === "docker_running" || item.key === "docker_desktop") ? "Running" : "Installed";
         } else if (isWarn) {
             badgeClass = "warn";
             badgeIcon = "alert-triangle";
@@ -74,16 +82,14 @@ window.onCheckEnvResults = function (results) {
             failedItems.push(item);
         }
 
-        // Icon bg color follows badge state for fail
-        var iconColorClass = isPassed ? meta.colorClass : (isWarn ? meta.colorClass : "red");
+        var iconColor = isPassed || isWarn ? meta.colorClass : "red";
+        var versionText = item.version ? "v" + escapeHtml(item.version) : escapeHtml(item.message || "");
 
-        var versionText = item.version
-            ? "v" + escapeHtml(item.version)
-            : escapeHtml(item.message || "");
-
+        var card = document.createElement("div");
+        card.className = "check-card";
         card.innerHTML =
             '<div class="check-card-top">' +
-            '  <div class="check-card-icon-bg ' + iconColorClass + '">' +
+            '  <div class="check-card-icon-bg ' + iconColor + '">' +
             '    <i data-lucide="' + meta.icon + '" class="card-icon"></i>' +
             '  </div>' +
             '  <div class="check-card-badge ' + badgeClass + '">' +
@@ -98,69 +104,44 @@ window.onCheckEnvResults = function (results) {
 
         grid.appendChild(card);
 
-        if (isPassed) {
-            passCount++;
-        } else if (item.required) {
-            failCount++;
-        }
+        if (isPassed) passCount++;
+        else if (item.required) failCount++;
     }
 
-    // Re-render lucide icons
-    if (window.lucide) {
-        lucide.createIcons();
-    }
-
-    // Show summary banner (above cards)
+    refreshIcons();
     renderSummaryBanner(passCount, failCount, results.length);
-
-    // Show error guidance for failed items
-    if (failedItems.length > 0) {
-        renderErrorGuidance(failedItems);
-    }
+    if (failedItems.length > 0) renderErrorGuidance(failedItems);
 };
 
 function renderSummaryBanner(passCount, failCount, totalCount) {
-    var banner = document.getElementById("summary-banner");
-    var now = new Date();
-    var timeStr = "Last checked: just now";
+    var banner = $("summary-banner");
+    var allPassed = failCount === 0;
+    var state = allPassed ? "success" : "failure";
+    var icon = allPassed ? "check-circle" : "alert-circle";
+    var title = allPassed
+        ? "All checks passed — environment is ready"
+        : failCount + " check(s) failed — action required";
 
-    if (failCount === 0) {
-        banner.className = "summary-banner success";
-        banner.innerHTML =
-            '<i data-lucide="check-circle" class="summary-icon success"></i>' +
-            '<div class="summary-text">' +
-            '  <div class="summary-title success">All checks passed — environment is ready</div>' +
-            '  <div class="summary-desc">' + passCount + ' of ' + totalCount + ' checks passed</div>' +
-            '</div>' +
-            '<span class="summary-time">' + timeStr + '</span>';
-    } else {
-        banner.className = "summary-banner failure";
-        banner.innerHTML =
-            '<i data-lucide="alert-circle" class="summary-icon failure"></i>' +
-            '<div class="summary-text">' +
-            '  <div class="summary-title failure">' + failCount + ' check(s) failed — action required</div>' +
-            '  <div class="summary-desc">' + passCount + ' of ' + totalCount + ' checks passed</div>' +
-            '</div>' +
-            '<span class="summary-time">' + timeStr + '</span>';
-    }
-
+    banner.className = "summary-banner " + state;
+    banner.innerHTML =
+        '<i data-lucide="' + icon + '" class="summary-icon ' + state + '"></i>' +
+        '<div class="summary-text">' +
+        '  <div class="summary-title ' + state + '">' + title + '</div>' +
+        '  <div class="summary-desc">' + passCount + ' of ' + totalCount + ' checks passed</div>' +
+        '</div>' +
+        '<span class="summary-time">Last checked: just now</span>';
     banner.style.display = "flex";
-
-    if (window.lucide) {
-        lucide.createIcons();
-    }
+    refreshIcons();
 }
 
 function renderEnvFileCheck(item) {
-    var row = document.getElementById("env-file-check");
-    var isPassed = item.installed;
-    var stateClass = isPassed ? "success" : "fail";
-    var badgeClass = isPassed ? "pass" : "fail";
-    var badgeIcon = isPassed ? "check" : "x";
-    var badgeText = isPassed ? "Verified" : "Missing";
-    var desc = isPassed
-        ? "Copied from .env.example — ready for configuration"
-        : (item.message || ".env file not found");
+    var row = $("env-file-check");
+    var ok = item.installed;
+    var stateClass = ok ? "success" : "fail";
+    var badgeClass = ok ? "pass" : "fail";
+    var badgeIcon = ok ? "check" : "x";
+    var badgeText = ok ? "Verified" : "Missing";
+    var desc = ok ? "Copied from .env.example — ready for configuration" : (item.message || ".env file not found");
 
     row.innerHTML =
         '<div class="env-file-icon-bg ' + stateClass + '">' +
@@ -174,24 +155,13 @@ function renderEnvFileCheck(item) {
         '  <i data-lucide="' + badgeIcon + '" class="env-file-badge-icon"></i>' +
         '  <span>' + badgeText + '</span>' +
         '</div>';
-
     row.style.display = "flex";
-
-    if (window.lucide) {
-        lucide.createIcons();
-    }
+    refreshIcons();
 }
 
 function renderErrorGuidance(failedItems) {
-    var container = document.getElementById("error-guidance");
-    var lines = [];
-
-    for (var i = 0; i < failedItems.length; i++) {
-        var item = failedItems[i];
-        lines.push("Action Required: Install " + escapeHtml(item.name));
-    }
-
-    var title = lines[0];
+    var container = $("error-guidance");
+    var title = "Action Required: Install " + escapeHtml(failedItems[0].name);
     var desc = failedItems.length === 1
         ? escapeHtml(failedItems[0].name) + " is required for " +
           escapeHtml(failedItems[0].message || "this feature") +
@@ -204,22 +174,15 @@ function renderErrorGuidance(failedItems) {
         '  <div class="error-guidance-title">' + title + '</div>' +
         '  <div class="error-guidance-desc">' + desc + '</div>' +
         '</div>';
-
     container.style.display = "flex";
-
-    if (window.lucide) {
-        lucide.createIcons();
-    }
+    refreshIcons();
 }
 
 window.onCheckEnvError = function (errorMessage) {
-    var grid = document.getElementById("check-results");
-    var loading = document.getElementById("check-loading");
-    var banner = document.getElementById("summary-banner");
+    $("check-loading").style.display = "none";
+    $("check-results").innerHTML = "";
 
-    loading.style.display = "none";
-    grid.innerHTML = "";
-
+    var banner = $("summary-banner");
     banner.className = "summary-banner failure";
     banner.style.display = "flex";
     banner.innerHTML =
@@ -227,75 +190,42 @@ window.onCheckEnvError = function (errorMessage) {
         '<div class="summary-text">' +
         '  <div class="summary-title failure">Error: ' + escapeHtml(errorMessage) + '</div>' +
         '</div>';
-
-    if (window.lucide) {
-        lucide.createIcons();
-    }
+    refreshIcons();
 };
 
-// ── Actions ──
+// ── 操作 ──
 
 function startCheckEnv() {
-    var grid = document.getElementById("check-results");
-    var banner = document.getElementById("summary-banner");
-    var loading = document.getElementById("check-loading");
-    var envFileRow = document.getElementById("env-file-check");
-    var errorGuidance = document.getElementById("error-guidance");
-
-    grid.innerHTML = "";
-    banner.style.display = "none";
-    envFileRow.style.display = "none";
-    errorGuidance.style.display = "none";
-    loading.style.display = "flex";
+    $("check-results").innerHTML = "";
+    $("summary-banner").style.display = "none";
+    $("env-file-check").style.display = "none";
+    $("error-guidance").style.display = "none";
+    $("check-loading").style.display = "flex";
 
     window.pywebview.api.check_env().then(function (raw) {
         var result = JSON.parse(raw);
-        if (!result.ok) {
-            window.onCheckEnvError(result.error);
-        }
+        if (!result.ok) window.onCheckEnvError(result.error);
     });
 }
 
-// ── Navigation ──
+// ── 導覽 ──
 
 function navigateTo(viewName) {
     var views = document.querySelectorAll(".view");
-    for (var i = 0; i < views.length; i++) {
-        views[i].classList.remove("active");
-    }
-    var target = document.getElementById("view-" + viewName);
-    if (target) {
-        target.classList.add("active");
-    }
+    for (var i = 0; i < views.length; i++) views[i].classList.remove("active");
+    var target = $("view-" + viewName);
+    if (target) target.classList.add("active");
 
     var navItems = document.querySelectorAll(".nav-item");
     for (var i = 0; i < navItems.length; i++) {
-        navItems[i].classList.remove("active");
-        if (navItems[i].getAttribute("data-view") === viewName) {
-            navItems[i].classList.add("active");
-        }
+        navItems[i].classList.toggle("active", navItems[i].getAttribute("data-view") === viewName);
     }
 
-    // Auto-run environment check when entering the Environment page
-    if (viewName === "environment") {
-        startCheckEnv();
-    }
-
-    // Load wizard defaults when entering Initialize page
-    if (viewName === "initialize") {
-        initWizardLoad();
-    }
+    if (viewName === "environment") startCheckEnv();
+    if (viewName === "initialize") initWizardLoad();
 }
 
-// ── Utilities ──
-
-function escapeHtml(text) {
-    var div = document.createElement("div");
-    div.appendChild(document.createTextNode(text));
-    return div.innerHTML;
-}
-
-// ── Initialize Wizard ──
+// ── 初始化精靈 ──
 
 var wizardStep = 1;
 var wizardData = {
@@ -315,31 +245,30 @@ var initStepLabels = {
     configure_stt: "設定語音轉文字"
 };
 
+var STEP_KEYS = ["create_dirs", "generate_config", "store_keys", "start_service", "wait_gateway", "configure_stt"];
+
+var SECRET_KEYS = [
+    "line_channel_access_token", "line_channel_secret",
+    "discord_bot_token", "openai_api_key",
+    "database_url", "redis_url"
+];
+
 function initWizardLoad() {
     wizardStep = 1;
-    // Reset UI
     showWizardStep(1);
     resetProgressList();
-    document.getElementById("init-dashboard-info").style.display = "none";
-    document.getElementById("init-error-banner").style.display = "none";
+    $("init-dashboard-info").style.display = "none";
+    $("init-error-banner").style.display = "none";
 
-    // Load defaults from backend
     window.pywebview.api.get_init_defaults().then(function (raw) {
-        var defaults = JSON.parse(raw);
-        wizardData.deployMode = defaults.deployMode;
-        wizardData.workingDir = defaults.workingDir;
-        wizardData.bindHost = defaults.bindHost;
-        wizardData.gatewayMode = defaults.gatewayMode;
-        wizardData.gatewayPort = defaults.gatewayPort;
+        var d = JSON.parse(raw);
+        Object.assign(wizardData, d);
 
-        // Fill form fields
-        document.getElementById("init-workingDir").value = defaults.workingDir;
-        document.getElementById("init-bindHost").value = defaults.bindHost;
-        document.getElementById("init-gatewayMode").value = defaults.gatewayMode;
-        document.getElementById("init-gatewayPort").value = defaults.gatewayPort;
-
-        // Pre-select mode card
-        selectDeployMode(defaults.deployMode);
+        $("init-workingDir").value = d.workingDir;
+        $("init-bindHost").value = d.bindHost;
+        $("init-gatewayMode").value = d.gatewayMode;
+        $("init-gatewayPort").value = d.gatewayPort;
+        selectDeployMode(d.deployMode);
     });
 }
 
@@ -347,129 +276,95 @@ function selectDeployMode(mode) {
     wizardData.deployMode = mode;
     var cards = document.querySelectorAll(".mode-card");
     for (var i = 0; i < cards.length; i++) {
-        cards[i].classList.remove("selected");
-        if (cards[i].getAttribute("data-mode") === mode) {
-            cards[i].classList.add("selected");
-        }
+        cards[i].classList.toggle("selected", cards[i].getAttribute("data-mode") === mode);
     }
 }
 
 function showWizardStep(step) {
-    // Show/hide panels
     for (var i = 1; i <= 3; i++) {
-        var panel = document.getElementById("init-step-" + i);
+        var panel = $("init-step-" + i);
         if (panel) panel.style.display = (i === step) ? "flex" : "none";
     }
 
-    // Update stepper
     for (var i = 1; i <= 3; i++) {
-        var el = document.getElementById("stepper-" + i);
+        var el = $("stepper-" + i);
         el.classList.remove("active", "completed");
         if (i < step) el.classList.add("completed");
         else if (i === step) el.classList.add("active");
     }
 
-    // Update buttons
-    var backBtn = document.getElementById("init-btn-back");
-    var nextBtn = document.getElementById("init-btn-next");
-    var counter = document.getElementById("init-step-counter");
+    var backBtn = $("init-btn-back");
+    var nextBtn = $("init-btn-next");
 
     backBtn.style.display = (step === 1) ? "none" : "";
-    counter.textContent = "Step " + step + " of 3";
+    $("init-step-counter").textContent = "Step " + step + " of 3";
 
-    if (step === 3) {
-        nextBtn.innerHTML = '<i data-lucide="rocket" class="btn-icon"></i> Initialize';
-    } else {
-        nextBtn.innerHTML = 'Next <i data-lucide="arrow-right" class="btn-icon"></i>';
-    }
+    nextBtn.innerHTML = step === 3
+        ? '<i data-lucide="rocket" class="btn-icon"></i> Initialize'
+        : 'Next <i data-lucide="arrow-right" class="btn-icon"></i>';
     nextBtn.disabled = false;
-
-    if (window.lucide) lucide.createIcons();
+    refreshIcons();
 }
 
 function collectWizardData() {
-    wizardData.workingDir = document.getElementById("init-workingDir").value.trim() || ".openclaw";
-    wizardData.bindHost = document.getElementById("init-bindHost").value.trim() || "0.0.0.0";
-    wizardData.gatewayMode = document.getElementById("init-gatewayMode").value.trim() || "local";
-    wizardData.gatewayPort = parseInt(document.getElementById("init-gatewayPort").value, 10) || 18789;
+    wizardData.workingDir = $("init-workingDir").value.trim() || ".openclaw";
+    wizardData.bindHost = $("init-bindHost").value.trim() || "0.0.0.0";
+    wizardData.gatewayMode = $("init-gatewayMode").value.trim() || "local";
+    wizardData.gatewayPort = parseInt($("init-gatewayPort").value, 10) || 18789;
 }
 
 function collectSecrets() {
-    var keys = [
-        "line_channel_access_token", "line_channel_secret",
-        "discord_bot_token", "openai_api_key",
-        "database_url", "redis_url"
-    ];
     var secrets = {};
-    for (var i = 0; i < keys.length; i++) {
-        var el = document.getElementById("init-" + keys[i]);
-        secrets[keys[i]] = el ? el.value.trim() : "";
+    for (var i = 0; i < SECRET_KEYS.length; i++) {
+        var el = $("init-" + SECRET_KEYS[i]);
+        secrets[SECRET_KEYS[i]] = el ? el.value.trim() : "";
     }
     return secrets;
 }
 
+function countNonEmpty(obj) {
+    var count = 0;
+    for (var k in obj) { if (obj[k]) count++; }
+    return count;
+}
+
 function validateWizardStep(step) {
     if (step === 1) {
-        if (!wizardData.deployMode) {
-            alert("請選擇部署模式");
-            return false;
-        }
-        var port = parseInt(document.getElementById("init-gatewayPort").value, 10);
-        if (isNaN(port) || port < 1 || port > 65535) {
-            alert("Gateway Port 需介於 1-65535");
-            return false;
-        }
+        if (!wizardData.deployMode) { alert("請選擇部署模式"); return false; }
+        var port = parseInt($("init-gatewayPort").value, 10);
+        if (isNaN(port) || port < 1 || port > 65535) { alert("Gateway Port 需介於 1-65535"); return false; }
         return true;
     }
     if (step === 2) {
-        // LINE token and secret must be paired
-        var token = document.getElementById("init-line_channel_access_token").value.trim();
-        var secret = document.getElementById("init-line_channel_secret").value.trim();
-        if ((token && !secret) || (!token && secret)) {
-            alert("LINE Token 和 Secret 必須成對填寫");
-            return false;
-        }
+        var token = $("init-line_channel_access_token").value.trim();
+        var secret = $("init-line_channel_secret").value.trim();
+        if ((token && !secret) || (!token && secret)) { alert("LINE Token 和 Secret 必須成對填寫"); return false; }
         return true;
     }
     return true;
 }
 
 function updateChannelStatus() {
-    var lineToken = document.getElementById("init-line_channel_access_token").value.trim();
-    var lineSecret = document.getElementById("init-line_channel_secret").value.trim();
-    var discordToken = document.getElementById("init-discord_bot_token").value.trim();
+    var hasLine = $("init-line_channel_access_token").value.trim() && $("init-line_channel_secret").value.trim();
+    var hasDiscord = $("init-discord_bot_token").value.trim();
 
-    var lineStatus = document.getElementById("init-line-status");
-    var discordStatus = document.getElementById("init-discord-status");
+    setChannelStatus("init-line-status", hasLine);
+    setChannelStatus("init-discord-status", hasDiscord);
+}
 
-    if (lineToken && lineSecret) {
-        lineStatus.textContent = "Configured";
-        lineStatus.className = "init-channel-status configured";
-    } else {
-        lineStatus.textContent = "Not configured";
-        lineStatus.className = "init-channel-status";
-    }
-
-    if (discordToken) {
-        discordStatus.textContent = "Configured";
-        discordStatus.className = "init-channel-status configured";
-    } else {
-        discordStatus.textContent = "Not configured";
-        discordStatus.className = "init-channel-status";
-    }
+function setChannelStatus(id, configured) {
+    var el = $(id);
+    el.textContent = configured ? "Configured" : "Not configured";
+    el.className = "init-channel-status" + (configured ? " configured" : "");
 }
 
 function wizardNext() {
     if (wizardStep < 3) {
         if (!validateWizardStep(wizardStep)) return;
         collectWizardData();
-        if (wizardStep === 1) {
-            updateChannelStatus();
-        }
+        if (wizardStep === 1) updateChannelStatus();
         wizardStep++;
-        if (wizardStep === 3) {
-            renderReviewStep();
-        }
+        if (wizardStep === 3) renderReviewStep();
         showWizardStep(wizardStep);
     } else {
         startInit();
@@ -477,8 +372,7 @@ function wizardNext() {
 }
 
 function wizardGoTo(step) {
-    if (step < 1 || step > 3) return;
-    if (step < wizardStep) {
+    if (step >= 1 && step < wizardStep) {
         wizardStep = step;
         showWizardStep(wizardStep);
     }
@@ -486,21 +380,14 @@ function wizardGoTo(step) {
 
 function renderReviewStep() {
     collectWizardData();
-    var secrets = collectSecrets();
-
-    var modeLabels = {
-        docker_windows: "Windows Docker",
-        docker_linux: "Linux Docker",
-        native_linux: "Native Linux"
-    };
-
+    var modeLabels = { docker_windows: "Windows Docker", docker_linux: "Linux Docker", native_linux: "Native Linux" };
     var items = [
         { label: "Deploy Mode", value: modeLabels[wizardData.deployMode] || wizardData.deployMode },
         { label: "Working Dir", value: wizardData.workingDir },
         { label: "Bind Host", value: wizardData.bindHost },
         { label: "Gateway Mode", value: wizardData.gatewayMode },
         { label: "Gateway Port", value: String(wizardData.gatewayPort) },
-        { label: "API Keys", value: countNonEmpty(secrets) + " configured" }
+        { label: "API Keys", value: countNonEmpty(collectSecrets()) + " configured" }
     ];
 
     var html = "";
@@ -510,48 +397,35 @@ function renderReviewStep() {
             '<div class="init-review-value">' + escapeHtml(items[i].value) + '</div>' +
             '</div>';
     }
-
-    document.getElementById("init-review-summary").innerHTML = html;
+    $("init-review-summary").innerHTML = html;
     resetProgressList();
 }
 
-function countNonEmpty(obj) {
-    var count = 0;
-    for (var k in obj) {
-        if (obj[k]) count++;
-    }
-    return count;
-}
-
 function resetProgressList() {
-    var keys = ["create_dirs", "generate_config", "store_keys", "start_service", "wait_gateway", "configure_stt"];
-    for (var i = 0; i < keys.length; i++) {
-        var el = document.getElementById("init-prog-" + keys[i]);
+    for (var i = 0; i < STEP_KEYS.length; i++) {
+        var el = $("init-prog-" + STEP_KEYS[i]);
         if (el) {
             el.className = "init-progress-item pending";
             el.innerHTML = '<div class="init-progress-icon"><i data-lucide="circle" class="prog-icon"></i></div>' +
-                '<span>' + initStepLabels[keys[i]] + '</span>';
+                '<span>' + initStepLabels[STEP_KEYS[i]] + '</span>';
         }
     }
-    if (window.lucide) lucide.createIcons();
+    refreshIcons();
 }
 
 function startInit() {
-    var nextBtn = document.getElementById("init-btn-next");
-    var backBtn = document.getElementById("init-btn-back");
+    var nextBtn = $("init-btn-next");
+    var backBtn = $("init-btn-back");
     nextBtn.disabled = true;
     backBtn.disabled = true;
 
-    document.getElementById("init-dashboard-info").style.display = "none";
-    document.getElementById("init-error-banner").style.display = "none";
+    $("init-dashboard-info").style.display = "none";
+    $("init-error-banner").style.display = "none";
 
     collectWizardData();
-    var secrets = collectSecrets();
-
     var configJson = JSON.stringify(wizardData);
-    var secretsJson = JSON.stringify(secrets);
+    var secretsJson = JSON.stringify(collectSecrets());
 
-    // Save secrets first, then run init
     window.pywebview.api.save_secrets(secretsJson).then(function (raw) {
         var result = JSON.parse(raw);
         if (!result.ok) {
@@ -571,88 +445,64 @@ function startInit() {
     });
 }
 
-// Callbacks from Python Bridge
+// ── 初始化回呼（由 Python Bridge 呼叫） ──
+
+var initStepIconMap = { running: "loader", done: "check-circle", error: "x-circle", skipped: "minus-circle" };
 
 window.onInitStepUpdate = function (update) {
-    var el = document.getElementById("init-prog-" + update.key);
+    var el = $("init-prog-" + update.key);
     if (!el) return;
-
-    var iconMap = {
-        running: "loader",
-        done: "check-circle",
-        error: "x-circle",
-        skipped: "minus-circle"
-    };
-    var icon = iconMap[update.status] || "circle";
+    var icon = initStepIconMap[update.status] || "circle";
     var label = initStepLabels[update.key] || update.key;
     var msg = update.message ? " — " + escapeHtml(update.message) : "";
 
     el.className = "init-progress-item " + update.status;
     el.innerHTML = '<div class="init-progress-icon"><i data-lucide="' + icon + '" class="prog-icon"></i></div>' +
         '<span>' + label + msg + '</span>';
-
-    if (window.lucide) lucide.createIcons();
+    refreshIcons();
 };
 
 window.onInitComplete = function (result) {
-    var nextBtn = document.getElementById("init-btn-next");
-    var backBtn = document.getElementById("init-btn-back");
+    var nextBtn = $("init-btn-next");
+    var backBtn = $("init-btn-back");
 
     if (result.success) {
-        var dashInfo = document.getElementById("init-dashboard-info");
-        document.getElementById("init-dashboard-url").textContent = result.dashboard_url || "—";
-        document.getElementById("init-dashboard-token").textContent = result.access_token || "—";
-        dashInfo.style.display = "flex";
-
+        $("init-dashboard-url").textContent = result.dashboard_url || "—";
+        $("init-dashboard-token").textContent = result.access_token || "—";
+        $("init-dashboard-info").style.display = "flex";
         nextBtn.innerHTML = '<i data-lucide="check" class="btn-icon"></i> Done';
         nextBtn.disabled = true;
     } else {
         showInitError(result.error || "未知錯誤");
         nextBtn.innerHTML = '<i data-lucide="rotate-ccw" class="btn-icon"></i> Retry';
         nextBtn.disabled = false;
-        nextBtn.onclick = function () {
-            nextBtn.onclick = wizardNext;
-            startInit();
-        };
+        nextBtn.onclick = function () { nextBtn.onclick = wizardNext; startInit(); };
     }
     backBtn.disabled = false;
-
-    if (window.lucide) lucide.createIcons();
+    refreshIcons();
 };
 
 window.onInitError = function (msg) {
     showInitError(msg);
-    var nextBtn = document.getElementById("init-btn-next");
-    var backBtn = document.getElementById("init-btn-back");
-    nextBtn.disabled = false;
-    backBtn.disabled = false;
+    $("init-btn-next").disabled = false;
+    $("init-btn-back").disabled = false;
 };
 
 function showInitError(msg) {
-    var banner = document.getElementById("init-error-banner");
-    document.getElementById("init-error-msg").textContent = msg;
-    banner.style.display = "flex";
-    if (window.lucide) lucide.createIcons();
+    $("init-error-msg").textContent = msg;
+    $("init-error-banner").style.display = "flex";
+    refreshIcons();
 }
 
-// ── Init ──
+// ── 應用程式初始化 ──
 
 window.addEventListener("pywebviewready", function () {
     window.pywebview.api.get_platform_info().then(function (raw) {
         var info = JSON.parse(raw);
-        // Update sidebar footer
-        var sidebarEnv = document.getElementById("sidebar-env-info");
-        if (sidebarEnv) {
-            sidebarEnv.textContent = info.env + " · " + info.os;
-        }
-        // Update header env badge
-        var modeText = document.getElementById("env-mode-text");
-        if (modeText) {
-            modeText.textContent = info.env + " Mode";
-        }
+        var sidebarEnv = $("sidebar-env-info");
+        if (sidebarEnv) sidebarEnv.textContent = info.env + " · " + info.os;
+        var modeText = $("env-mode-text");
+        if (modeText) modeText.textContent = info.env + " Mode";
     });
-
-    if (window.lucide) {
-        lucide.createIcons();
-    }
+    refreshIcons();
 });

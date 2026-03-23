@@ -1,4 +1,4 @@
-"""Platform Utils - OS detection and cross-platform utilities."""
+"""平台工具 — 作業系統偵測與跨平台輔助函式。"""
 
 import platform
 import shutil
@@ -17,17 +17,15 @@ class EnvType(Enum):
 
 
 def detect_os() -> OSType:
-    system = platform.system()
-    if system == "Windows":
-        return OSType.WINDOWS
-    return OSType.LINUX
+    """偵測當前作業系統。"""
+    return OSType.WINDOWS if platform.system() == "Windows" else OSType.LINUX
 
 
 def detect_env_type() -> EnvType:
-    if shutil.which("docker"):
-        return EnvType.DOCKER
-    return EnvType.NATIVE
+    """偵測環境類型（Docker 可用則視為 Docker 環境）。"""
+    return EnvType.DOCKER if shutil.which("docker") else EnvType.NATIVE
 
 
 def get_project_root() -> Path:
+    """取得專案根目錄路徑。"""
     return Path(__file__).resolve().parent.parent

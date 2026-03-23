@@ -1,4 +1,4 @@
-"""Config Manager - settings and key management via keyring."""
+"""設定管理器 — 設定檔讀寫與金鑰安全儲存（keyring 整合）。"""
 
 import json
 from pathlib import Path
@@ -10,64 +10,50 @@ KEYRING_SERVICE = "openclaw-gui"
 CONFIG_FILENAME = "openclaw.json"
 
 
-# ── Secret operations ──
+# ── 金鑰操作 ──
+
+
+def _keyring_op(fn, default=None):
+    """執行 keyring 操作，失敗時回傳預設值。"""
+    try:
+        return fn()
+    except (keyring.errors.NoKeyringError, keyring.errors.KeyringError, Exception):
+        return default
 
 
 def store_secret(key: str, value: str) -> bool:
-    """Store a secret in the system keyring."""
-    try:
-        keyring.set_password(KEYRING_SERVICE, key, value)
-        return True
-    except keyring.errors.NoKeyringError:
-        return False
-    except Exception:
-        return False
+    """將金鑰儲存至系統 keyring。"""
+    return _keyring_op(lambda: (keyring.set_password(KEYRING_SERVICE, key, value), True)[1], False)
 
 
 def get_secret(key: str) -> str | None:
-    """Retrieve a secret from the system keyring."""
-    try:
-        return keyring.get_password(KEYRING_SERVICE, key)
-    except keyring.errors.NoKeyringError:
-        return None
-    except Exception:
-        return None
+    """從系統 keyring 取得金鑰。"""
+    return _keyring_op(lambda: keyring.get_password(KEYRING_SERVICE, key))
 
 
 def delete_secret(key: str) -> bool:
-    """Delete a secret from the system keyring."""
-    try:
-        keyring.delete_password(KEYRING_SERVICE, key)
-        return True
-    except keyring.errors.PasswordDeleteError:
-        return False
-    except keyring.errors.NoKeyringError:
-        return False
-    except Exception:
-        return False
+    """從系統 keyring 刪除金鑰。"""
+    return _keyring_op(lambda: (keyring.delete_password(KEYRING_SERVICE, key), True)[1], False)
 
 
 def store_secrets(secrets: dict[str, str]) -> dict[str, bool]:
-    """Store multiple secrets, skipping empty values."""
-    results = {}
-    for key, value in secrets.items():
-        if value:
-            results[key] = store_secret(key, value)
-        else:
-            results[key] = True  # skip empty, not an error
-    return results
+    """批次儲存金鑰，空值視為跳過（不算失敗）。"""
+    return {
+        key: store_secret(key, value) if value else True
+        for key, value in secrets.items()
+    }
 
 
-# ── Config file operations ──
+# ── 設定檔操作 ──
 
 
 def get_config_path(project_root: Path) -> Path:
-    """Return path to openclaw.json inside .openclaw directory."""
+    """取得 .openclaw/openclaw.json 路徑。"""
     return project_root / ".openclaw" / CONFIG_FILENAME
 
 
 def read_config(project_root: Path) -> dict:
-    """Read openclaw.json, return empty dict if missing."""
+    """讀取 openclaw.json，不存在或格式錯誤時回傳空字典。"""
     config_path = get_config_path(project_root)
     if not config_path.exists():
         return {}
@@ -78,7 +64,7 @@ def read_config(project_root: Path) -> dict:
 
 
 def write_config(project_root: Path, data: dict) -> None:
-    """Write data to openclaw.json, creating directories as needed."""
+    """寫入 openclaw.json，自動建立父目錄。"""
     config_path = get_config_path(project_root)
     config_path.parent.mkdir(parents=True, exist_ok=True)
     config_path.write_text(
@@ -88,7 +74,7 @@ def write_config(project_root: Path, data: dict) -> None:
 
 
 def _deep_merge(base: dict, patch: dict) -> dict:
-    """Recursively merge patch into base, returning a new dict."""
+    """遞迴合併 patch 至 base，回傳新字典。"""
     result = base.copy()
     for key, value in patch.items():
         if key in result and isinstance(result[key], dict) and isinstance(value, dict):
@@ -99,18 +85,17 @@ def _deep_merge(base: dict, patch: dict) -> dict:
 
 
 def merge_config(project_root: Path, patch: dict) -> dict:
-    """Read existing config, deep-merge patch, write back, return merged."""
-    existing = read_config(project_root)
-    merged = _deep_merge(existing, patch)
+    """讀取設定、深層合併、寫回並回傳合併結果。"""
+    merged = _deep_merge(read_config(project_root), patch)
     write_config(project_root, merged)
     return merged
 
 
-# ── Defaults ──
+# ── 預設值 ──
 
 
 def get_defaults_for_mode(deploy_mode: str) -> dict:
-    """Return sensible default config values for a deployment mode."""
+    """依部署模式回傳合理的預設設定。"""
     base = {
         "gateway": {
             "mode": "local",
