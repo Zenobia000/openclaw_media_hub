@@ -1,64 +1,112 @@
-/* OpenClaw GUI - Frontend Logic */
+/* OpenClaw GUI - Frontend Logic (Structured UI, no terminal) */
 
 // ── Global callbacks (called from Python Bridge) ──
 
-window.onLogLine = function (line, level) {
-    var body = document.getElementById("terminal-body");
-    if (!body) return;
-    var div = document.createElement("div");
-    div.className = "log-line " + level;
-    div.textContent = line;
-    body.appendChild(div);
-    body.scrollTop = body.scrollHeight;
-};
-
-window.onProcessComplete = function (exitCode) {
-    var btnRun = document.getElementById("btn-run-check");
-    var btnCancel = document.getElementById("btn-cancel");
+window.onCheckEnvResults = function (results) {
+    var container = document.getElementById("check-results");
     var summary = document.getElementById("result-summary");
+    var loading = document.getElementById("check-loading");
 
-    btnRun.disabled = false;
-    btnCancel.disabled = true;
+    loading.style.display = "none";
+    container.innerHTML = "";
 
+    var passCount = 0;
+    var failCount = 0;
+
+    for (var i = 0; i < results.length; i++) {
+        var item = results[i];
+        var card = document.createElement("div");
+        card.className = "status-card " + (item.installed ? "pass" : "fail");
+
+        var icon = item.installed ? "check-circle" : "x-circle";
+        var statusLabel = item.installed ? "PASS" : "FAIL";
+        if (!item.required && !item.installed) {
+            card.className = "status-card warn";
+            icon = "alert-triangle";
+            statusLabel = "WARN";
+        }
+
+        var versionHtml = item.version
+            ? '<span class="card-version">v' + escapeHtml(item.version) + "</span>"
+            : "";
+
+        card.innerHTML =
+            '<div class="card-left">' +
+            '  <i data-lucide="' + icon + '" class="card-icon"></i>' +
+            '  <div class="card-info">' +
+            '    <div class="card-name">' + escapeHtml(item.name) + versionHtml + "</div>" +
+            '    <div class="card-message">' + escapeHtml(item.message) + "</div>" +
+            "  </div>" +
+            "</div>" +
+            '<div class="card-status">' + statusLabel + "</div>";
+
+        container.appendChild(card);
+
+        if (item.installed) {
+            passCount++;
+        } else if (item.required) {
+            failCount++;
+        }
+    }
+
+    // Re-render lucide icons for new elements
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+
+    // Show summary
     summary.style.display = "block";
-    if (exitCode === 0) {
+    if (failCount === 0) {
         summary.className = "result-summary success";
-        summary.textContent = "All checks passed successfully.";
+        summary.innerHTML =
+            '<i data-lucide="check-circle" style="width:18px;height:18px"></i> ' +
+            "All checks passed (" + passCount + "/" + results.length + ")";
     } else {
         summary.className = "result-summary failure";
-        summary.textContent = "Some checks failed (exit code: " + exitCode + "). Review the output above.";
+        summary.innerHTML =
+            '<i data-lucide="alert-circle" style="width:18px;height:18px"></i> ' +
+            failCount + " check(s) failed, " + passCount + " passed";
+    }
+
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+};
+
+window.onCheckEnvError = function (errorMessage) {
+    var container = document.getElementById("check-results");
+    var loading = document.getElementById("check-loading");
+    var summary = document.getElementById("result-summary");
+
+    loading.style.display = "none";
+    container.innerHTML = "";
+
+    summary.style.display = "block";
+    summary.className = "result-summary failure";
+    summary.innerHTML =
+        '<i data-lucide="alert-circle" style="width:18px;height:18px"></i> ' +
+        "Error: " + escapeHtml(errorMessage);
+
+    if (window.lucide) {
+        lucide.createIcons();
     }
 };
 
 // ── Actions ──
 
 function startCheckEnv() {
-    var terminal = document.getElementById("terminal");
-    var body = document.getElementById("terminal-body");
-    var btnRun = document.getElementById("btn-run-check");
-    var btnCancel = document.getElementById("btn-cancel");
+    var container = document.getElementById("check-results");
     var summary = document.getElementById("result-summary");
+    var loading = document.getElementById("check-loading");
 
-    terminal.style.display = "block";
-    body.innerHTML = "";
+    container.innerHTML = "";
     summary.style.display = "none";
-    btnRun.disabled = true;
-    btnCancel.disabled = false;
+    loading.style.display = "flex";
 
     window.pywebview.api.check_env().then(function (raw) {
         var result = JSON.parse(raw);
         if (!result.ok) {
-            window.onLogLine("Error: " + result.error, "error");
-            window.onProcessComplete(-1);
-        }
-    });
-}
-
-function cancelProcess() {
-    window.pywebview.api.cancel_process().then(function (raw) {
-        var result = JSON.parse(raw);
-        if (result.ok) {
-            window.onLogLine("Process cancelled by user.", "warn");
+            window.onCheckEnvError(result.error);
         }
     });
 }
@@ -66,18 +114,15 @@ function cancelProcess() {
 // ── Navigation ──
 
 function navigateTo(viewName) {
-    // Hide all views
     var views = document.querySelectorAll(".view");
     for (var i = 0; i < views.length; i++) {
         views[i].classList.remove("active");
     }
-    // Show target view
     var target = document.getElementById("view-" + viewName);
     if (target) {
         target.classList.add("active");
     }
 
-    // Update nav items
     var navItems = document.querySelectorAll(".nav-item");
     for (var i = 0; i < navItems.length; i++) {
         navItems[i].classList.remove("active");
@@ -85,6 +130,19 @@ function navigateTo(viewName) {
             navItems[i].classList.add("active");
         }
     }
+
+    // Auto-run environment check when entering the Environment page
+    if (viewName === "environment") {
+        startCheckEnv();
+    }
+}
+
+// ── Utilities ──
+
+function escapeHtml(text) {
+    var div = document.createElement("div");
+    div.appendChild(document.createTextNode(text));
+    return div.innerHTML;
 }
 
 // ── Init ──
@@ -96,7 +154,6 @@ window.addEventListener("pywebviewready", function () {
         document.getElementById("badge-env").textContent = "Env: " + info.env;
     });
 
-    // Render lucide icons
     if (window.lucide) {
         lucide.createIcons();
     }

@@ -2,7 +2,7 @@
 
 ---
 
-**版本:** `v1.2`
+**版本:** `v2.0`
 **更新:** `2026-03-23`
 **作者:** `[專案經理 / 開發人員]`
 **審核:** `[TL / 審核人員]`
@@ -40,7 +40,7 @@
 | 角色    | 負責人 | 職責概述                                                    | 週工時 |
 | :------ | :----- | :---------------------------------------------------------- | :----- |
 | **PM**  | 待定   | 專案進度追蹤、需求確認與溝通、風險控管                      | 10h    |
-| **DEV** | 待定   | 架構設計、前後端實作 (PyWebView, PyInstaller, UI)、腳本介接 | 30h    |
+| **DEV** | 待定   | 架構設計、前後端實作 (PyWebView, PyInstaller, UI)、Python 原生操作邏輯 | 30h    |
 | **QA**  | 待定   | 測試計劃與案例撰寫、功能驗證測試、發布前檢查                | 5h     |
 
 ---
@@ -103,7 +103,7 @@
 | :-- | :----------------------------------------------- | :----- | :--- | :-------- | :----- | :----- | :----------------------------- |
 | 2.1 | 建立架構設計與 ADR (Frontend/Backend Tech Stack) | DEV    | 6h   | ✅ 完成    | 03/22  | 03/23  | 產出 202_architecture_design.md, ADR-001 |
 | 2.2 | 設計 UI Mockup (Wireframes)                      | DEV/PM | 6h   | 🔄 進行中 | 03/23  | 03/27  | pencil.pen 設計中              |
-| 2.3 | 設計 Backend 與 Frontend 的 API Spec             | DEV    | 4h   | ⬜ 未開始 | 03/26  | 03/27  | Subprocess 腳本介接定義        |
+| 2.3 | 設計 Backend 與 Frontend 的 API Spec             | DEV    | 4h   | ⬜ 未開始 | 03/26  | 03/27  | Bridge API 與 Python 操作模組介面定義 |
 | 2.4 | QA 測試計劃與案例撰寫                            | QA     | 4h   | ⬜ 未開始 | 03/26  | 03/27  | 根據 User Stories 撰寫測試案例 |
 
 ### 3.0 實作建置
@@ -111,10 +111,10 @@
 | ID  | 任務                                                  | 負責人 | 工時 | 狀態      | 開始日 | 完成日 | 備註                                             |
 | :-- | :---------------------------------------------------- | :----- | :--- | :-------- | :----- | :----- | :----------------------------------------------- |
 | 3.1 | 專案環境初始化 (PyWebView + TailwindCSS)              | DEV    | 8h   | ✅ 完成   | 03/23  | 03/23  | uv init + src 骨架 + pywebview 最小可執行視窗     |
-| 3.2 | 實作 UI 與邏輯：環境檢查 (US-001)                     | DEV    | 8h   | ✅ 完成   | 03/23  | 03/23  | 呼叫 check-env 腳本                              |
-| 3.3 | 實作 UI 與邏輯：初始化設定表單 (US-002)               | DEV    | 12h  | ⬜ 未開始 | 04/03  | 04/06  | 金鑰與環境變數處理                               |
-| 3.4 | 實作 UI 與邏輯：服務啟停與終端日誌 (US-003)           | DEV    | 16h  | ⬜ 未開始 | 04/07  | 04/09  | 即時 stdout 擷取與 docker/systemctl/process 判斷 |
-| 3.5 | 實作 UI 與邏輯：技能部署與外掛安裝 (US-005, US-006)  | DEV    | 8h   | ⬜ 未開始 | 04/10  | 04/13  | 呼叫 deploy-skills / install-plugins 腳本        |
+| 3.2 | 實作 UI 與邏輯：環境檢查 (US-001)                     | DEV    | 8h   | 🔄 重構中 | 03/23  | —      | Python 原生偵測 + 結構化狀態卡片 UI（原腳本版需重構） |
+| 3.3 | 實作 UI 與邏輯：初始化設定表單 (US-002)               | DEV    | 12h  | ⬜ 未開始 | 04/03  | 04/06  | Python 原生目錄建立、config 產生、keyring 金鑰儲存 |
+| 3.4 | 實作 UI 與邏輯：服務啟停與狀態 UI (US-003)            | DEV    | 16h  | ⬜ 未開始 | 04/07  | 04/09  | docker compose / systemctl 控制 + 結構化狀態指示 |
+| 3.5 | 實作 UI 與邏輯：技能部署與外掛安裝 (US-005, US-006)  | DEV    | 8h   | ⬜ 未開始 | 04/10  | 04/13  | Python 原生目錄掃描、SKILL.md 解析、勾選清單 UI  |
 | 3.6 | PyInstaller 打包設定與測試 (US-004)                   | DEV    | 12h  | ⬜ 未開始 | 04/14  | 04/16  | 單一可執行檔 (Windows/Linux) 測試                |
 | 3.7 | QA 功能驗證測試                                       | QA     | 8h   | ⬜ 未開始 | 04/14  | 04/16  | 與 3.6 並行，驗證已完成功能                      |
 
@@ -131,7 +131,7 @@
 
 ### 整體進度
 
-階段 1 (Inception & Planning) 已完成。階段 2 (Design & Architecture) 進行中，架構設計與 ADR 已完成，正進行 UI Mockup 設計。階段 3 (Construction) 持續推進 — 3.1 專案環境初始化完成，3.2 US-001 環境檢查功能已完成（含 Bridge API、subprocess 管理、前端 sidebar + 終端元件）。
+階段 1 (Inception & Planning) 已完成。階段 2 (Design & Architecture) 進行中，架構設計與 ADR 已完成（含 ADR-003 廢棄 Shell 腳本決策），正進行 UI Mockup 設計。階段 3 (Construction) 持續推進 — 3.1 專案環境初始化完成，3.2 環境檢查功能需依 ADR-003 重構（從腳本呼叫改為 Python 原生偵測 + 結構化 UI）。
 
 ### 週度進度
 
@@ -144,7 +144,7 @@
   - `ADR-001` 前端框架選擇決策：維持 Vanilla HTML/JS + Tailwind CSS，不採用 React。
 - **已完成 (補充)**:
   - `3.1` 專案環境初始化：uv init (Python 3.12)、pyproject.toml 設定、src/ 模組骨架、PyWebView 最小可執行入口、tests/ 目錄、uv sync 依賴安裝與 lock file 產生。
-  - `3.2` US-001 環境檢查功能實作：platform_utils (OS/Env 偵測、腳本路徑解析)、process_manager (非同步 subprocess + 日誌串流)、Bridge API (check_env/cancel_process)、前端 UI (sidebar 導航、終端元件、即時 log 顯示與顏色標記)。
+  - `3.2` US-001 環境檢查功能初版實作：platform_utils (OS/Env 偵測)、process_manager (非同步 subprocess)、Bridge API (check_env/cancel_process)、前端 UI (sidebar 導航)。**注意：此版本基於腳本呼叫 + 終端元件，需依 ADR-003 重構為 Python 原生偵測 + 結構化狀態卡片 UI。**
 - **進行中**:
   - UI Mockup 設計 (`pencil.pen`)。
 - **計劃中**:
@@ -159,7 +159,7 @@
 
 | 風險項目                                             | 影響度 | 可能性 | 緩解措施                                                                                      | 負責人 |
 | :--------------------------------------------------- | :----- | :----- | :-------------------------------------------------------------------------------------------- | :----- |
-| **PyWebView 與即時 Log 顯示的效能瓶頸**              | 高     | 中     | 盡早進行 PoC，確認 stdout 串流更新頁面 DOM 的效能是否能負載。                                 | DEV    |
+| **PyWebView 與結構化 UI 更新的效能瓶頸**              | 中     | 低     | ADR-003 改用結構化 JSON 回傳取代 stdout 串流，DOM 更新頻率大幅降低，風險已緩解。              | DEV    |
 | **PyInstaller 打包跨平台檔案遇到的依賴問題**         | 高     | 高     | 在開發早期建立 CI/CD 或本地打包腳本，隨時驗證打包後的執行檔。                                 | DEV    |
 | **Docker-compose 與 Systemctl 在不同環境的權限問題** | 中     | 高     | 確保 GUI 應用程式執行時會檢查權限，並在 UI 上給予友善的錯誤提示（如「請以系統管理員執行」）。 | DEV    |
 | **金鑰安全儲存的跨平台相容性**                       | 中     | 中     | 使用 Python `keyring` 套件統一介面，開發初期驗證 Windows/Linux 各環境的整合。                  | DEV    |
@@ -179,6 +179,6 @@
 
 ### 品質指標
 
-- **測試覆蓋率**: 主力業務邏輯 (Python subprocess) 需達 80%。
+- **測試覆蓋率**: 主力業務邏輯（Python 操作模組）需達 80%。
 - **穩定性**: PyInstaller 打包出的檔案，在 Windows/Linux 原生環境啟動不可直接閃退，崩潰率 (Crash Rate) < 1%。
-- **流暢度**: 即時 Log 顯示延遲 < 500ms，不會造成整個 UI 凍結。
+- **流暢度**: 操作進度回饋延遲 < 500ms，不會造成整個 UI 凍結。

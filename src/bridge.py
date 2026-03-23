@@ -1,22 +1,17 @@
 """Bridge API - exposes Python backend to frontend via PyWebView."""
 
 import json
+import threading
 
-from src.platform_utils import (
-    build_command,
-    detect_env_type,
-    detect_os,
-    get_project_root,
-    resolve_script,
-)
-from src.process_manager import ProcessManager
+from src.env_checker import run_all_checks
+from src.platform_utils import detect_env_type, detect_os
 
 
 class Bridge:
 
     def __init__(self):
         self._window = None
-        self._pm = ProcessManager()
+        self._checking = False
 
     def set_window(self, window):
         self._window = window
@@ -27,42 +22,33 @@ class Bridge:
         return json.dumps({"os": os_type.value, "env": env_type.value})
 
     def check_env(self) -> str:
-        os_type = detect_os()
-        env_type = detect_env_type()
-        try:
-            script_path = resolve_script("check-env", os_type, env_type)
-        except ValueError as e:
-            return json.dumps({"ok": False, "error": str(e)})
+        """Run environment checks asynchronously.
 
-        if not script_path.exists():
-            return json.dumps({"ok": False, "error": f"Script not found: {script_path.name}"})
+        Returns immediately with {ok: true}. Results are pushed to the
+        frontend via window.onCheckEnvResults() callback when complete.
+        """
+        if self._checking:
+            return json.dumps({"ok": False, "error": "Check already running"})
 
-        command = build_command(script_path)
-        cwd = str(get_project_root())
+        self._checking = True
 
-        def on_log(line: str, level: str):
-            if self._window is None:
-                return
-            escaped = json.dumps(line)
-            self._window.evaluate_js(
-                f"window.onLogLine({escaped}, '{level}')"
-            )
+        def _run():
+            try:
+                results = run_all_checks()
+                if self._window is not None:
+                    payload = json.dumps(results)
+                    self._window.evaluate_js(
+                        f"window.onCheckEnvResults({payload})"
+                    )
+            except Exception as e:
+                if self._window is not None:
+                    error = json.dumps(str(e))
+                    self._window.evaluate_js(
+                        f"window.onCheckEnvError({error})"
+                    )
+            finally:
+                self._checking = False
 
-        def on_complete(exit_code: int):
-            if self._window is None:
-                return
-            self._window.evaluate_js(
-                f"window.onProcessComplete({exit_code})"
-            )
-
-        started = self._pm.run_script(command, cwd, on_log, on_complete)
-        if not started:
-            return json.dumps({"ok": False, "error": "A process is already running"})
+        thread = threading.Thread(target=_run, daemon=True)
+        thread.start()
         return json.dumps({"ok": True})
-
-    def cancel_process(self) -> str:
-        cancelled = self._pm.cancel()
-        return json.dumps({"ok": cancelled})
-
-    def is_process_running(self) -> str:
-        return json.dumps({"running": self._pm.is_running()})

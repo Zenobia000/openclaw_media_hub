@@ -215,71 +215,144 @@ body {
     background: var(--bg-input);
 }
 
-.btn-danger {
-    background: var(--error);
-    color: #fff;
-}
-
 .btn-row {
     display: flex;
     gap: 10px;
     margin-bottom: 20px;
 }
 
-/* ── Terminal ── */
-.terminal {
-    background: var(--bg-primary);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    overflow: hidden;
+/* ── Loading Indicator ── */
+.check-loading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    color: var(--text-muted);
+    font-size: 14px;
 }
 
-.terminal-header {
-    background: var(--bg-card);
-    padding: 8px 12px;
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ── Status Cards ── */
+.check-results {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.status-card {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    padding: 14px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    transition: border-color 0.15s;
+}
+
+.status-card.pass {
+    border-left: 3px solid var(--success);
+}
+
+.status-card.fail {
+    border-left: 3px solid var(--error);
+}
+
+.status-card.warn {
+    border-left: 3px solid var(--warning);
+}
+
+.card-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.card-icon {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+}
+
+.status-card.pass .card-icon {
+    color: var(--success);
+}
+
+.status-card.fail .card-icon {
+    color: var(--error);
+}
+
+.status-card.warn .card-icon {
+    color: var(--warning);
+}
+
+.card-info {
+    min-width: 0;
+}
+
+.card-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.card-version {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-muted);
+    background: var(--bg-input);
+    padding: 1px 6px;
+    border-radius: 4px;
+}
+
+.card-message {
     font-size: 13px;
     color: var(--text-muted);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.terminal-dots {
-    display: flex;
-    gap: 6px;
-}
-
-.terminal-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-}
-
-.terminal-dot.red { background: #ef4444; }
-.terminal-dot.yellow { background: #f59e0b; }
-.terminal-dot.green { background: #22c55e; }
-
-.terminal-body {
-    padding: 12px;
-    font-family: "Courier New", Courier, monospace;
+.card-status {
     font-size: 12px;
-    line-height: 1.6;
-    max-height: 420px;
-    overflow-y: auto;
-    color: var(--text-secondary);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+    padding: 4px 10px;
+    border-radius: 4px;
 }
 
-.log-line {
-    padding: 1px 0;
-    white-space: pre-wrap;
-    word-break: break-all;
+.status-card.pass .card-status {
+    color: var(--success);
+    background: rgba(34, 197, 94, 0.1);
 }
 
-.log-line.ok { color: var(--success); }
-.log-line.error { color: var(--error); }
-.log-line.warn { color: var(--warning); }
-.log-line.info { color: var(--info); }
-.log-line.default { color: var(--text-secondary); }
+.status-card.fail .card-status {
+    color: var(--error);
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.status-card.warn .card-status {
+    color: var(--warning);
+    background: rgba(245, 158, 11, 0.1);
+}
 
 /* ── Result Summary ── */
 .result-summary {
@@ -288,15 +361,19 @@ body {
     border-radius: var(--radius-sm);
     font-size: 14px;
     display: none;
+    align-items: center;
+    gap: 8px;
 }
 
 .result-summary.success {
+    display: flex;
     background: rgba(34, 197, 94, 0.1);
     border: 1px solid rgba(34, 197, 94, 0.3);
     color: var(--success);
 }
 
 .result-summary.failure {
+    display: flex;
     background: rgba(239, 68, 68, 0.1);
     border: 1px solid rgba(239, 68, 68, 0.3);
     color: var(--error);

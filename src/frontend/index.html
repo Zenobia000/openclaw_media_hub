@@ -79,29 +79,16 @@
                 </div>
             </div>
 
-            <div class="btn-row">
-                <button id="btn-run-check" class="btn btn-primary" onclick="startCheckEnv()">
-                    <i data-lucide="play" style="width:16px;height:16px"></i>
-                    Run Check
-                </button>
-                <button id="btn-cancel" class="btn btn-secondary" onclick="cancelProcess()" disabled>
-                    <i data-lucide="square" style="width:16px;height:16px"></i>
-                    Cancel
-                </button>
+            <!-- Loading indicator -->
+            <div id="check-loading" class="check-loading" style="display:none">
+                <div class="spinner"></div>
+                <span>Checking environment...</span>
             </div>
 
-            <div id="terminal" class="terminal" style="display:none">
-                <div class="terminal-header">
-                    <div class="terminal-dots">
-                        <span class="terminal-dot red"></span>
-                        <span class="terminal-dot yellow"></span>
-                        <span class="terminal-dot green"></span>
-                    </div>
-                    <span>Terminal Output</span>
-                </div>
-                <div id="terminal-body" class="terminal-body"></div>
-            </div>
+            <!-- Status cards container -->
+            <div id="check-results" class="check-results"></div>
 
+            <!-- Summary -->
             <div id="result-summary" class="result-summary"></div>
         </div>
 

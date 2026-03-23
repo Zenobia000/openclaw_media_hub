@@ -56,15 +56,20 @@ openclaw_media_hub/
 ├── src/                        # GUI 應用程式原始碼
 │   ├── main.py                 # PyWebView 入口點
 │   ├── bridge.py               # Python Bridge API
-│   ├── process_manager.py      # Subprocess 非同步管理
+│   ├── process_manager.py      # Subprocess 管理 (僅用於 docker/systemctl)
 │   ├── config_manager.py       # 設定與金鑰管理 (keyring)
 │   ├── platform_utils.py       # 跨平台偵測工具
-│   └── frontend/               # 前端靜態資源
+│   ├── env_checker.py          # 環境檢查 (Python 原生偵測)
+│   ├── initializer.py          # 初始化邏輯 (目錄建立、config 產生)
+│   ├── skill_manager.py        # 技能部署 (掃描、解析、複製/移除)
+│   ├── plugin_manager.py       # 外掛管理
+│   ├── service_controller.py   # 服務啟停控制
+│   └── frontend/               # 前端靜態資源 (結構化 UI，無 terminal)
 │       ├── index.html
 │       ├── css/styles.css
 │       └── js/app.js
 ├── tests/                      # 測試目錄
-├── scripts/                    # OpenClaw 操作腳本（不修改）
+├── scripts/                    # [DEPRECATED] 舊版 Shell 腳本 (僅供參考)
 ├── docs/                       # 專案文件
 ├── pyproject.toml              # 專案設定與依賴宣告 (PEP 621)
 ├── uv.lock                    # 依賴鎖定檔（須提交至版控）
