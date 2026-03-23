@@ -24,32 +24,6 @@
 
    ![alt text](image-1.png)
 
-### 啟用 Calendar API
-
-4. 在搜尋欄中輸入「Calendar API」，按 Enter 搜尋。
-
-   ![alt text](image-2.png)
-
-5. 點擊「Google Calendar API」選項。
-
-   ![alt text](image-3.png)
-
-6. 點擊「啟用」按鈕。
-
-   ![alt text](image-4.png)
-
-### 啟用 Gmail API
-
-4. 在搜尋欄中輸入「Gmail API」，按 Enter 搜尋。
-
-   ![alt text](image-16.png)
-
-5. 點擊「Gmail API」選項。
-
-   ![alt text](image-17.png)
-
-6. 點擊「啟用」按鈕。
-
 ### 啟用 Google Drive API
 
 4. 在搜尋欄中輸入「Google Drive API」，按 Enter 搜尋。
