@@ -5,9 +5,161 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OpenClaw GUI</title>
     <link rel="stylesheet" href="css/styles.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
-    <h1>OpenClaw GUI</h1>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <div class="logo-badge">OC</div>
+            <span class="logo-text">OpenClaw</span>
+        </div>
+
+        <nav>
+            <div class="sidebar-section">
+                <div class="sidebar-section-label">MAIN</div>
+                <div class="nav-item" data-view="dashboard" onclick="navigateTo('dashboard')">
+                    <i data-lucide="layout-dashboard" class="nav-icon"></i>
+                    <span>Dashboard</span>
+                </div>
+                <div class="nav-item active" data-view="environment" onclick="navigateTo('environment')">
+                    <i data-lucide="monitor-check" class="nav-icon"></i>
+                    <span>Environment</span>
+                </div>
+                <div class="nav-item" data-view="configuration" onclick="navigateTo('configuration')">
+                    <i data-lucide="settings" class="nav-icon"></i>
+                    <span>Configuration</span>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-section-label">OPERATIONS</div>
+                <div class="nav-item" data-view="initialize" onclick="navigateTo('initialize')">
+                    <i data-lucide="rocket" class="nav-icon"></i>
+                    <span>Initialize</span>
+                </div>
+                <div class="nav-item" data-view="deploy-skills" onclick="navigateTo('deploy-skills')">
+                    <i data-lucide="upload" class="nav-icon"></i>
+                    <span>Deploy Skills</span>
+                </div>
+                <div class="nav-item" data-view="install-plugins" onclick="navigateTo('install-plugins')">
+                    <i data-lucide="puzzle" class="nav-icon"></i>
+                    <span>Install Plugins</span>
+                </div>
+                <div class="nav-item" data-view="fix-plugin" onclick="navigateTo('fix-plugin')">
+                    <i data-lucide="wrench" class="nav-icon"></i>
+                    <span>Fix Plugin</span>
+                </div>
+            </div>
+        </nav>
+
+        <div class="sidebar-footer">
+            OpenClaw GUI v0.1.0
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Environment View -->
+        <div id="view-environment" class="view active">
+            <div class="view-header">
+                <h1 class="view-title">Environment Check</h1>
+                <p class="view-subtitle">Verify system dependencies and runtime environment</p>
+            </div>
+
+            <div class="badge-row">
+                <div class="badge">
+                    <span class="badge-dot"></span>
+                    <span id="badge-os">Detecting...</span>
+                </div>
+                <div class="badge">
+                    <span class="badge-dot"></span>
+                    <span id="badge-env">Detecting...</span>
+                </div>
+            </div>
+
+            <div class="btn-row">
+                <button id="btn-run-check" class="btn btn-primary" onclick="startCheckEnv()">
+                    <i data-lucide="play" style="width:16px;height:16px"></i>
+                    Run Check
+                </button>
+                <button id="btn-cancel" class="btn btn-secondary" onclick="cancelProcess()" disabled>
+                    <i data-lucide="square" style="width:16px;height:16px"></i>
+                    Cancel
+                </button>
+            </div>
+
+            <div id="terminal" class="terminal" style="display:none">
+                <div class="terminal-header">
+                    <div class="terminal-dots">
+                        <span class="terminal-dot red"></span>
+                        <span class="terminal-dot yellow"></span>
+                        <span class="terminal-dot green"></span>
+                    </div>
+                    <span>Terminal Output</span>
+                </div>
+                <div id="terminal-body" class="terminal-body"></div>
+            </div>
+
+            <div id="result-summary" class="result-summary"></div>
+        </div>
+
+        <!-- Dashboard View -->
+        <div id="view-dashboard" class="view">
+            <div class="view-header">
+                <h1 class="view-title">Dashboard</h1>
+                <p class="view-subtitle">System overview and status</p>
+            </div>
+            <div class="placeholder">Dashboard — coming soon</div>
+        </div>
+
+        <!-- Configuration View -->
+        <div id="view-configuration" class="view">
+            <div class="view-header">
+                <h1 class="view-title">Configuration</h1>
+                <p class="view-subtitle">Manage API keys and settings</p>
+            </div>
+            <div class="placeholder">Configuration — coming soon</div>
+        </div>
+
+        <!-- Initialize View -->
+        <div id="view-initialize" class="view">
+            <div class="view-header">
+                <h1 class="view-title">Initialize</h1>
+                <p class="view-subtitle">Set up OpenClaw instance</p>
+            </div>
+            <div class="placeholder">Initialize — coming soon</div>
+        </div>
+
+        <!-- Deploy Skills View -->
+        <div id="view-deploy-skills" class="view">
+            <div class="view-header">
+                <h1 class="view-title">Deploy Skills</h1>
+                <p class="view-subtitle">Deploy skill configurations</p>
+            </div>
+            <div class="placeholder">Deploy Skills — coming soon</div>
+        </div>
+
+        <!-- Install Plugins View -->
+        <div id="view-install-plugins" class="view">
+            <div class="view-header">
+                <h1 class="view-title">Install Plugins</h1>
+                <p class="view-subtitle">Install and manage plugins</p>
+            </div>
+            <div class="placeholder">Install Plugins — coming soon</div>
+        </div>
+
+        <!-- Fix Plugin View -->
+        <div id="view-fix-plugin" class="view">
+            <div class="view-header">
+                <h1 class="view-title">Fix Plugin</h1>
+                <p class="view-subtitle">Diagnose and repair plugins</p>
+            </div>
+            <div class="placeholder">Fix Plugin — coming soon</div>
+        </div>
+    </main>
+
     <script src="js/app.js"></script>
 </body>
 </html>

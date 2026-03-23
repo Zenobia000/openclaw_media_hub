@@ -111,7 +111,7 @@
 | ID  | 任務                                                  | 負責人 | 工時 | 狀態      | 開始日 | 完成日 | 備註                                             |
 | :-- | :---------------------------------------------------- | :----- | :--- | :-------- | :----- | :----- | :----------------------------------------------- |
 | 3.1 | 專案環境初始化 (PyWebView + TailwindCSS)              | DEV    | 8h   | ✅ 完成   | 03/23  | 03/23  | uv init + src 骨架 + pywebview 最小可執行視窗     |
-| 3.2 | 實作 UI 與邏輯：環境檢查 (US-001)                     | DEV    | 8h   | ⬜ 未開始 | 04/01  | 04/02  | 呼叫 check-env 腳本                              |
+| 3.2 | 實作 UI 與邏輯：環境檢查 (US-001)                     | DEV    | 8h   | ✅ 完成   | 03/23  | 03/23  | 呼叫 check-env 腳本                              |
 | 3.3 | 實作 UI 與邏輯：初始化設定表單 (US-002)               | DEV    | 12h  | ⬜ 未開始 | 04/03  | 04/06  | 金鑰與環境變數處理                               |
 | 3.4 | 實作 UI 與邏輯：服務啟停與終端日誌 (US-003)           | DEV    | 16h  | ⬜ 未開始 | 04/07  | 04/09  | 即時 stdout 擷取與 docker/systemctl/process 判斷 |
 | 3.5 | 實作 UI 與邏輯：技能部署與外掛安裝 (US-005, US-006)  | DEV    | 8h   | ⬜ 未開始 | 04/10  | 04/13  | 呼叫 deploy-skills / install-plugins 腳本        |
@@ -131,7 +131,7 @@
 
 ### 整體進度
 
-階段 1 (Inception & Planning) 已完成。階段 2 (Design & Architecture) 進行中，架構設計與 ADR 已完成，正進行 UI Mockup 設計。階段 3 (Construction) 已提前啟動 — 3.1 專案環境初始化完成（uv + PyWebView 骨架就緒）。
+階段 1 (Inception & Planning) 已完成。階段 2 (Design & Architecture) 進行中，架構設計與 ADR 已完成，正進行 UI Mockup 設計。階段 3 (Construction) 持續推進 — 3.1 專案環境初始化完成，3.2 US-001 環境檢查功能已完成（含 Bridge API、subprocess 管理、前端 sidebar + 終端元件）。
 
 ### 週度進度
 
@@ -144,6 +144,7 @@
   - `ADR-001` 前端框架選擇決策：維持 Vanilla HTML/JS + Tailwind CSS，不採用 React。
 - **已完成 (補充)**:
   - `3.1` 專案環境初始化：uv init (Python 3.12)、pyproject.toml 設定、src/ 模組骨架、PyWebView 最小可執行入口、tests/ 目錄、uv sync 依賴安裝與 lock file 產生。
+  - `3.2` US-001 環境檢查功能實作：platform_utils (OS/Env 偵測、腳本路徑解析)、process_manager (非同步 subprocess + 日誌串流)、Bridge API (check_env/cancel_process)、前端 UI (sidebar 導航、終端元件、即時 log 顯示與顏色標記)。
 - **進行中**:
   - UI Mockup 設計 (`pencil.pen`)。
 - **計劃中**:
