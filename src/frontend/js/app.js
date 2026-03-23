@@ -280,6 +280,11 @@ function navigateTo(viewName) {
     if (viewName === "environment") {
         startCheckEnv();
     }
+
+    // Load wizard defaults when entering Initialize page
+    if (viewName === "initialize") {
+        initWizardLoad();
+    }
 }
 
 // ── Utilities ──
@@ -288,6 +293,346 @@ function escapeHtml(text) {
     var div = document.createElement("div");
     div.appendChild(document.createTextNode(text));
     return div.innerHTML;
+}
+
+// ── Initialize Wizard ──
+
+var wizardStep = 1;
+var wizardData = {
+    deployMode: "",
+    workingDir: ".openclaw",
+    bindHost: "0.0.0.0",
+    gatewayMode: "local",
+    gatewayPort: 18789
+};
+
+var initStepLabels = {
+    create_dirs: "建立目錄結構",
+    generate_config: "產生設定檔",
+    store_keys: "儲存金鑰",
+    start_service: "啟動服務",
+    wait_gateway: "等待 Gateway 就緒",
+    configure_stt: "設定語音轉文字"
+};
+
+function initWizardLoad() {
+    wizardStep = 1;
+    // Reset UI
+    showWizardStep(1);
+    resetProgressList();
+    document.getElementById("init-dashboard-info").style.display = "none";
+    document.getElementById("init-error-banner").style.display = "none";
+
+    // Load defaults from backend
+    window.pywebview.api.get_init_defaults().then(function (raw) {
+        var defaults = JSON.parse(raw);
+        wizardData.deployMode = defaults.deployMode;
+        wizardData.workingDir = defaults.workingDir;
+        wizardData.bindHost = defaults.bindHost;
+        wizardData.gatewayMode = defaults.gatewayMode;
+        wizardData.gatewayPort = defaults.gatewayPort;
+
+        // Fill form fields
+        document.getElementById("init-workingDir").value = defaults.workingDir;
+        document.getElementById("init-bindHost").value = defaults.bindHost;
+        document.getElementById("init-gatewayMode").value = defaults.gatewayMode;
+        document.getElementById("init-gatewayPort").value = defaults.gatewayPort;
+
+        // Pre-select mode card
+        selectDeployMode(defaults.deployMode);
+    });
+}
+
+function selectDeployMode(mode) {
+    wizardData.deployMode = mode;
+    var cards = document.querySelectorAll(".mode-card");
+    for (var i = 0; i < cards.length; i++) {
+        cards[i].classList.remove("selected");
+        if (cards[i].getAttribute("data-mode") === mode) {
+            cards[i].classList.add("selected");
+        }
+    }
+}
+
+function showWizardStep(step) {
+    // Show/hide panels
+    for (var i = 1; i <= 3; i++) {
+        var panel = document.getElementById("init-step-" + i);
+        if (panel) panel.style.display = (i === step) ? "flex" : "none";
+    }
+
+    // Update stepper
+    for (var i = 1; i <= 3; i++) {
+        var el = document.getElementById("stepper-" + i);
+        el.classList.remove("active", "completed");
+        if (i < step) el.classList.add("completed");
+        else if (i === step) el.classList.add("active");
+    }
+
+    // Update buttons
+    var backBtn = document.getElementById("init-btn-back");
+    var nextBtn = document.getElementById("init-btn-next");
+    var counter = document.getElementById("init-step-counter");
+
+    backBtn.style.display = (step === 1) ? "none" : "";
+    counter.textContent = "Step " + step + " of 3";
+
+    if (step === 3) {
+        nextBtn.innerHTML = '<i data-lucide="rocket" class="btn-icon"></i> Initialize';
+    } else {
+        nextBtn.innerHTML = 'Next <i data-lucide="arrow-right" class="btn-icon"></i>';
+    }
+    nextBtn.disabled = false;
+
+    if (window.lucide) lucide.createIcons();
+}
+
+function collectWizardData() {
+    wizardData.workingDir = document.getElementById("init-workingDir").value.trim() || ".openclaw";
+    wizardData.bindHost = document.getElementById("init-bindHost").value.trim() || "0.0.0.0";
+    wizardData.gatewayMode = document.getElementById("init-gatewayMode").value.trim() || "local";
+    wizardData.gatewayPort = parseInt(document.getElementById("init-gatewayPort").value, 10) || 18789;
+}
+
+function collectSecrets() {
+    var keys = [
+        "line_channel_access_token", "line_channel_secret",
+        "discord_bot_token", "openai_api_key",
+        "database_url", "redis_url"
+    ];
+    var secrets = {};
+    for (var i = 0; i < keys.length; i++) {
+        var el = document.getElementById("init-" + keys[i]);
+        secrets[keys[i]] = el ? el.value.trim() : "";
+    }
+    return secrets;
+}
+
+function validateWizardStep(step) {
+    if (step === 1) {
+        if (!wizardData.deployMode) {
+            alert("請選擇部署模式");
+            return false;
+        }
+        var port = parseInt(document.getElementById("init-gatewayPort").value, 10);
+        if (isNaN(port) || port < 1 || port > 65535) {
+            alert("Gateway Port 需介於 1-65535");
+            return false;
+        }
+        return true;
+    }
+    if (step === 2) {
+        // LINE token and secret must be paired
+        var token = document.getElementById("init-line_channel_access_token").value.trim();
+        var secret = document.getElementById("init-line_channel_secret").value.trim();
+        if ((token && !secret) || (!token && secret)) {
+            alert("LINE Token 和 Secret 必須成對填寫");
+            return false;
+        }
+        return true;
+    }
+    return true;
+}
+
+function updateChannelStatus() {
+    var lineToken = document.getElementById("init-line_channel_access_token").value.trim();
+    var lineSecret = document.getElementById("init-line_channel_secret").value.trim();
+    var discordToken = document.getElementById("init-discord_bot_token").value.trim();
+
+    var lineStatus = document.getElementById("init-line-status");
+    var discordStatus = document.getElementById("init-discord-status");
+
+    if (lineToken && lineSecret) {
+        lineStatus.textContent = "Configured";
+        lineStatus.className = "init-channel-status configured";
+    } else {
+        lineStatus.textContent = "Not configured";
+        lineStatus.className = "init-channel-status";
+    }
+
+    if (discordToken) {
+        discordStatus.textContent = "Configured";
+        discordStatus.className = "init-channel-status configured";
+    } else {
+        discordStatus.textContent = "Not configured";
+        discordStatus.className = "init-channel-status";
+    }
+}
+
+function wizardNext() {
+    if (wizardStep < 3) {
+        if (!validateWizardStep(wizardStep)) return;
+        collectWizardData();
+        if (wizardStep === 1) {
+            updateChannelStatus();
+        }
+        wizardStep++;
+        if (wizardStep === 3) {
+            renderReviewStep();
+        }
+        showWizardStep(wizardStep);
+    } else {
+        startInit();
+    }
+}
+
+function wizardGoTo(step) {
+    if (step < 1 || step > 3) return;
+    if (step < wizardStep) {
+        wizardStep = step;
+        showWizardStep(wizardStep);
+    }
+}
+
+function renderReviewStep() {
+    collectWizardData();
+    var secrets = collectSecrets();
+
+    var modeLabels = {
+        docker_windows: "Windows Docker",
+        docker_linux: "Linux Docker",
+        native_linux: "Native Linux"
+    };
+
+    var items = [
+        { label: "Deploy Mode", value: modeLabels[wizardData.deployMode] || wizardData.deployMode },
+        { label: "Working Dir", value: wizardData.workingDir },
+        { label: "Bind Host", value: wizardData.bindHost },
+        { label: "Gateway Mode", value: wizardData.gatewayMode },
+        { label: "Gateway Port", value: String(wizardData.gatewayPort) },
+        { label: "API Keys", value: countNonEmpty(secrets) + " configured" }
+    ];
+
+    var html = "";
+    for (var i = 0; i < items.length; i++) {
+        html += '<div class="init-review-item">' +
+            '<div class="init-review-label">' + escapeHtml(items[i].label) + '</div>' +
+            '<div class="init-review-value">' + escapeHtml(items[i].value) + '</div>' +
+            '</div>';
+    }
+
+    document.getElementById("init-review-summary").innerHTML = html;
+    resetProgressList();
+}
+
+function countNonEmpty(obj) {
+    var count = 0;
+    for (var k in obj) {
+        if (obj[k]) count++;
+    }
+    return count;
+}
+
+function resetProgressList() {
+    var keys = ["create_dirs", "generate_config", "store_keys", "start_service", "wait_gateway", "configure_stt"];
+    for (var i = 0; i < keys.length; i++) {
+        var el = document.getElementById("init-prog-" + keys[i]);
+        if (el) {
+            el.className = "init-progress-item pending";
+            el.innerHTML = '<div class="init-progress-icon"><i data-lucide="circle" class="prog-icon"></i></div>' +
+                '<span>' + initStepLabels[keys[i]] + '</span>';
+        }
+    }
+    if (window.lucide) lucide.createIcons();
+}
+
+function startInit() {
+    var nextBtn = document.getElementById("init-btn-next");
+    var backBtn = document.getElementById("init-btn-back");
+    nextBtn.disabled = true;
+    backBtn.disabled = true;
+
+    document.getElementById("init-dashboard-info").style.display = "none";
+    document.getElementById("init-error-banner").style.display = "none";
+
+    collectWizardData();
+    var secrets = collectSecrets();
+
+    var configJson = JSON.stringify(wizardData);
+    var secretsJson = JSON.stringify(secrets);
+
+    // Save secrets first, then run init
+    window.pywebview.api.save_secrets(secretsJson).then(function (raw) {
+        var result = JSON.parse(raw);
+        if (!result.ok) {
+            showInitError("金鑰儲存失敗: " + (result.error || "unknown"));
+            nextBtn.disabled = false;
+            backBtn.disabled = false;
+            return;
+        }
+        window.pywebview.api.run_init(configJson, secretsJson).then(function (raw2) {
+            var result2 = JSON.parse(raw2);
+            if (!result2.ok) {
+                showInitError(result2.error || "啟動失敗");
+                nextBtn.disabled = false;
+                backBtn.disabled = false;
+            }
+        });
+    });
+}
+
+// Callbacks from Python Bridge
+
+window.onInitStepUpdate = function (update) {
+    var el = document.getElementById("init-prog-" + update.key);
+    if (!el) return;
+
+    var iconMap = {
+        running: "loader",
+        done: "check-circle",
+        error: "x-circle",
+        skipped: "minus-circle"
+    };
+    var icon = iconMap[update.status] || "circle";
+    var label = initStepLabels[update.key] || update.key;
+    var msg = update.message ? " — " + escapeHtml(update.message) : "";
+
+    el.className = "init-progress-item " + update.status;
+    el.innerHTML = '<div class="init-progress-icon"><i data-lucide="' + icon + '" class="prog-icon"></i></div>' +
+        '<span>' + label + msg + '</span>';
+
+    if (window.lucide) lucide.createIcons();
+};
+
+window.onInitComplete = function (result) {
+    var nextBtn = document.getElementById("init-btn-next");
+    var backBtn = document.getElementById("init-btn-back");
+
+    if (result.success) {
+        var dashInfo = document.getElementById("init-dashboard-info");
+        document.getElementById("init-dashboard-url").textContent = result.dashboard_url || "—";
+        document.getElementById("init-dashboard-token").textContent = result.access_token || "—";
+        dashInfo.style.display = "flex";
+
+        nextBtn.innerHTML = '<i data-lucide="check" class="btn-icon"></i> Done';
+        nextBtn.disabled = true;
+    } else {
+        showInitError(result.error || "未知錯誤");
+        nextBtn.innerHTML = '<i data-lucide="rotate-ccw" class="btn-icon"></i> Retry';
+        nextBtn.disabled = false;
+        nextBtn.onclick = function () {
+            nextBtn.onclick = wizardNext;
+            startInit();
+        };
+    }
+    backBtn.disabled = false;
+
+    if (window.lucide) lucide.createIcons();
+};
+
+window.onInitError = function (msg) {
+    showInitError(msg);
+    var nextBtn = document.getElementById("init-btn-next");
+    var backBtn = document.getElementById("init-btn-back");
+    nextBtn.disabled = false;
+    backBtn.disabled = false;
+};
+
+function showInitError(msg) {
+    var banner = document.getElementById("init-error-banner");
+    document.getElementById("init-error-msg").textContent = msg;
+    banner.style.display = "flex";
+    if (window.lucide) lucide.createIcons();
 }
 
 // ── Init ──

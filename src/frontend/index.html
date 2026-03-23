@@ -118,9 +118,229 @@
         <div id="view-initialize" class="view">
             <div class="view-header">
                 <h1 class="view-title">Initialize</h1>
-                <p class="view-subtitle">Set up OpenClaw instance</p>
+                <p class="view-subtitle">Set up your OpenClaw instance with the initialization wizard</p>
             </div>
-            <div class="placeholder">Initialize — coming soon</div>
+
+            <!-- Wizard Stepper -->
+            <div class="wizard-stepper">
+                <div class="wizard-step active" id="stepper-1">
+                    <div class="wizard-step-number">1</div>
+                    <span class="wizard-step-label">Environment</span>
+                </div>
+                <div class="wizard-step-line"></div>
+                <div class="wizard-step" id="stepper-2">
+                    <div class="wizard-step-number">2</div>
+                    <span class="wizard-step-label">API Keys</span>
+                </div>
+                <div class="wizard-step-line"></div>
+                <div class="wizard-step" id="stepper-3">
+                    <div class="wizard-step-number">3</div>
+                    <span class="wizard-step-label">Review & Run</span>
+                </div>
+            </div>
+
+            <!-- Step 1: Deployment Mode & Gateway -->
+            <div id="init-step-1" class="init-step-panel">
+                <div class="init-section">
+                    <div class="init-section-title">
+                        <i data-lucide="server" class="init-section-icon"></i>
+                        Deployment Mode
+                    </div>
+                    <div class="mode-selector">
+                        <div class="mode-card" data-mode="docker_windows" onclick="selectDeployMode('docker_windows')">
+                            <i data-lucide="monitor" class="mode-card-icon"></i>
+                            <div class="mode-card-title">Windows Docker</div>
+                            <div class="mode-card-desc">Docker Desktop on Windows</div>
+                        </div>
+                        <div class="mode-card" data-mode="docker_linux" onclick="selectDeployMode('docker_linux')">
+                            <i data-lucide="container" class="mode-card-icon"></i>
+                            <div class="mode-card-title">Linux Docker</div>
+                            <div class="mode-card-desc">Docker Engine on Linux</div>
+                        </div>
+                        <div class="mode-card" data-mode="native_linux" onclick="selectDeployMode('native_linux')">
+                            <i data-lucide="terminal" class="mode-card-icon"></i>
+                            <div class="mode-card-title">Native Linux</div>
+                            <div class="mode-card-desc">systemd service on Linux</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="init-section">
+                    <div class="init-section-title">
+                        <i data-lucide="settings" class="init-section-icon"></i>
+                        Gateway & Directory
+                    </div>
+                    <div class="init-form-grid">
+                        <div class="init-field">
+                            <label>Working Directory</label>
+                            <input type="text" id="init-workingDir" value=".openclaw" placeholder=".openclaw">
+                        </div>
+                        <div class="init-field">
+                            <label>Bind Host</label>
+                            <input type="text" id="init-bindHost" value="0.0.0.0" placeholder="0.0.0.0">
+                        </div>
+                        <div class="init-field">
+                            <label>Gateway Mode</label>
+                            <input type="text" id="init-gatewayMode" value="local" placeholder="local">
+                        </div>
+                        <div class="init-field">
+                            <label>Gateway Port</label>
+                            <input type="number" id="init-gatewayPort" value="18789" min="1" max="65535" placeholder="18789">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: API Keys & Services -->
+            <div id="init-step-2" class="init-step-panel" style="display:none">
+                <div class="init-section">
+                    <div class="init-section-title">
+                        <i data-lucide="key" class="init-section-icon"></i>
+                        API Keys & Tokens
+                    </div>
+                    <div class="init-form-grid">
+                        <div class="init-field">
+                            <label>LINE Channel Access Token</label>
+                            <input type="password" id="init-line_channel_access_token" placeholder="Enter LINE token">
+                        </div>
+                        <div class="init-field">
+                            <label>LINE Channel Secret</label>
+                            <input type="password" id="init-line_channel_secret" placeholder="Enter LINE secret">
+                        </div>
+                        <div class="init-field">
+                            <label>Discord Bot Token</label>
+                            <input type="password" id="init-discord_bot_token" placeholder="Enter Discord token">
+                        </div>
+                        <div class="init-field">
+                            <label>OpenAI API Key</label>
+                            <input type="password" id="init-openai_api_key" placeholder="sk-...">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="init-section">
+                    <div class="init-section-title">
+                        <i data-lucide="database" class="init-section-icon"></i>
+                        Database & Services
+                    </div>
+                    <div class="init-form-grid">
+                        <div class="init-field">
+                            <label>Database URL</label>
+                            <input type="password" id="init-database_url" placeholder="postgres://...">
+                        </div>
+                        <div class="init-field">
+                            <label>Redis URL</label>
+                            <input type="password" id="init-redis_url" placeholder="redis://...">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="init-section">
+                    <div class="init-section-title">
+                        <i data-lucide="plug" class="init-section-icon"></i>
+                        Channel Plugins
+                    </div>
+                    <div class="init-channel-info">
+                        <div class="init-channel-row">
+                            <i data-lucide="message-circle" class="init-channel-icon"></i>
+                            <span>LINE</span>
+                            <span class="init-channel-status" id="init-line-status">Not configured</span>
+                        </div>
+                        <div class="init-channel-row">
+                            <i data-lucide="hash" class="init-channel-icon"></i>
+                            <span>Discord</span>
+                            <span class="init-channel-status" id="init-discord-status">Not configured</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="security-note">
+                    <i data-lucide="shield" class="security-note-icon"></i>
+                    <span>金鑰將透過系統 keyring 安全儲存 (Windows: DPAPI / Linux: libsecret)，不會以明文寫入檔案。</span>
+                </div>
+            </div>
+
+            <!-- Step 3: Review & Run -->
+            <div id="init-step-3" class="init-step-panel" style="display:none">
+                <div class="init-section">
+                    <div class="init-section-title">
+                        <i data-lucide="clipboard-list" class="init-section-icon"></i>
+                        Configuration Summary
+                    </div>
+                    <div id="init-review-summary" class="init-review-summary"></div>
+                </div>
+
+                <div class="init-section">
+                    <div class="init-section-title">
+                        <i data-lucide="list-checks" class="init-section-icon"></i>
+                        Initialization Progress
+                    </div>
+                    <div id="init-progress-list" class="init-progress-list">
+                        <div class="init-progress-item pending" id="init-prog-create_dirs">
+                            <div class="init-progress-icon"><i data-lucide="circle" class="prog-icon"></i></div>
+                            <span>建立目錄結構</span>
+                        </div>
+                        <div class="init-progress-item pending" id="init-prog-generate_config">
+                            <div class="init-progress-icon"><i data-lucide="circle" class="prog-icon"></i></div>
+                            <span>產生設定檔</span>
+                        </div>
+                        <div class="init-progress-item pending" id="init-prog-store_keys">
+                            <div class="init-progress-icon"><i data-lucide="circle" class="prog-icon"></i></div>
+                            <span>儲存金鑰</span>
+                        </div>
+                        <div class="init-progress-item pending" id="init-prog-start_service">
+                            <div class="init-progress-icon"><i data-lucide="circle" class="prog-icon"></i></div>
+                            <span>啟動服務</span>
+                        </div>
+                        <div class="init-progress-item pending" id="init-prog-wait_gateway">
+                            <div class="init-progress-icon"><i data-lucide="circle" class="prog-icon"></i></div>
+                            <span>等待 Gateway 就緒</span>
+                        </div>
+                        <div class="init-progress-item pending" id="init-prog-configure_stt">
+                            <div class="init-progress-icon"><i data-lucide="circle" class="prog-icon"></i></div>
+                            <span>設定語音轉文字</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard Info (shown after completion) -->
+                <div id="init-dashboard-info" class="init-dashboard-info" style="display:none">
+                    <div class="init-dashboard-title">
+                        <i data-lucide="check-circle" class="init-dashboard-icon"></i>
+                        初始化完成
+                    </div>
+                    <div class="init-dashboard-grid">
+                        <div class="init-dashboard-field">
+                            <label>Dashboard URL</label>
+                            <div class="init-dashboard-value" id="init-dashboard-url">—</div>
+                        </div>
+                        <div class="init-dashboard-field">
+                            <label>Access Token</label>
+                            <div class="init-dashboard-value" id="init-dashboard-token">—</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error banner (shown on failure) -->
+                <div id="init-error-banner" class="init-error-banner" style="display:none">
+                    <i data-lucide="alert-circle" class="init-error-icon"></i>
+                    <div class="init-error-text">
+                        <div class="init-error-title">初始化失敗</div>
+                        <div class="init-error-desc" id="init-error-msg"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Bar -->
+            <div class="init-action-bar">
+                <button class="btn btn-secondary" id="init-btn-back" onclick="wizardGoTo(wizardStep - 1)" style="display:none">
+                    <i data-lucide="arrow-left" class="btn-icon"></i> Back
+                </button>
+                <div class="init-step-counter" id="init-step-counter">Step 1 of 3</div>
+                <button class="btn btn-primary" id="init-btn-next" onclick="wizardNext()">
+                    Next <i data-lucide="arrow-right" class="btn-icon"></i>
+                </button>
+            </div>
         </div>
 
         <!-- Deploy Skills View -->
