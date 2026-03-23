@@ -23,13 +23,13 @@
                     <i data-lucide="layout-dashboard" class="nav-icon"></i>
                     <span>Dashboard</span>
                 </div>
-                <div class="nav-item active" data-view="environment" onclick="navigateTo('environment')">
-                    <i data-lucide="monitor-check" class="nav-icon"></i>
-                    <span>Environment</span>
-                </div>
                 <div class="nav-item" data-view="configuration" onclick="navigateTo('configuration')">
                     <i data-lucide="settings" class="nav-icon"></i>
                     <span>Configuration</span>
+                </div>
+                <div class="nav-item active" data-view="environment" onclick="navigateTo('environment')">
+                    <i data-lucide="monitor-check" class="nav-icon"></i>
+                    <span>Environment</span>
                 </div>
             </div>
 
@@ -55,7 +55,8 @@
         </nav>
 
         <div class="sidebar-footer">
-            OpenClaw GUI v0.1.0
+            <div class="sidebar-version">OpenClaw v0.2.0</div>
+            <div class="sidebar-env" id="sidebar-env-info">Docker · Windows 11</div>
         </div>
     </aside>
 
@@ -63,19 +64,16 @@
     <main class="main-content">
         <!-- Environment View -->
         <div id="view-environment" class="view active">
-            <div class="view-header">
-                <h1 class="view-title">Environment Check</h1>
-                <p class="view-subtitle">Verify system dependencies and runtime environment</p>
-            </div>
-
-            <div class="badge-row">
-                <div class="badge">
-                    <span class="badge-dot"></span>
-                    <span id="badge-os">Detecting...</span>
+            <div class="env-header">
+                <div class="env-header-left">
+                    <h1 class="env-title">Environment Check</h1>
+                    <p class="env-subtitle">Verify system dependencies and runtime environment</p>
                 </div>
-                <div class="badge">
-                    <span class="badge-dot"></span>
-                    <span id="badge-env">Detecting...</span>
+                <div class="env-header-actions">
+                    <div class="env-badge" id="env-mode-badge">
+                        <span class="env-badge-dot"></span>
+                        <span id="env-mode-text">Docker Mode</span>
+                    </div>
                 </div>
             </div>
 
@@ -85,11 +83,17 @@
                 <span>Checking environment...</span>
             </div>
 
-            <!-- Status cards container -->
-            <div id="check-results" class="check-results"></div>
+            <!-- Summary banner (above cards) -->
+            <div id="summary-banner" class="summary-banner" style="display:none"></div>
 
-            <!-- Summary -->
-            <div id="result-summary" class="result-summary"></div>
+            <!-- Status cards grid (horizontal) -->
+            <div id="check-results" class="cards-grid"></div>
+
+            <!-- .env file check -->
+            <div id="env-file-check" class="env-file-row" style="display:none"></div>
+
+            <!-- Error guidance -->
+            <div id="error-guidance" class="error-guidance" style="display:none"></div>
         </div>
 
         <!-- Dashboard View -->
