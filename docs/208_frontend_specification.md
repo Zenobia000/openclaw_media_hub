@@ -75,6 +75,18 @@ Root (SPA - Single Page Application)
   - **Main Content**: `flex: 1`，`padding: 32px`，垂直 Flexbox，`gap: 24px`
 - **視窗尺寸**: 固定 `1280 × 800`（PyWebView 視窗，不支援 RWD）
 - **捲動**: 主內容區垂直捲動，Sidebar 不捲動
+  - **可捲動內容區域模式**: 當頁面內容超出 `800px` 可視範圍時（如 Configuration Step 1、Step 2），採用「固定 Action Bar + 可捲動內容區」佈局：
+    ```
+    main-content (flex: 1, vertical, 不捲動, 無 overflow)
+    ├── scroll-area (flex: 1, overflow-y: auto, padding: 20px 24px 12px 24px)
+    │   ├── Header
+    │   ├── Step Indicator（如適用）
+    │   └── 各內容面板（垂直排列, gap: 20px）
+    └── action-bar (固定底部, padding: 16px 24px 32px 24px, border-top: 1px)
+    ```
+  - **Action Bar 固定規則**: Action Bar 不隨內容捲動，始終固定於主內容區底部，上方以 `1px solid border-default` 分隔線區隔
+  - **捲動提示**: 當內容溢出時，scroll-area 底部以 `4px` 漸層淡出（`linear-gradient(transparent, bg-primary)`）暗示可繼續捲動
+  - **不適用頁面**: Dashboard、Environment、Configuration Step 3 等內容未溢出的頁面維持現有非捲動佈局；Deploy Skills / Install Plugins / Fix Plugins 的列表面板以獨立 `overflow-y: auto` 處理內部捲動
 
 ### 3.2 Design Tokens
 
@@ -315,6 +327,13 @@ const result = await window.pywebview.api.check_env();
 6. **Action Bar** — 底部固定，上方 `1px` 分隔線
    - 右側: "Step 1 of 3" 文字 + "Next" Button/Primary (帶 `arrow-right` icon)
 
+**捲動行為**:
+- 本頁內容（Deployment Mode + SSH Connection + Gateway & Directory）超出 `800px` 可視高度（實際內容高度約 `1124px`），採用 3.1 節定義的「固定 Action Bar + 可捲動內容區」模式
+- Action Bar 固定於底部，Header 至 Gateway & Directory 區塊為可捲動範圍
+- 初始載入時 Deployment Mode 與 SSH Connection 區塊完整可見，Gateway & Directory 區塊需向下捲動
+
+> **Mockup 說明**: UI Mockup 中同時展示所有區塊（含 SSH Connection），以呈現完整 UI 結構。實作時 SSH Connection 區塊須依 Deployment Mode 條件顯示/隱藏（僅 `remote-ssh` 模式顯示）。當非 SSH 模式時，內容可能不溢出，此時 scroll-area 自然無需捲動。
+
 **Bridge API 呼叫**:
 
 ```javascript
@@ -407,9 +426,14 @@ await window.pywebview.api.connect_remote({
 5. **Security Note** — 底部安全提示
    - `shield-check` icon (紅) + 文字: "All keys are encrypted and stored securely using your operating system's credential manager (DPAPI / libsecret). Keys are never written to plain text files."
 
-6. **Action Bar**
+6. **Action Bar** — 底部固定，上方 `1px` 分隔線
    - 左側: "Back" Button/Secondary (帶 `arrow-left` icon)
    - 右側: "Step 2 of 3" + "Next" Button/Primary (帶 `arrow-right` icon)
+
+**捲動行為**:
+- 本頁內容（Model Providers + Channel Credentials + Tools + Security Note）超出 `800px` 可視高度（實際內容高度約 `1076px`），採用 3.1 節定義的「固定 Action Bar + 可捲動內容區」模式
+- Action Bar 固定於底部，Header 至 Security Note 為可捲動範圍
+- 初始載入時 Model Providers 區塊完整可見，Channel Credentials 區塊部分可見，Tools 區塊與 Security Note 需向下捲動
 
 **Bridge API 呼叫**:
 
