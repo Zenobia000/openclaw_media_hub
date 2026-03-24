@@ -92,7 +92,7 @@ Root (SPA - Single Page Application)
 | `text-secondary` | `#d4d4d8` | 次要文字（描述、副標題） |
 | `text-muted` | `#838387` | 淡化文字（佔位符、版本資訊） |
 | `accent-primary` | `#ff5c5c` | 主強調色（品牌紅、Active 狀態、主按鈕） |
-| `accent-secondary` | `#14b8a6` | 次強調色（Teal，Gateway/DB 圖示） |
+| `accent-secondary` | `#14b8a6` | 次強調色（Teal，Gateway 圖示、Quick Actions） |
 | `status-success` | `#22c55e` | 成功狀態（綠色，通過/已安裝） |
 | `status-error` | `#ef4444` | 錯誤狀態（紅色，缺失/失敗） |
 | `status-info` | `#3b82f6` | 資訊狀態（藍色，Docker/VS Code 圖示） |
@@ -156,10 +156,16 @@ Root (SPA - Single Page Application)
 │                         │  ← Spacer (flex: 1)
 ├─────────────────────────┤
 │ OpenClaw v1.0.0         │  ← 版本資訊 (11px, #838387)
-│ Docker · Windows 11     │  ← 環境資訊 (11px, #838387)
+│ Docker · Windows        │  ← 環境模式 (11px, #838387, 動態)
 └─────────────────────────┘
 ```
 
+- **環境模式文字**（動態）: App 啟動時由 `detect_platform()` 取得 `current_mode`，Configuration Step 1 切換時即時更新
+  | `deployment_mode` | 顯示文字 |
+  | :--- | :--- |
+  | `docker-windows` | Docker · Windows |
+  | `docker-linux` | Docker · Linux/WSL2 |
+  | `native-linux` | Native · Linux (systemd) |
 - **Active 狀態**: 背景 `#1f1318`，邊框 `#ff5c5c30`，icon 變 `accent-primary`，文字變 `text-primary` + `font-weight: 600`
 - **Hover 狀態**: 背景微亮（`bg-card` 色調）
 - **Sidebar 邊框**: 右側 `1px solid border-default`
@@ -178,7 +184,7 @@ Root (SPA - Single Page Application)
 1. **Header**
    - 標題: "Environment Check"（24px, 700）
    - 副標題: "Verify system dependencies and runtime environment"（14px, 400）
-   - 右側: 環境 StatusBadge（顯示 Docker 環境類型）
+   - 右側: 環境模式 StatusBadge（動態顯示當前部署模式名稱，如 "Docker" 或 "Native"）
 
 2. **Summary Banner**
    - 全通過時: 綠色底 (`#4CAF5015`)，綠色邊框 (`#4CAF5040`)，check-circle icon
@@ -187,11 +193,29 @@ Root (SPA - Single Page Application)
    - 有失敗時: 切換為紅色/黃色樣式，顯示失敗數量
    - 右側: "Last checked: just now" 時間戳
 
-3. **Cards Grid** — 水平排列的檢查卡片（Flexbox, gap: 16px, 等寬）
-   - **Docker**: icon `container` (藍), 版本號, Installed badge
-   - **Docker Desktop**: icon `activity` (綠), Running/Stopped badge
-   - **VS Code**: icon `code` (藍), 版本號, Installed badge
-   - **ngrok**: icon `globe`, 版本號或 "Not installed" 紅色提示, Not Found badge
+3. **Cards Grid** — 水平排列的檢查卡片（Flexbox, gap: 16px, 自動換行 `flex-wrap: wrap`）
+
+   卡片由 `check_env()` API 回傳動態渲染，不同部署模式回傳不同檢查項目。前端維護 icon mapping：
+
+   ```javascript
+   const CHECK_ICONS = {
+     "Docker":           { icon: "container",  color: "status-info" },
+     "Docker Desktop":   { icon: "activity",   color: "status-success" },
+     "Docker Running":   { icon: "activity",   color: "status-success" },
+     "Node.js":          { icon: "hexagon",    color: "status-success" },
+     "OpenClaw CLI":     { icon: "terminal",   color: "accent-primary" },
+     "jq":               { icon: "braces",     color: "accent-secondary" },
+     "VS Code":          { icon: "code",       color: "status-info" },
+     "ngrok":            { icon: "globe",      color: "text-muted" },
+     "systemd Service":  { icon: "server",     color: "accent-secondary" },
+   };
+   ```
+
+   **Docker 模式** (docker-windows / docker-linux) 顯示 4 張卡片：
+   - Docker、Docker Desktop/Running、VS Code、ngrok
+
+   **Native Linux 模式** (native-linux) 顯示 6 張卡片：
+   - Node.js (≥18)、OpenClaw CLI、jq、VS Code、ngrok、systemd Service
 
 4. **.env File Check** — 單行卡片
    - Icon: `file-text`，名稱: ".env Configuration File"
@@ -201,22 +225,25 @@ Root (SPA - Single Page Application)
 5. **Error Guidance** — 條件顯示（有失敗項目時才出現）
    - 紅色底 (`#F4433610`)，紅色邊框 (`#F4433630`)
    - alert-circle icon + 標題 "Action Required: Install [軟體名]"
-   - 描述提供安裝指引
+   - 描述提供安裝指引（由 API 回傳的 `message` 欄位決定內容）
 
 **Bridge API 呼叫**:
 
 ```javascript
-// 觸發環境檢查
+// 觸發環境檢查（後端根據 persisted deployment_mode 決定檢查項目）
 const result = await window.pywebview.api.check_env();
 // 回傳: { checks: [{name, installed, version, message}], env_file: {exists, message} }
+// Docker 模式回傳 4 項 checks，Native 模式回傳 6 項 checks
 ```
 
 **驗收標準 (Acceptance Criteria)**:
 - [ ] 點擊 "Environment" nav item 時，自動觸發環境檢查（或顯示上次結果）
+- [ ] 檢查卡片數量與內容依當前部署模式動態變化
 - [ ] 每個軟體以獨立 CheckCard 顯示，綠色 = 通過，紅色 = 缺失
 - [ ] Summary Banner 即時反映檢查結果統計
 - [ ] 缺失軟體時顯示 Error Guidance 區塊
 - [ ] .env 檔案存在性獨立顯示
+- [ ] Header StatusBadge 顯示當前部署模式名稱
 
 ---
 
@@ -257,13 +284,29 @@ const result = await window.pywebview.api.check_env();
 **Bridge API 呼叫**:
 
 ```javascript
-// 偵測目前環境類型（預設選中值）
+// 偵測目前環境類型（預設選中值 + 已持久化的模式）
 const platform = await window.pywebview.api.detect_platform();
-// 回傳: { os, env_type, suggested_mode }
+// 回傳: { os, env_type, suggested_mode, current_mode }
+// current_mode: 已持久化的模式（可能為 null，表示首次使用）
+// suggested_mode: 後端依 OS/環境自動建議的模式
+```
+
+**模式選擇行為**:
+
+使用者選擇 Radio Card 後立即：
+1. 呼叫 `save_config({"deployment_mode": selected_mode})` 持久化至 `gui-settings.json`
+2. 更新前端全域狀態 `window.__currentMode`
+3. 即時更新 Sidebar footer 環境模式文字
+
+```javascript
+// 持久化模式選擇
+await window.pywebview.api.save_config({ deployment_mode: "docker-windows" });
 ```
 
 **驗收標準**:
 - [ ] Deployment Mode 三選一 Radio Card，點擊切換
+- [ ] 已有 `current_mode` 時以其為預設選中；否則以 `suggested_mode` 為預設
+- [ ] 切換模式後即時持久化並更新 Sidebar footer
 - [ ] Gateway 欄位有合理預設值（從 Bridge 取得或硬編碼）
 - [ ] 點擊 "Next" 驗證必填欄位後進入 Step 2
 
@@ -283,41 +326,29 @@ const platform = await window.pywebview.api.detect_platform();
      - Row 2: Discord Bot Token + OpenAI API Key (`placeholder: sk-...`)
    - 所有輸入框帶 `lock` icon，type=password
 
-3. **Database & Services 區塊** (SectionPanel)
-   - Icon: `database` (teal), 標題: "Database & Services"
-   - 1×2 表單 Grid:
-     - Database URL (`placeholder: postgresql://localhost:5432/openclaw`)
-     - Redis URL (`placeholder: redis://localhost:6379`)
-
-4. **Channel Plugins 區塊** (SectionPanel)
+3. **Channel Plugins 區塊** (SectionPanel)
    - Icon: `message-circle` (藍), 標題: "Channel Plugins"
    - 描述: "LINE and Discord plugin credentials for messaging integration"
    - 2 行 Channel Row（帶品牌 icon + 名稱 + 描述 + Configured badge）:
      - LINE: 綠底 "L" icon (`#06C755`)，描述 "Channel Access Token + Secret configured above · Webhook URL via ngrok"
      - Discord: 紫底 "D" icon (`#5865F2`)，描述 "Bot Token configured above · DM policy: open, Group: allowlist"
 
-5. **Security Note** — 底部安全提示
+4. **Security Note** — 底部安全提示
    - `shield-check` icon (紅) + 文字: "All keys are encrypted and stored securely using your operating system's credential manager (DPAPI / libsecret). Keys are never written to plain text files."
 
-6. **Action Bar**
+5. **Action Bar**
    - 左側: "Back" Button/Secondary (帶 `arrow-left` icon)
    - 右側: "Step 2 of 3" + "Next" Button/Primary (帶 `arrow-right` icon)
 
 **Bridge API 呼叫**:
 
 ```javascript
-// 儲存金鑰（逐一或批次）
+// 儲存金鑰（逐一或批次，透過 keyring 安全儲存）
 await window.pywebview.api.save_keys({
   line_channel_access_token: "...",
   line_channel_secret: "...",
   discord_bot_token: "...",
   openai_api_key: "..."
-});
-
-// 儲存服務設定
-await window.pywebview.api.save_config({
-  database_url: "...",
-  redis_url: "..."
 });
 ```
 
@@ -341,8 +372,10 @@ await window.pywebview.api.save_config({
    - 6 個 ProgressItem 垂直列表（以 `1px` 分隔線間隔）:
      1. "Create directory structure" — `.openclaw/agents/main/agent/, workspace/skills/`
      2. "Generate openclaw.json" — `Gateway config: mode=local, bind=0.0.0.0`
-     3. "Store API keys via keyring" — `6 credentials saved to system credential manager`
-     4. "Start Docker Compose" — `docker compose up -d`
+     3. "Store API keys via keyring" — `Credentials saved to system credential manager`
+     4. **依模式變化**:
+        - Docker 模式: "Start Docker Compose" — `docker compose up -d`
+        - Native 模式: "Start openclaw-gateway" — `systemctl start openclaw-gateway`
      5. "Wait for Gateway ready" — `Health check on http://127.0.0.1:18789`
      6. "Configure speech-to-text" — `Auto-enable whisper if OpenAI key detected`
    - 狀態圖示:
@@ -401,7 +434,7 @@ await window.pywebview.api.initialize({
      - Stopped 時: 紅色圓點 + "Stopped" 紅字（`status-error`）
 
 2. **StatCards Row** — 水平排列 4 張 StatCard（Flexbox, gap: 16px, 等寬）
-   - **Services**: icon `server`（`accent-primary`），數值 "X/X"，描述 "Services Running"，badge 依全部啟動/部分啟動顯示 success/warning
+   - **Services**: icon `server`（`accent-primary`），數值 "X/1"，描述 "Services Running"（目前僅 Gateway），badge 依啟動/停止顯示 success/error
    - **Uptime**: icon `clock`（`accent-secondary`），數值 "Xh Xm" 或 "—"（未啟動），描述 "Uptime"，badge info
    - **Skills**: icon `zap`（`status-info`），數值 數量，描述 "Skills Deployed"，badge info
    - **Plugins**: icon `puzzle`（`accent-secondary`），數值 數量，描述 "Plugins Installed"，badge info
@@ -411,7 +444,8 @@ await window.pywebview.api.initialize({
    - Icon: `activity`（紅）, 標題: "Service Control"
    - 描述: "Start or stop the OpenClaw service stack"
    - **服務列表**: 垂直排列各服務狀態行（`1px` 分隔線間隔）
-     - 每行: 服務 icon + 服務名稱（如 "Gateway", "Database", "Redis"）+ StatusBadge (running/stopped/error)
+     - 每行: 服務 icon + 服務名稱 + StatusBadge (running/stopped/error)
+     - 服務列表由 `get_service_status()` API 動態回傳（目前僅 "Gateway" 一個服務）
    - **控制按鈕組** — 底部，水平排列，gap: 12px
      - 服務未啟動時:
        - Button/Primary "Start Services"（`play` icon）
@@ -432,19 +466,19 @@ await window.pywebview.api.initialize({
 **Bridge API 呼叫**:
 
 ```javascript
-// 進入頁面時查詢服務狀態
+// 進入頁面時查詢服務狀態（後端根據 deployment_mode 決定查詢方式）
 const status = await window.pywebview.api.get_service_status();
 // 回傳: {
 //   running: true,
 //   services: [
-//     {name: "gateway", status: "running"},
-//     {name: "database", status: "running"},
-//     {name: "redis", status: "running"}
+//     {name: "gateway", status: "running"}
 //   ],
 //   uptime: "2h 35m",
 //   skills_count: 5,
 //   plugins_count: 3
 // }
+// Docker 模式: 透過 docker compose ps 查詢
+// Native 模式: 透過 systemctl is-active 查詢
 
 // 啟動服務
 await window.pywebview.api.start_service();
@@ -760,6 +794,24 @@ const result = await window.pywebview.api.fix_all_plugins();
 
 ## 5. API 整合策略 (API Integration)
 
+### 5.0 部署模式與後端分流 (Deployment Mode Strategy)
+
+應用程式支援 3 種部署模式，前端選項對應 2 種後端策略：
+
+| 前端選項 | 後端策略 | 服務控制 | Gateway CLI |
+| :--- | :--- | :--- | :--- |
+| Docker Windows | **Docker** | `docker compose up/down/restart` | `docker compose exec openclaw-gateway openclaw <cmd>` |
+| Docker Linux/WSL2 | **Docker** | 同上 | 同上 |
+| Native Linux (systemd) | **Native** | `systemctl start/stop/restart openclaw-gateway` | `openclaw <cmd>`（直接呼叫） |
+
+**模式持久化**: 使用者選擇的模式儲存於 `{project_root}/.openclaw/gui-settings.json`（與 `openclaw.json` 分開），所有後端 API 自動讀取此設定決定分流邏輯，前端不需在每次 API 呼叫傳遞 mode 參數。
+
+**影響範圍**:
+- `check_env()`: Docker 模式檢查 4 項（Docker, Docker Desktop, VS Code, ngrok），Native 模式檢查 6 項（Node.js, OpenClaw CLI, jq, VS Code, ngrok, systemd）
+- `initialize()`: Step 4 服務啟動指令不同
+- `start_service()` / `stop_service()` / `restart_service()`: 控制指令不同
+- `get_service_status()`: 查詢方式不同（`docker compose ps` vs `systemctl is-active`）
+
 ### 5.1 通訊機制
 
 - **Client**: PyWebView Bridge — `window.pywebview.api.<method>()`
@@ -816,7 +868,7 @@ window.updateFixProgress = function(pluginName, status, message) {
 | API 方法 | 對應模組 | 回傳資料 |
 | :--- | :--- | :--- |
 | `check_env()` | `env_checker.py` | `{checks: [{name, installed, version, message}], env_file: {exists, message}}` |
-| `detect_platform()` | `platform_utils.py` | `{os, env_type, suggested_mode}` |
+| `detect_platform()` | `platform_utils.py` | `{os, env_type, suggested_mode, current_mode}` |
 | `save_keys(keys)` | `config_manager.py` | `{success, saved_count}` |
 | `save_config(config)` | `config_manager.py` | `{success}` |
 | `initialize(params)` | `initializer.py` | 透過回呼逐步回報，最終 `{success, dashboard_url, access_token}` |
