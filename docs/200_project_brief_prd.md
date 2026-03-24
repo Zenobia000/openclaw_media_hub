@@ -14,24 +14,26 @@
 | :-------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **目標 (Goal)** | 開發一個圖形化介面 (GUI) 應用程式，取代原有的命令列腳本（如 `openclaw-docker.ps1`, `openclaw.sh` 等）。提供友善的操作介面供使用者填寫金鑰、設定參數、檢查環境規格，以及控制 OpenClaw 服務的啟動與停止。   |
 | **目標受眾**    | OpenClaw 的終端使用者與開發團隊（期望降低命令列操作門檻）                                                                                                                                                 |
-| **關鍵指標**    | 1. 成功編譯為單一可執行檔 (PyInstaller)。<br>2. 以 Python 原生邏輯涵蓋所有核心功能（`init`, `check-env`, `deploy-skills`, `install-plugins` 以及啟停操作）。<br>3. 應用程式穩定運作且以結構化 UI 呈現操作結果與回饋。 |
+| **關鍵指標**    | 1. 成功編譯為單一可執行檔 (PyInstaller)。<br>2. 以 Python 原生邏輯涵蓋所有核心功能（`init`, `check-env`, `onboard`, `configure`, `deploy-skills`, `install-plugins`, `channels add/login` 以及啟停操作）。<br>3. 應用程式穩定運作且以結構化 UI 呈現操作結果與回饋。 |
 
 ## 2. 使用者故事 (User Stories)
 
 | ID         | 故事描述 (身為... 我想要... 以便...)                                                                                    | 驗收標準 (Acceptance Criteria)                                                                                                                                                                   |
 | :--------- | :---------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **US-001** | **身為** 使用者, **我想要** 在 UI 上檢查系統是否符合最低規格, **以便** 知道我的環境是否能順利安裝與執行 OpenClaw。      | 1. 提供「檢查環境 (Check Env)」按鈕。<br>2. 點擊後以 Python 原生邏輯偵測各軟體（Docker, VS Code, ngrok 等）。<br>3. 於畫面以狀態卡片列表呈現檢查結果（綠色通過/紅色缺失）。                       |
-| **US-002** | **身為** 使用者, **我想要** 透過介面填寫金鑰（如 LINE/Discord）與各項設定, **以便** 輕鬆完成系統初始化 (`init`)。       | 1. UI 提供表單輸入框供填寫對應之金鑰與配置。<br>2. 點擊「初始化」後，以 Python 原生邏輯建立目錄結構、寫入設定檔、透過 keyring 安全儲存金鑰。                                                      |
+| **US-002** | **身為** 使用者, **我想要** 透過介面填寫模型供應商與通訊管道金鑰（如 OpenAI, Anthropic, Gemini, LINE, Discord, Telegram 等）與各項設定, **以便** 輕鬆完成系統初始化 (`init`) 與 Onboarding。 | 1. UI 提供分類式動態表單，依使用者選擇的供應商/管道動態顯示對應金鑰欄位。<br>2. 點擊「初始化」後，以 Python 原生邏輯建立目錄結構（含 `identity/`, `agents/main/`）、產生 `openclaw.json` 與 `.env`、透過 keyring 安全儲存金鑰。<br>3. GUI 流程等價於 `openclaw onboard` + `openclaw configure` CLI 指令。 |
 | **US-003** | **身為** 使用者, **我想要** 有清楚的啟動與停止按鈕, **以便** 輕鬆管理 OpenClaw 服務狀態。                               | 1. 若服務未啟動，顯示「啟動」按鈕。<br>2. 點擊「啟動」或「停止」時，後台以 Python 呼叫 docker compose / systemctl 控制服務，並在 UI 上以結構化狀態指示燈顯示結果。                                |
 | **US-004** | **身為** 開發者, **我想要** 應用程式採用 PyWebView 與 PyInstaller 技術, **以便** 能結合現代前端 Web UI 且方便打包發布。 | 1. 前端使用 HTML/JS/CSS，搭配 Tailwind CSS 作為樣式框架。<br>2. 後端使用 Python (PyWebView Bridge 模式) 以原生邏輯處理所有操作。<br>3. 提供 `build.py` 或指令以 PyInstaller 進行跨平台或單一平台打包。 |
-| **US-005** | **身為** 使用者, **我想要** 透過介面一鍵部署技能模組 (Skills), **以便** 不需手動在命令列操作。                           | 1. 提供「部署技能 (Deploy Skills)」勾選清單介面。<br>2. 以 Python 原生邏輯掃描技能模組、部署或移除。<br>3. 於畫面以結構化清單呈現部署進度與結果。                                                  |
-| **US-006** | **身為** 使用者, **我想要** 透過介面安裝外掛模組 (Plugins), **以便** 不需手動在命令列操作。                               | 1. 提供「安裝外掛 (Install Plugins)」勾選清單介面。<br>2. 以 Python 原生邏輯處理外掛安裝。<br>3. 於畫面以結構化清單呈現安裝進度與結果。                                                            |
+| **US-005** | **身為** 使用者, **我想要** 透過介面一鍵部署技能模組 (Skills), **以便** 不需手動在命令列操作。                           | 1. 提供「部署技能 (Deploy Skills)」勾選清單介面，區分兩種來源：`module_pack/`（自訂業務模組）與 `openclaw/skills/`（55+ 社群技能）。<br>2. 以 Python 原生邏輯掃描技能模組、解析 SKILL.md YAML frontmatter（name, description, emoji）、部署至 `~/.openclaw/workspace/skills/` 或移除。<br>3. 於畫面以結構化清單呈現部署進度與結果。 |
+| **US-006** | **身為** 使用者, **我想要** 透過介面安裝外掛模組 (Plugins), **以便** 不需手動在命令列操作。                               | 1. 提供「安裝外掛 (Install Plugins)」分類勾選清單介面，外掛對應 `openclaw/extensions/`（76+ 擴充套件），按類型分組（Model Providers / Channels / Tools / Infrastructure）。<br>2. 以 Python 原生邏輯讀取 `openclaw.plugin.json` 取得外掛資訊，安裝方式為修改 `openclaw.json` 的 `plugins` 區段（config-driven），非檔案複製。<br>3. 於畫面以結構化清單呈現安裝進度與結果。 |
 
 ## 3. 專案範圍 (Scope)
 
 - **納入範圍 (In Scope)**:
-  - 前端 UI 設計與實作（包含金鑰輸入表單、狀態卡片、勾選清單、進度步驟元件等結構化 UI）。
+  - 前端 UI 設計與實作（包含分類式動態金鑰表單、狀態卡片、勾選清單、進度步驟元件等結構化 UI）。
   - 後端 Python 原生操作邏輯實作（環境檢查、初始化、技能部署、外掛安裝、服務控制），僅在呼叫外部程式（docker, systemctl）時使用 subprocess。
+  - 支援 openclaw `onboard` 與 `configure` CLI 指令的 GUI 等價流程。
+  - 動態 API 金鑰表單（根據使用者選擇的供應商與管道顯示對應欄位）。
   - PyInstaller 打包配置支援。
 - **不包含 (Out of Scope)**:
   - 雲端自動遠端部署功能（目前維持本地操作）。
@@ -45,3 +47,5 @@
   - **決議:** 使用 Tailwind CSS。
 - [x] 服務的「啟動」與「停止」具體是對應哪個尚未列出的腳本？還是針對 docker-compose / 系統服務做直接控制？
   - **決議:** 啟動與停止沒有專屬腳本，依據環境直接控制：Docker 環境使用 `docker-compose up -d` / `docker-compose down` 起停；Linux 原生環境使用 `systemctl start/stop` 起停；Windows 原生環境使用背景程序管理 (`Start-Process` / `Stop-Process`) 起停。
+- [ ] GUI 是否需要支援 `openclaw channels login`（WhatsApp QR 登入）和 `openclaw channels add`（Telegram/Discord token 新增）的等價功能？
+  - **背景:** Docker 設定流程結束後，setup.sh 會提示使用者手動執行 `docker compose run --rm openclaw-cli channels login`（WhatsApp）或 `channels add --channel telegram --token "<token>"`。GUI 是否需要整合這些管道註冊流程？

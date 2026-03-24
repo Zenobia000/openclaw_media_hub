@@ -200,6 +200,7 @@ Root (SPA - Single Page Application)
    ```javascript
    const CHECK_ICONS = {
      "Docker":           { icon: "container",  color: "status-info" },
+     "Docker Compose":   { icon: "layers",     color: "status-info" },
      "Docker Desktop":   { icon: "activity",   color: "status-success" },
      "Docker Running":   { icon: "activity",   color: "status-success" },
      "Node.js":          { icon: "hexagon",    color: "status-success" },
@@ -211,8 +212,9 @@ Root (SPA - Single Page Application)
    };
    ```
 
-   **Docker 模式** (docker-windows / docker-linux) 顯示 4 張卡片：
-   - Docker、Docker Desktop/Running、VS Code、ngrok
+   **Docker 模式** (docker-windows / docker-linux) 顯示 5 張卡片：
+   - Docker、Docker Compose、Docker Desktop/Running、VS Code、ngrok
+   - 備註：Docker Compose 為獨立檢查項，實際 setup.sh 會分別驗證 `docker` 與 `docker compose version`
 
    **Native Linux 模式** (native-linux) 顯示 6 張卡片：
    - Node.js (≥18)、OpenClaw CLI、jq、VS Code、ngrok、systemd Service
@@ -274,9 +276,14 @@ const result = await window.pywebview.api.check_env();
 
 4. **Gateway & Directory 區塊** (SectionPanel)
    - Icon: `globe` (teal), 標題: "Gateway & Directory"
-   - 2×2 表單 Grid (gap: 16px):
-     - Row 1: Working Directory (`placeholder: .openclaw`) + Gateway Bind Host (`placeholder: 0.0.0.0`)
-     - Row 2: Gateway Mode (`placeholder: local`) + Gateway Port (`placeholder: 18789`)
+   - 3×2 表單 Grid (gap: 16px):
+     - Row 1: Config Directory (`placeholder: ~/.openclaw`, 對應 `OPENCLAW_CONFIG_DIR`) + Workspace Directory (`placeholder: ~/.openclaw/workspace`, 對應 `OPENCLAW_WORKSPACE_DIR`)
+     - Row 2: Gateway Bind Host (`placeholder: lan`, 對應 `OPENCLAW_GATEWAY_BIND`) + Gateway Mode (`placeholder: local`)
+     - Row 3: Gateway Port (`placeholder: 18789`, 對應 `OPENCLAW_GATEWAY_PORT`) + Bridge Port (`placeholder: 18790`, 對應 `OPENCLAW_BRIDGE_PORT`)
+   - **進階設定** (預設收合，點擊展開):
+     - Timezone (`placeholder: Asia/Taipei`, 對應 `OPENCLAW_TZ`)
+     - Docker Image (`placeholder: openclaw:local`, 對應 `OPENCLAW_IMAGE`)
+     - Enable Sandbox (toggle, 對應 `OPENCLAW_SANDBOX`)
 
 5. **Action Bar** — 底部固定，上方 `1px` 分隔線
    - 右側: "Step 1 of 3" 文字 + "Next" Button/Primary (帶 `arrow-right` icon)
@@ -318,22 +325,41 @@ await window.pywebview.api.save_config({ deployment_mode: "docker-windows" });
 
 1. **Step Indicator** — Step 1 完成（綠底勾），Step 2 Active（紅底數字），Step 3 Pending
 
-2. **API Keys & Tokens 區塊** (SectionPanel)
-   - Icon: `key-round` (紅), 標題: "API Keys & Tokens"
-   - 描述: "Enter your API credentials — stored securely via system keyring"
-   - 2×2 表單 Grid:
-     - Row 1: LINE Channel Access Token + LINE Channel Secret
-     - Row 2: Discord Bot Token + OpenAI API Key (`placeholder: sk-...`)
-   - 所有輸入框帶 `lock` icon，type=password
+2. **Model Providers 區塊** (SectionPanel)
+   - Icon: `cpu` (紅), 標題: "Model Providers"
+   - 描述: "Select providers and enter API keys — stored securely via system keyring"
+   - **供應商勾選清單**（水平 Flexbox, 可多選，勾選後展開對應金鑰欄位）:
+     - OpenAI (`OPENAI_API_KEY`, placeholder: `sk-...`)
+     - Anthropic (`ANTHROPIC_API_KEY`, placeholder: `sk-ant-...`)
+     - Google Gemini (`GEMINI_API_KEY`)
+     - OpenRouter (`OPENROUTER_API_KEY`)
+     - Ollama (無金鑰，僅需 URL 設定)
+     - 更多...（收合區，含 Amazon Bedrock, Mistral, NVIDIA, Together, ZAI, MiniMax 等）
+   - 勾選的供應商下方展開對應金鑰輸入框（帶 `lock` icon，type=password）
 
-3. **Channel Plugins 區塊** (SectionPanel)
-   - Icon: `message-circle` (藍), 標題: "Channel Plugins"
-   - 描述: "LINE and Discord plugin credentials for messaging integration"
-   - 2 行 Channel Row（帶品牌 icon + 名稱 + 描述 + Configured badge）:
-     - LINE: 綠底 "L" icon (`#06C755`)，描述 "Channel Access Token + Secret configured above · Webhook URL via ngrok"
-     - Discord: 紫底 "D" icon (`#5865F2`)，描述 "Bot Token configured above · DM policy: open, Group: allowlist"
+3. **Channels 區塊** (SectionPanel)
+   - Icon: `message-circle` (藍), 標題: "Channel Credentials"
+   - 描述: "Select messaging channels and enter credentials"
+   - **管道勾選清單**（水平 Flexbox，每個帶品牌色 icon）:
+     - LINE: 綠底 "L" (`#06C755`) → 展開 2 欄位: Channel Access Token + Channel Secret
+     - Discord: 紫底 "D" (`#5865F2`) → 展開 1 欄位: Bot Token (`DISCORD_BOT_TOKEN`)
+     - Telegram: 藍底 "T" (`#0088CC`) → 展開 1 欄位: Bot Token (`TELEGRAM_BOT_TOKEN`)
+     - Slack: 紫底 "S" (`#4A154B`) → 展開 2 欄位: Bot Token (`SLACK_BOT_TOKEN`) + App Token (`SLACK_APP_TOKEN`)
+     - WhatsApp: 綠底 "W" (`#25D366`) → 提示需在初始化後透過 `channels login` 配對
+     - 更多...（收合區，含 Matrix, Signal, Mattermost, Zalo, IRC 等）
+   - 每個已勾選管道顯示 "Configured" / "Not Configured" badge
 
-4. **Security Note** — 底部安全提示
+4. **Tools 區塊** (SectionPanel, 預設收合)
+   - Icon: `wrench` (teal), 標題: "Tool API Keys"
+   - 描述: "Optional — enable search, speech, and web scraping tools"
+   - 展開後顯示金鑰輸入框:
+     - Brave Search (`BRAVE_API_KEY`)
+     - Perplexity (`PERPLEXITY_API_KEY`)
+     - Firecrawl (`FIRECRAWL_API_KEY`)
+     - ElevenLabs (`ELEVENLABS_API_KEY`)
+     - Deepgram (`DEEPGRAM_API_KEY`)
+
+5. **Security Note** — 底部安全提示
    - `shield-check` icon (紅) + 文字: "All keys are encrypted and stored securely using your operating system's credential manager (DPAPI / libsecret). Keys are never written to plain text files."
 
 5. **Action Bar**
@@ -343,18 +369,36 @@ await window.pywebview.api.save_config({ deployment_mode: "docker-windows" });
 **Bridge API 呼叫**:
 
 ```javascript
-// 儲存金鑰（逐一或批次，透過 keyring 安全儲存）
+// 取得可用的供應商與管道列表（從 openclaw/extensions/ 掃描）
+const providers = await window.pywebview.api.get_available_providers();
+// 回傳: [{name: "openai", env_var: "OPENAI_API_KEY", placeholder: "sk-..."}, ...]
+
+const channels = await window.pywebview.api.get_available_channels();
+// 回傳: [{name: "line", fields: [{key: "line_channel_access_token", label: "Channel Access Token"}, {key: "line_channel_secret", label: "Channel Secret"}], icon: "L", icon_color: "#06C755"}, ...]
+
+// 儲存金鑰（分類式，透過 keyring 安全儲存）
 await window.pywebview.api.save_keys({
-  line_channel_access_token: "...",
-  line_channel_secret: "...",
-  discord_bot_token: "...",
-  openai_api_key: "..."
+  providers: {
+    openai_api_key: "sk-...",
+    anthropic_api_key: "sk-ant-..."
+  },
+  channels: {
+    line_channel_access_token: "...",
+    line_channel_secret: "...",
+    discord_bot_token: "..."
+  },
+  tools: {
+    brave_api_key: "..."
+  }
 });
 ```
 
 **驗收標準**:
+- [ ] 進入頁面時呼叫 `get_available_providers()` / `get_available_channels()` 動態渲染可選項
 - [ ] 金鑰欄位以密碼模式顯示（可切換顯示/隱藏）
-- [ ] Channel Plugins 區塊根據上方金鑰填寫狀態自動顯示 "Configured" / "Not Configured" badge
+- [ ] 勾選供應商/管道後展開對應金鑰欄位，取消勾選後收合
+- [ ] Channel 區塊根據金鑰填寫狀態自動顯示 "Configured" / "Not Configured" badge
+- [ ] Tools 區塊預設收合，點擊標題展開
 - [ ] 點擊 "Back" 回到 Step 1（保留已填資料）
 - [ ] 點擊 "Next" 儲存金鑰至 keyring 後進入 Step 3
 
@@ -368,16 +412,24 @@ await window.pywebview.api.save_keys({
 
 2. **Initialization Progress 面板** (左側，flex: 1)
    - Icon: `loader` (紅), 標題: "Initialization Progress"
-   - 描述: "Running 6 steps to set up your environment"
-   - 6 個 ProgressItem 垂直列表（以 `1px` 分隔線間隔）:
-     1. "Create directory structure" — `.openclaw/agents/main/agent/, workspace/skills/`
-     2. "Generate openclaw.json" — `Gateway config: mode=local, bind=0.0.0.0`
-     3. "Store API keys via keyring" — `Credentials saved to system credential manager`
-     4. **依模式變化**:
-        - Docker 模式: "Start Docker Compose" — `docker compose up -d`
-        - Native 模式: "Start openclaw-gateway" — `systemctl start openclaw-gateway`
-     5. "Wait for Gateway ready" — `Health check on http://127.0.0.1:18789`
-     6. "Configure speech-to-text" — `Auto-enable whisper if OpenAI key detected`
+   - 描述: "Running 10 steps to set up your environment"（對齊 `openclaw/scripts/docker/setup.sh` 實際流程）
+   - **Docker 模式** — 10 個 ProgressItem 垂直列表（以 `1px` 分隔線間隔）:
+     1. "Validate environment" — `Checking Docker and Docker Compose availability`
+     2. "Create directory structure" — `~/.openclaw/identity/, agents/main/agent/, agents/main/sessions/`
+     3. "Generate gateway token" — `Reading from config or generating new token`
+     4. "Write environment file" — `.env with 16 variables (ports, paths, token, timezone)`
+     5. "Build/Pull Docker image" — `Building openclaw:local or pulling image`（⚠️ 最耗時步驟，需進度提示）
+     6. "Fix directory permissions" — `Setting ownership for container user`
+     7. "Run onboarding" — `openclaw onboard --mode local`
+     8. "Configure gateway" — `Set mode=local, bind, controlUi.allowedOrigins`
+     9. "Start gateway" — `docker compose up -d openclaw-gateway`
+     10. "Verify health" — `Health check on http://127.0.0.1:{port}/healthz`
+   - **Native Linux 模式** — 步驟 1/5/6/7 替換為:
+     1. "Validate environment" — `Checking Node.js, OpenClaw CLI, systemd availability`
+     5. *(略過 — 無 Docker image)*
+     6. *(略過 — 無 Docker 權限問題)*
+     7. "Run onboarding" — `openclaw onboard --mode local`
+     9. "Start gateway" — `systemctl start openclaw-gateway`
    - 狀態圖示:
      - Done: 綠底白勾圓圈 + "Done" 綠字
      - Running: 紅底白 loader 圓圈 + "Running..." 紅字
@@ -387,7 +439,7 @@ await window.pywebview.api.save_keys({
    - Icon: `layout-dashboard` (teal), 標題: "Dashboard Info"
    - 提示: "Available after Gateway is ready"（Gateway ready 前欄位為 disabled）
    - Dashboard URL: 唯讀顯示 `http://127.0.0.1:18789/`
-   - Access Token: 唯讀顯示（遮罩 `••••••••••••••••`）
+   - Access Token: 唯讀顯示 `OPENCLAW_GATEWAY_TOKEN`（遮罩 `••••••••••••••••`，附「複製」按鈕）
    - Device Pairing 區塊（分隔線後）:
      - 說明: "Open the Dashboard URL in your browser, then approve the pending device request."
      - "Approve Pending Device" Button/Secondary（帶 `smartphone` icon）
@@ -400,15 +452,20 @@ await window.pywebview.api.save_keys({
 **Bridge API 呼叫**:
 
 ```javascript
-// 啟動初始化（非同步，透過回呼更新進度）
+// 啟動初始化（非同步，透過回呼更新 10 步進度）
 await window.pywebview.api.initialize({
   mode: "docker-windows",
-  working_dir: ".openclaw",
-  gateway_bind: "0.0.0.0",
+  config_dir: "~/.openclaw",           // OPENCLAW_CONFIG_DIR
+  workspace_dir: "~/.openclaw/workspace", // OPENCLAW_WORKSPACE_DIR
+  gateway_bind: "lan",                 // OPENCLAW_GATEWAY_BIND
   gateway_mode: "local",
-  gateway_port: 18789
+  gateway_port: 18789,                 // OPENCLAW_GATEWAY_PORT
+  bridge_port: 18790,                  // OPENCLAW_BRIDGE_PORT
+  timezone: "Asia/Taipei",             // OPENCLAW_TZ
+  docker_image: "openclaw:local"       // OPENCLAW_IMAGE
 });
 // 進度更新透過 Bridge 回呼: window.updateInitProgress(step, status, message)
+// step: 1-10，對應 Initialization Progress 面板的 10 個步驟
 ```
 
 **驗收標準**:
@@ -545,7 +602,11 @@ function stopPolling() {
 
 3. **Skills Checklist 區塊** (SectionPanel)
    - Icon: `zap`（`accent-primary`）, 標題: "Available Skills"
-   - 描述: "Scanned from module_pack/ directory"
+   - 描述: "Scanned from module_pack/ (custom modules) and openclaw/skills/ (community skills)"
+   - **Tab 切換列**: 頂部，2 個 Tab:
+     - "Custom Modules"（來自 `module_pack/`，自訂業務模組）
+     - "Community Skills"（來自 `openclaw/skills/`，55+ 社群技能）
+   - 當前 Tab 以 `accent-primary` 底線高亮
    - **Select All 列**: 頂部，checkbox + "Select All" 文字 + 底部 `1px` 分隔線
    - **技能列表**: 垂直排列，每項以 `1px` 分隔線間隔，padding `14px 16px`
      - 每行結構（水平 Flexbox, align-items: center）:
@@ -579,13 +640,16 @@ function stopPolling() {
 **Bridge API 呼叫**:
 
 ```javascript
-// 進入頁面時載入技能清單
+// 進入頁面時載入技能清單（掃描兩個來源）
 const skills = await window.pywebview.api.list_skills();
 // 回傳: [
-//   {name: "google-search", emoji: "🔍", description: "Search the web using Google", installed: true},
-//   {name: "weather", emoji: "🌤️", description: "Get weather information", installed: false},
+//   {name: "google-search", emoji: "🔍", description: "Search the web using Google", installed: true, source: "community"},
+//   {name: "weather", emoji: "🌤️", description: "Get weather information", installed: false, source: "community"},
+//   {name: "booking", emoji: "📅", description: "Booking management module", installed: true, source: "module_pack"},
 //   ...
 // ]
+// source: "module_pack" = 自訂業務模組, "community" = openclaw/skills/ 社群技能
+// SKILL.md YAML frontmatter 提供 name, description, metadata.openclaw.emoji
 
 // 部署選取的技能（非同步，透過回呼更新進度）
 const result = await window.pywebview.api.deploy_skills(["weather", "calculator"]);
@@ -631,7 +695,13 @@ const result = await window.pywebview.api.remove_skills(["google-search"]);
 
 3. **Plugins Checklist 區塊** (SectionPanel)
    - Icon: `puzzle`（`accent-secondary`）, 標題: "Available Plugins"
-   - 描述: "Messaging and integration plugins for OpenClaw"
+   - 描述: "Extensions from openclaw/extensions/ — install by modifying openclaw.json plugins config"
+   - **分類 Tab 列**: 頂部，4 個 Tab:
+     - "Providers"（模型供應商: openai, anthropic, google, ollama, amazon-bedrock, openrouter, mistral, nvidia, together 等）
+     - "Channels"（通訊管道: line, discord, telegram, slack, whatsapp, matrix, signal, msteams, zalo, irc 等）
+     - "Tools"（工具: brave, perplexity, firecrawl, elevenlabs, tavily 等）
+     - "Infrastructure"（基礎設施: memory-core, memory-lancedb, diagnostics-otel, thread-ownership 等）
+   - 當前 Tab 以 `accent-secondary` 底線高亮
    - **Select All 列**: 頂部，checkbox + "Select All" 文字 + 底部 `1px` 分隔線
    - **外掛列表**: 垂直排列，每項以 `1px` 分隔線間隔，padding `14px 16px`
      - 每行結構（水平 Flexbox, align-items: center）:
@@ -667,13 +737,18 @@ const result = await window.pywebview.api.remove_skills(["google-search"]);
 **Bridge API 呼叫**:
 
 ```javascript
-// 進入頁面時載入外掛清單
+// 進入頁面時載入外掛清單（從 openclaw/extensions/ 掃描 openclaw.plugin.json）
 const plugins = await window.pywebview.api.list_plugins();
 // 回傳: [
-//   {name: "line-bot", description: "LINE messaging bot integration", installed: true, icon: "L", icon_color: "#06C755"},
-//   {name: "discord-bot", description: "Discord bot integration", installed: false, icon: "D", icon_color: "#5865F2"},
+//   {name: "openai", category: "provider", description: "OpenAI GPT models", installed: true, icon: "O", icon_color: "#10a37f", providers: ["openai", "openai-codex"]},
+//   {name: "line", category: "channel", description: "LINE messaging integration", installed: true, icon: "L", icon_color: "#06C755", channels: ["line"]},
+//   {name: "discord", category: "channel", description: "Discord bot integration", installed: false, icon: "D", icon_color: "#5865F2", channels: ["discord"]},
+//   {name: "brave", category: "tool", description: "Brave Search API", installed: false, icon: "B", icon_color: "#FB542B"},
+//   {name: "memory-core", category: "infrastructure", description: "Core memory system", installed: true, icon: "M", icon_color: "#838387"},
 //   ...
 // ]
+// category 由 openclaw.plugin.json 的 providers[]/channels[] 欄位推導
+// 安裝方式: 修改 openclaw.json 的 plugins.load.paths[] 與 plugins.installs 區段
 
 // 安裝選取的外掛（非同步，透過回呼更新進度）
 const result = await window.pywebview.api.install_plugins(["discord-bot"]);
@@ -800,7 +875,7 @@ const result = await window.pywebview.api.fix_all_plugins();
 
 | 前端選項 | 後端策略 | 服務控制 | Gateway CLI |
 | :--- | :--- | :--- | :--- |
-| Docker Windows | **Docker** | `docker compose up/down/restart` | `docker compose exec openclaw-gateway openclaw <cmd>` |
+| Docker Windows | **Docker** | `docker compose up/down/restart` | `docker compose run --rm openclaw-cli <cmd>` |
 | Docker Linux/WSL2 | **Docker** | 同上 | 同上 |
 | Native Linux (systemd) | **Native** | `systemctl start/stop/restart openclaw-gateway` | `openclaw <cmd>`（直接呼叫） |
 
@@ -885,3 +960,7 @@ window.updateFixProgress = function(pluginName, status, message) {
 | `diagnose_plugins()` | `plugin_manager.py` | `[{name, status, issues, icon, icon_color}]` |
 | `fix_plugins(names)` | `plugin_manager.py` | 透過回呼逐項回報，最終 `{success, fixed, failed}` |
 | `fix_all_plugins()` | `plugin_manager.py` | 透過回呼逐項回報，最終 `{success, fixed, failed}` |
+| `get_available_providers()` | `plugin_manager.py` | `[{name, env_var, placeholder}]` — 從 extensions 取得可用供應商列表 |
+| `get_available_channels()` | `plugin_manager.py` | `[{name, fields: [{key, label}], icon, icon_color}]` — 從 extensions 取得可用管道列表 |
+| `get_openclaw_config()` | `config_manager.py` | `{meta, agents, channels, gateway, plugins, ...}` — 讀取 openclaw.json |
+| `save_openclaw_config(section, data)` | `config_manager.py` | `{success}` — 寫入 openclaw.json 指定區段（deep merge） |
