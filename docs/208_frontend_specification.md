@@ -166,6 +166,17 @@ Root (SPA - Single Page Application)
   | `docker-windows` | Docker · Windows |
   | `docker-linux` | Docker · Linux/WSL2 |
   | `native-linux` | Native · Linux (systemd) |
+  | `remote-ssh` | Remote · SSH |
+- **連線狀態指示燈**（僅 `remote-ssh` 模式顯示，位於版本資訊上方）:
+  | 狀態 | 圓點色 | 文字 | 說明 |
+  | :--- | :--- | :--- | :--- |
+  | Connected | `status-success` (#22c55e) | "Connected" | SSH 連線正常 |
+  | Disconnected | `status-error` (#ef4444) | "Disconnected" | 未連線或連線已斷開 |
+  | Connecting | `accent-secondary` (#14b8a6) | "Connecting..." | 正在建立 SSH 連線 |
+  | Error | `status-error` (#ef4444) | "Connection Error" | 連線失敗（認證錯誤等） |
+  - 格式：8px 圓點 + 文字 (11px, 400)，水平排列，gap 6px
+  - 點擊可觸發 `get_connection_status()` 查詢最新狀態
+  - 連線中斷時圓點以 pulse 動畫閃爍提示
 - **Active 狀態**: 背景 `#1f1318`，邊框 `#ff5c5c30`，icon 變 `accent-primary`，文字變 `text-primary` + `font-weight: 600`
 - **Hover 狀態**: 背景微亮（`bg-card` 色調）
 - **Sidebar 邊框**: 右側 `1px solid border-default`
@@ -268,11 +279,27 @@ const result = await window.pywebview.api.check_env();
 
 3. **Deployment Mode 區塊** (SectionPanel)
    - Icon: `monitor` (紅), 標題: "Deployment Mode"
-   - 3 個 Radio Card 水平排列：
+   - 4 個 Radio Card（2×2 Grid，`grid-cols-2 gap-3`）：
      - **Docker Windows** (預設選中): 紅色邊框 `2px`，內有勾選圓圈（紅底白勾）
      - **Docker Linux/WSL2**: teal 邊框 `1px`，空心圓圈
      - **Native Linux (systemd)**: 灰色邊框 `1px`，空心圓圈
+     - **Remote Server (SSH)**: 紫色邊框 `1px`（`#8b5cf6`），空心圓圈，icon: `cloud`
    - 每張卡片含: icon + 模式名稱 + 描述文字
+
+4. **SSH Connection 區塊** (SectionPanel，**僅當 Deployment Mode = `remote-ssh` 時顯示**)
+   - Icon: `terminal` (紫 `#8b5cf6`), 標題: "SSH Connection"
+   - 描述: "Connect to your remote server via SSH"
+   - 2×2 表單 Grid (`grid-cols-2 gap-4`):
+     - Row 1: Host (`placeholder: 192.168.1.100`, **required**) + Port (`placeholder: 22`, type=number, default=22)
+     - Row 2: Username (`placeholder: ubuntu`, **required**) + SSH Key File (`Browse` 按鈕，file picker，`placeholder: ~/.ssh/id_rsa`)
+   - **Password 備用** (預設隱藏): 文字連結 "Use password instead" 切換顯示 Password 欄位（type=password）
+   - **Test Connection 按鈕** (`Button/Secondary`，帶 `wifi` icon):
+     - 點擊後呼叫 `test_connection()` Bridge API
+     - 按鈕右側顯示 inline 狀態 badge:
+       - 測試中: `Connecting...`（橙色，帶 spinner）
+       - 成功: `Connected — Ubuntu 22.04, 4 cores, 8GB`（綠色 badge）
+       - 失敗: `Connection failed: reason`（紅色 badge）
+   - **Next 按鈕**: 當 Deployment Mode = `remote-ssh` 時，需 SSH 測試通過（`test_connection` 成功）才啟用
 
 4. **Gateway & Directory 區塊** (SectionPanel)
    - Icon: `globe` (teal), 標題: "Gateway & Directory"
@@ -308,12 +335,30 @@ const platform = await window.pywebview.api.detect_platform();
 ```javascript
 // 持久化模式選擇
 await window.pywebview.api.save_config({ deployment_mode: "docker-windows" });
+
+// SSH 連線測試（僅 remote-ssh 模式）
+const result = await window.pywebview.api.test_connection({
+  host: "192.168.1.100", port: 22,
+  username: "ubuntu", key_file: "~/.ssh/id_rsa"
+});
+// 回傳: { success: true, server_info: { os, cpu_cores, memory_gb, disk_gb } }
+
+// SSH 連線建立（Step 1 完成後自動呼叫）
+await window.pywebview.api.connect_remote({
+  host: "192.168.1.100", port: 22,
+  username: "ubuntu", key_file: "~/.ssh/id_rsa"
+});
+// 回傳: { success: true, server_info: { ... } }
 ```
 
 **驗收標準**:
-- [ ] Deployment Mode 三選一 Radio Card，點擊切換
+- [ ] Deployment Mode 四選一 Radio Card（2×2 Grid），點擊切換
 - [ ] 已有 `current_mode` 時以其為預設選中；否則以 `suggested_mode` 為預設
 - [ ] 切換模式後即時持久化並更新 Sidebar footer
+- [ ] 選擇 "Remote Server (SSH)" 時動態顯示 SSH Connection 區塊
+- [ ] SSH Connection 表單驗證：Host 與 Username 為必填
+- [ ] Test Connection 按鈕顯示 inline 測試結果 badge
+- [ ] 當 `remote-ssh` 模式時，Next 按鈕需 SSH 測試通過才啟用
 - [ ] Gateway 欄位有合理預設值（從 Bridge 取得或硬編碼）
 - [ ] 點擊 "Next" 驗證必填欄位後進入 Step 2
 
@@ -871,21 +916,24 @@ const result = await window.pywebview.api.fix_all_plugins();
 
 ### 5.0 部署模式與後端分流 (Deployment Mode Strategy)
 
-應用程式支援 3 種部署模式，前端選項對應 2 種後端策略：
+應用程式支援 4 種部署模式，前端選項對應 3 種後端策略：
 
 | 前端選項 | 後端策略 | 服務控制 | Gateway CLI |
 | :--- | :--- | :--- | :--- |
 | Docker Windows | **Docker** | `docker compose up/down/restart` | `docker compose run --rm openclaw-cli <cmd>` |
 | Docker Linux/WSL2 | **Docker** | 同上 | 同上 |
 | Native Linux (systemd) | **Native** | `systemctl start/stop/restart openclaw-gateway` | `openclaw <cmd>`（直接呼叫） |
+| Remote Server (SSH) | **Remote** | 透過 `RemoteExecutor` 在遠端執行 `systemctl` 指令 | 透過 SSH 在遠端執行 `openclaw <cmd>` |
 
-**模式持久化**: 使用者選擇的模式儲存於 `{project_root}/.openclaw/gui-settings.json`（與 `openclaw.json` 分開），所有後端 API 自動讀取此設定決定分流邏輯，前端不需在每次 API 呼叫傳遞 mode 參數。
+**模式持久化**: 使用者選擇的模式儲存於 `{project_root}/.openclaw/gui-settings.json`（與 `openclaw.json` 分開），所有後端 API 自動讀取此設定決定分流邏輯，前端不需在每次 API 呼叫傳遞 mode 參數。Remote SSH 模式額外儲存 `ssh_host`, `ssh_port`, `ssh_username`, `ssh_key_file` 欄位。
 
 **影響範圍**:
-- `check_env()`: Docker 模式檢查 4 項（Docker, Docker Desktop, VS Code, ngrok），Native 模式檢查 6 項（Node.js, OpenClaw CLI, jq, VS Code, ngrok, systemd）
-- `initialize()`: Step 4 服務啟動指令不同
-- `start_service()` / `stop_service()` / `restart_service()`: 控制指令不同
-- `get_service_status()`: 查詢方式不同（`docker compose ps` vs `systemctl is-active`）
+- `check_env()`: Docker 模式檢查 4 項（Docker, Docker Desktop, VS Code, ngrok），Native 模式檢查 6 項（Node.js, OpenClaw CLI, jq, VS Code, ngrok, systemd），Remote 模式透過 SSH 在遠端執行 Native 模式檢查
+- `initialize()`: Step 4 服務啟動指令不同；Remote 模式透過 SSH 在遠端建立目錄、寫入 `.env`、啟動服務
+- `start_service()` / `stop_service()` / `restart_service()`: 控制指令不同；Remote 模式透過 `RemoteExecutor` 路由至遠端
+- `get_service_status()`: 查詢方式不同（`docker compose ps` vs `systemctl is-active`）；Remote 模式透過 SSH 查詢遠端狀態
+- `deploy_skills()`: Remote 模式使用 `TransferService` 將本機 `module_pack/` 透過 SFTP 上傳至遠端
+- `connect_remote()` / `disconnect_remote()` / `get_connection_status()`: 僅 Remote 模式使用，管理 SSH 連線生命週期
 
 ### 5.1 通訊機制
 
@@ -927,6 +975,12 @@ window.updatePluginProgress = function(pluginName, status, message) {
 window.updateFixProgress = function(pluginName, status, message) {
   // 更新 Fix Plugins 的 Fix Progress Overlay 狀態
 };
+
+window.updateConnectionStatus = function(status, message) {
+  // 更新 Sidebar 連線狀態指示燈與 SSH 連線狀態
+  // status: "connected" | "disconnected" | "connecting" | "error"
+  // message: 連線資訊或錯誤描述
+};
 ```
 
 ### 5.3 錯誤處理
@@ -937,6 +991,9 @@ window.updateFixProgress = function(pluginName, status, message) {
 | `PERMISSION` | 顯示權限不足提示（如「請以系統管理員身分執行」） |
 | `NOT_FOUND` | 顯示缺失軟體提示，導引至 Environment 頁面 |
 | `INTERNAL` | 顯示通用錯誤訊息卡片，提供「重試」按鈕 |
+| `CONNECTION_LOST` | 頂部紅色警示條（persistent banner）："SSH connection lost — reconnecting..."；Sidebar 指示燈切換至 `error` 狀態；自動重連 3 次（指數退避 2/4/8s），失敗後顯示「Reconnect」按鈕 |
+| `AUTH_FAILED` | SSH 認證失敗提示卡片："Authentication failed — please check your credentials"；導引回 Configuration Step 1 SSH Connection 表單 |
+| `SFTP_TIMEOUT` | SFTP 傳輸逾時提示卡片："File transfer timed out"；提供「重試 (Retry)」與「跳過 (Skip)」兩個按鈕 |
 
 ### 5.4 Bridge API 清單
 
@@ -964,3 +1021,7 @@ window.updateFixProgress = function(pluginName, status, message) {
 | `get_available_channels()` | `plugin_manager.py` | `[{name, fields: [{key, label}], icon, icon_color}]` — 從 extensions 取得可用管道列表 |
 | `get_openclaw_config()` | `config_manager.py` | `{meta, agents, channels, gateway, plugins, ...}` — 讀取 openclaw.json |
 | `save_openclaw_config(section, data)` | `config_manager.py` | `{success}` — 寫入 openclaw.json 指定區段（deep merge） |
+| `connect_remote(params)` | `ssh_connection.py` | `{success, server_info: {os, cpu_cores, memory_gb, disk_gb}}` — 建立 SSH 連線並初始化 RemoteExecutor |
+| `disconnect_remote()` | `ssh_connection.py` | `{success}` — 中斷 SSH 連線並釋放資源 |
+| `get_connection_status()` | `ssh_connection.py` | `{connected, status, host, uptime}` — 查詢當前 SSH 連線狀態 |
+| `test_connection(params)` | `ssh_connection.py` | `{success, server_info: {os, cpu_cores, memory_gb, disk_gb}}` — 測試 SSH 連線（不持久化） |

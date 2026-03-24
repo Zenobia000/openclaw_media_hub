@@ -4,7 +4,7 @@
 
 **版本:** `v2.0`
 **狀態:** `草案`
-**變更依據:** `ADR-003` — 廢棄 Shell 腳本，改以原生 Python 實作所有操作邏輯
+**變更依據:** `ADR-003` — 廢棄 Shell 腳本，改以原生 Python 實作所有操作邏輯; `ADR-004` — SSH 遠端管理 Transport Layer
 
 ---
 
@@ -26,6 +26,7 @@
 | **US-004** | **身為** 開發者, **我想要** 應用程式採用 PyWebView 與 PyInstaller 技術, **以便** 能結合現代前端 Web UI 且方便打包發布。 | 1. 前端使用 HTML/JS/CSS，搭配 Tailwind CSS 作為樣式框架。<br>2. 後端使用 Python (PyWebView Bridge 模式) 以原生邏輯處理所有操作。<br>3. 提供 `build.py` 或指令以 PyInstaller 進行跨平台或單一平台打包。 |
 | **US-005** | **身為** 使用者, **我想要** 透過介面一鍵部署技能模組 (Skills), **以便** 不需手動在命令列操作。                           | 1. 提供「部署技能 (Deploy Skills)」勾選清單介面，區分兩種來源：`module_pack/`（自訂業務模組）與 `openclaw/skills/`（55+ 社群技能）。<br>2. 以 Python 原生邏輯掃描技能模組、解析 SKILL.md YAML frontmatter（name, description, emoji）、部署至 `~/.openclaw/workspace/skills/` 或移除。<br>3. 於畫面以結構化清單呈現部署進度與結果。 |
 | **US-006** | **身為** 使用者, **我想要** 透過介面安裝外掛模組 (Plugins), **以便** 不需手動在命令列操作。                               | 1. 提供「安裝外掛 (Install Plugins)」分類勾選清單介面，外掛對應 `openclaw/extensions/`（76+ 擴充套件），按類型分組（Model Providers / Channels / Tools / Infrastructure）。<br>2. 以 Python 原生邏輯讀取 `openclaw.plugin.json` 取得外掛資訊，安裝方式為修改 `openclaw.json` 的 `plugins` 區段（config-driven），非檔案複製。<br>3. 於畫面以結構化清單呈現安裝進度與結果。 |
+| **US-007** | **身為** 使用者, **我想要** 從本機 GUI 透過 SSH 連線管理部署於雲端 VM 的 OpenClaw 實例, **以便** 不需要手動 SSH 進入伺服器操作命令列。 | 1. Configuration Step 1 提供第 4 種部署模式「Remote Server (SSH)」。<br>2. 選擇後顯示 SSH 連線表單（host、port、username、key file），點擊「Test Connection」驗證連通性。<br>3. 連線成功後，所有操作頁面（環境檢查、初始化、技能部署、服務控制等）透過 SSH 在遠端執行，UI 體驗與本機模式一致。<br>4. Sidebar 顯示連線狀態指示燈（已連線/未連線/連線中）。<br>5. 金鑰儲存於本機 keyring，初始化時透過 SSH 寫入遠端 `.env` (ADR-004)。 |
 
 ## 3. 專案範圍 (Scope)
 
@@ -35,8 +36,10 @@
   - 支援 openclaw `onboard` 與 `configure` CLI 指令的 GUI 等價流程。
   - 動態 API 金鑰表單（根據使用者選擇的供應商與管道顯示對應欄位）。
   - PyInstaller 打包配置支援。
+  - SSH 遠端管理：使用者可從本機 GUI 透過 SSH 連線管理部署於雲端 VM 的 OpenClaw 實例。Transport Abstraction Layer（`Executor` Protocol）統一本機與遠端操作介面，非雲端自動部署 (ADR-004)。
 - **不包含 (Out of Scope)**:
-  - 雲端自動遠端部署功能（目前維持本地操作）。
+  - 雲端自動部署（CI/CD pipeline、Terraform/Ansible 自動化佈建）。
+  - 多伺服器同時管理（v1.0 僅支援單一遠端連線）。
 - **限制條件 (Constraints)**:
   - 必須採用 PyWebView 與其 Bridge 模式進行前後端通訊。
   - 所有操作邏輯以 Python 原生實作，跨平台差異由 Python 標準庫處理（`pathlib`, `shutil`, `platform`）(ADR-003)。
@@ -49,3 +52,5 @@
   - **決議:** 啟動與停止沒有專屬腳本，依據環境直接控制：Docker 環境使用 `docker-compose up -d` / `docker-compose down` 起停；Linux 原生環境使用 `systemctl start/stop` 起停；Windows 原生環境使用背景程序管理 (`Start-Process` / `Stop-Process`) 起停。
 - [ ] GUI 是否需要支援 `openclaw channels login`（WhatsApp QR 登入）和 `openclaw channels add`（Telegram/Discord token 新增）的等價功能？
   - **背景:** Docker 設定流程結束後，setup.sh 會提示使用者手動執行 `docker compose run --rm openclaw-cli channels login`（WhatsApp）或 `channels add --channel telegram --token "<token>"`。GUI 是否需要整合這些管道註冊流程？
+- [ ] SSH 遠端模式下，技能部署需要將本機 `module_pack/` 目錄上傳至遠端伺服器。若自訂業務模組體積較大（例如包含二進位資產），是否需要設定上傳大小限制或提供進度百分比回饋？
+  - **背景:** `RemoteExecutor` 透過 SFTP 遞迴上傳目錄，paramiko 無原生 `copytree`，需手動實作。大檔案傳輸可能導致 UI 長時間無回饋 (ADR-004)。

@@ -24,138 +24,150 @@
               "height": "fit_content"
             },
             "aSBxR": {
-              "x": 20,
-              "y": 24
+              "x": 16,
+              "y": 20
             },
             "u50YC": {
-              "x": 6,
-              "y": 8
+              "x": 7.5,
+              "y": 9.5
             },
             "fX9GX": {
-              "x": 62,
-              "y": 30.5
+              "x": 60,
+              "y": 28
             },
             "HnHLc": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 80
+              "y": 74
             },
             "qQHnO": {
-              "x": 20,
-              "y": 12
+              "x": 16,
+              "y": 16
             },
             "2Ew7K": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 108
+              "y": 109
             },
             "n5c7q": {
               "width": "fill_container",
-              "x": 12
+              "x": 8
             },
             "hwpJ4": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "dtyVy": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "QJmdN": {
               "width": "fill_container",
-              "x": 12,
-              "y": 38
+              "x": 8,
+              "y": 44
             },
             "RuQOA": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "7QlNK": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "jx9yy": {
               "width": "fill_container",
-              "x": 12,
-              "y": 76
+              "x": 8,
+              "y": 88
             },
             "O2kf1": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "zsx8z": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "KOGPq": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 220
+              "y": 237
             },
             "6bA9Q": {
-              "x": 20,
-              "y": 16
+              "x": 16,
+              "y": 20
             },
             "vGgDK": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 252
+              "y": 276
             },
             "bsTRX": {
               "width": "fill_container",
-              "x": 12
+              "x": 8
             },
             "H8Xy5": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "RuDyK": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "G9Kdv": {
               "width": "fill_container",
-              "x": 12,
-              "y": 38
+              "x": 8,
+              "y": 44
             },
             "rjsTQ": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "46HPZ": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "Lwej7": {
               "width": "fill_container",
-              "x": 12,
-              "y": 76
+              "x": 8,
+              "y": 88
             },
             "SzKqr": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "gCY9R": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "bhmxx": {
               "width": "fill_container",
               "height": "fill_container",
-              "y": 364
+              "y": 404
             },
             "dQvMX": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 740
+              "y": 717
             },
             "gFYxI": {
-              "x": 20,
+              "x": 16,
               "y": 16
             },
+            "OGHqu": {
+              "width": "fill_container",
+              "x": 16,
+              "y": 35,
+              "height": "fit_content"
+            },
+            "IkjwR": {
+              "y": 2.5
+            },
+            "0KRBt": {
+              "x": 14
+            },
             "FPKNH": {
-              "x": 20,
-              "y": 31
+              "x": 16,
+              "y": 54
             }
           }
         },
@@ -167,8 +179,13 @@
           "width": "fill_container",
           "height": "fill_container",
           "layout": "vertical",
-          "gap": 24,
-          "padding": 32,
+          "gap": 20,
+          "padding": [
+            20,
+            24,
+            32,
+            24
+          ],
           "children": [
             {
               "type": "frame",
@@ -192,8 +209,9 @@
                       "fill": "$text-primary",
                       "content": "Dashboard",
                       "fontFamily": "Inter",
-                      "fontSize": 24,
-                      "fontWeight": "700"
+                      "fontSize": 22,
+                      "fontWeight": "650",
+                      "letterSpacing": -0.7
                     },
                     {
                       "type": "text",
@@ -202,8 +220,9 @@
                       "fill": "$text-secondary",
                       "content": "Monitor and control your OpenClaw services",
                       "fontFamily": "Inter",
-                      "fontSize": 14,
-                      "fontWeight": "normal"
+                      "fontSize": 13.5,
+                      "fontWeight": "normal",
+                      "letterSpacing": -0.1
                     }
                   ]
                 },
@@ -212,15 +231,15 @@
                   "id": "c6ha7",
                   "name": "statusBadge",
                   "fill": "#22c55e18",
-                  "cornerRadius": 12,
+                  "cornerRadius": "$radius-full",
                   "stroke": {
                     "thickness": 1,
                     "fill": "#22c55e40"
                   },
                   "gap": 6,
                   "padding": [
-                    4,
-                    10
+                    5,
+                    11
                   ],
                   "alignItems": "center",
                   "children": [
@@ -229,8 +248,8 @@
                       "id": "vZRlA",
                       "name": "statusDot",
                       "fill": "$status-success",
-                      "width": 8,
-                      "height": 8
+                      "width": 7,
+                      "height": 7
                     },
                     {
                       "type": "text",
@@ -240,7 +259,7 @@
                       "content": "Running",
                       "fontFamily": "Inter",
                       "fontSize": 12,
-                      "fontWeight": "600"
+                      "fontWeight": "500"
                     }
                   ]
                 }
@@ -251,7 +270,7 @@
               "id": "7j30P",
               "name": "stats-row",
               "width": "fill_container",
-              "gap": 16,
+              "gap": 12,
               "children": [
                 {
                   "type": "frame",
@@ -259,14 +278,14 @@
                   "name": "StatCard/Services",
                   "width": "fill_container",
                   "fill": "$bg-card",
-                  "cornerRadius": "$radius-md",
+                  "cornerRadius": "$radius-lg",
                   "stroke": {
                     "thickness": 1,
                     "fill": "$border-default"
                   },
                   "layout": "vertical",
-                  "gap": 12,
-                  "padding": 20,
+                  "gap": 10,
+                  "padding": 18,
                   "children": [
                     {
                       "type": "frame",
@@ -333,18 +352,20 @@
                       "fill": "$text-primary",
                       "content": "1/1",
                       "fontFamily": "Inter",
-                      "fontSize": 28,
-                      "fontWeight": "700"
+                      "fontSize": 24,
+                      "fontWeight": "700",
+                      "letterSpacing": -0.7
                     },
                     {
                       "type": "text",
                       "id": "y3CZf",
                       "name": "card1desc",
-                      "fill": "$text-secondary",
+                      "fill": "$text-muted",
                       "content": "Services Running",
                       "fontFamily": "Inter",
-                      "fontSize": 13,
-                      "fontWeight": "normal"
+                      "fontSize": 11,
+                      "fontWeight": "500",
+                      "letterSpacing": 0.4
                     }
                   ]
                 },
@@ -354,14 +375,14 @@
                   "name": "StatCard/Uptime",
                   "width": "fill_container",
                   "fill": "$bg-card",
-                  "cornerRadius": "$radius-md",
+                  "cornerRadius": "$radius-lg",
                   "stroke": {
                     "thickness": 1,
                     "fill": "$border-default"
                   },
                   "layout": "vertical",
-                  "gap": 12,
-                  "padding": 20,
+                  "gap": 10,
+                  "padding": 18,
                   "children": [
                     {
                       "type": "frame",
@@ -393,18 +414,20 @@
                       "fill": "$text-primary",
                       "content": "2h 35m",
                       "fontFamily": "Inter",
-                      "fontSize": 28,
-                      "fontWeight": "700"
+                      "fontSize": 24,
+                      "fontWeight": "700",
+                      "letterSpacing": -0.7
                     },
                     {
                       "type": "text",
                       "id": "28wrU",
                       "name": "card2desc",
-                      "fill": "$text-secondary",
+                      "fill": "$text-muted",
                       "content": "Uptime",
                       "fontFamily": "Inter",
-                      "fontSize": 13,
-                      "fontWeight": "normal"
+                      "fontSize": 11,
+                      "fontWeight": "500",
+                      "letterSpacing": 0.4
                     }
                   ]
                 },
@@ -414,14 +437,14 @@
                   "name": "StatCard/Skills",
                   "width": "fill_container",
                   "fill": "$bg-card",
-                  "cornerRadius": "$radius-md",
+                  "cornerRadius": "$radius-lg",
                   "stroke": {
                     "thickness": 1,
                     "fill": "$border-default"
                   },
                   "layout": "vertical",
-                  "gap": 12,
-                  "padding": 20,
+                  "gap": 10,
+                  "padding": 18,
                   "children": [
                     {
                       "type": "frame",
@@ -453,18 +476,20 @@
                       "fill": "$text-primary",
                       "content": "5",
                       "fontFamily": "Inter",
-                      "fontSize": 28,
-                      "fontWeight": "700"
+                      "fontSize": 24,
+                      "fontWeight": "700",
+                      "letterSpacing": -0.7
                     },
                     {
                       "type": "text",
                       "id": "op4U3",
                       "name": "card3desc",
-                      "fill": "$text-secondary",
+                      "fill": "$text-muted",
                       "content": "Skills Deployed",
                       "fontFamily": "Inter",
-                      "fontSize": 13,
-                      "fontWeight": "normal"
+                      "fontSize": 11,
+                      "fontWeight": "500",
+                      "letterSpacing": 0.4
                     }
                   ]
                 },
@@ -474,14 +499,14 @@
                   "name": "StatCard/Plugins",
                   "width": "fill_container",
                   "fill": "$bg-card",
-                  "cornerRadius": "$radius-md",
+                  "cornerRadius": "$radius-lg",
                   "stroke": {
                     "thickness": 1,
                     "fill": "$border-default"
                   },
                   "layout": "vertical",
-                  "gap": 12,
-                  "padding": 20,
+                  "gap": 10,
+                  "padding": 18,
                   "children": [
                     {
                       "type": "frame",
@@ -513,18 +538,20 @@
                       "fill": "$text-primary",
                       "content": "3",
                       "fontFamily": "Inter",
-                      "fontSize": 28,
-                      "fontWeight": "700"
+                      "fontSize": 24,
+                      "fontWeight": "700",
+                      "letterSpacing": -0.7
                     },
                     {
                       "type": "text",
                       "id": "Ox6OD",
                       "name": "card4desc",
-                      "fill": "$text-secondary",
+                      "fill": "$text-muted",
                       "content": "Plugins Installed",
                       "fontFamily": "Inter",
-                      "fontSize": 13,
-                      "fontWeight": "normal"
+                      "fontSize": 11,
+                      "fontWeight": "500",
+                      "letterSpacing": 0.4
                     }
                   ]
                 }
@@ -536,7 +563,7 @@
               "name": "bottomRow",
               "width": "fill_container",
               "height": "fill_container",
-              "gap": 24,
+              "gap": 16,
               "children": [
                 {
                   "type": "frame",
@@ -544,14 +571,14 @@
                   "name": "ServiceControl",
                   "width": "fill_container",
                   "fill": "$bg-card",
-                  "cornerRadius": "$radius-md",
+                  "cornerRadius": "$radius-lg",
                   "stroke": {
                     "thickness": 1,
                     "fill": "$border-default"
                   },
                   "layout": "vertical",
-                  "gap": 16,
-                  "padding": 24,
+                  "gap": 14,
+                  "padding": 20,
                   "children": [
                     {
                       "type": "frame",
@@ -565,10 +592,10 @@
                           "type": "frame",
                           "id": "CWMwn",
                           "name": "svcIconWrap",
-                          "width": 28,
-                          "height": 28,
+                          "width": 30,
+                          "height": 30,
                           "fill": "#ff5c5c18",
-                          "cornerRadius": "$radius-sm",
+                          "cornerRadius": 8,
                           "justifyContent": "center",
                           "alignItems": "center",
                           "children": [
@@ -591,8 +618,9 @@
                           "fill": "$text-primary",
                           "content": "Service Control",
                           "fontFamily": "Inter",
-                          "fontSize": 16,
-                          "fontWeight": "600"
+                          "fontSize": 15,
+                          "fontWeight": "600",
+                          "letterSpacing": -0.3
                         }
                       ]
                     },
@@ -604,7 +632,8 @@
                       "content": "Start or stop the OpenClaw service stack",
                       "fontFamily": "Inter",
                       "fontSize": 13,
-                      "fontWeight": "normal"
+                      "fontWeight": "normal",
+                      "letterSpacing": -0.1
                     },
                     {
                       "type": "frame",
@@ -648,7 +677,8 @@
                               "content": "Gateway",
                               "fontFamily": "Inter",
                               "fontSize": 13,
-                              "fontWeight": "500"
+                              "fontWeight": "500",
+                              "letterSpacing": -0.1
                             },
                             {
                               "type": "frame",
@@ -662,7 +692,7 @@
                               "id": "ulaKU",
                               "name": "svcR1badge",
                               "fill": "#22c55e18",
-                              "cornerRadius": 10,
+                              "cornerRadius": "$radius-full",
                               "gap": 4,
                               "padding": [
                                 2,
@@ -706,15 +736,15 @@
                           "id": "O9lGT",
                           "name": "btnRestart",
                           "fill": "$bg-input",
-                          "cornerRadius": "$radius-sm",
+                          "cornerRadius": "$radius-md",
                           "stroke": {
                             "thickness": 1,
                             "fill": "$border-default"
                           },
                           "gap": 8,
                           "padding": [
-                            10,
-                            16
+                            9,
+                            14
                           ],
                           "alignItems": "center",
                           "children": [
@@ -735,8 +765,9 @@
                               "fill": "$text-secondary",
                               "content": "Restart Services",
                               "fontFamily": "Inter",
-                              "fontSize": 14,
-                              "fontWeight": "500"
+                              "fontSize": 13,
+                              "fontWeight": "500",
+                              "letterSpacing": -0.1
                             }
                           ]
                         },
@@ -745,11 +776,11 @@
                           "id": "IBIJ4",
                           "name": "btnStop",
                           "fill": "$status-error",
-                          "cornerRadius": "$radius-sm",
+                          "cornerRadius": "$radius-md",
                           "gap": 8,
                           "padding": [
-                            10,
-                            16
+                            9,
+                            14
                           ],
                           "alignItems": "center",
                           "children": [
@@ -770,8 +801,9 @@
                               "fill": "$text-on-accent",
                               "content": "Stop Services",
                               "fontFamily": "Inter",
-                              "fontSize": 14,
-                              "fontWeight": "500"
+                              "fontSize": 13,
+                              "fontWeight": "500",
+                              "letterSpacing": -0.1
                             }
                           ]
                         }
@@ -785,14 +817,14 @@
                   "name": "QuickActions",
                   "width": "fill_container",
                   "fill": "$bg-card",
-                  "cornerRadius": "$radius-md",
+                  "cornerRadius": "$radius-lg",
                   "stroke": {
                     "thickness": 1,
                     "fill": "$border-default"
                   },
                   "layout": "vertical",
-                  "gap": 16,
-                  "padding": 24,
+                  "gap": 14,
+                  "padding": 20,
                   "children": [
                     {
                       "type": "frame",
@@ -806,10 +838,10 @@
                           "type": "frame",
                           "id": "Hlcya",
                           "name": "qaIconWrap",
-                          "width": 28,
-                          "height": 28,
+                          "width": 30,
+                          "height": 30,
                           "fill": "#14b8a618",
-                          "cornerRadius": "$radius-sm",
+                          "cornerRadius": 8,
                           "justifyContent": "center",
                           "alignItems": "center",
                           "children": [
@@ -832,8 +864,9 @@
                           "fill": "$text-primary",
                           "content": "Quick Actions",
                           "fontFamily": "Inter",
-                          "fontSize": 16,
-                          "fontWeight": "600"
+                          "fontSize": 15,
+                          "fontWeight": "600",
+                          "letterSpacing": -0.3
                         }
                       ]
                     },
@@ -845,7 +878,8 @@
                       "content": "Navigate to common tasks",
                       "fontFamily": "Inter",
                       "fontSize": 13,
-                      "fontWeight": "normal"
+                      "fontWeight": "normal",
+                      "letterSpacing": -0.1
                     },
                     {
                       "type": "frame",
@@ -853,15 +887,15 @@
                       "name": "qaCards",
                       "width": "fill_container",
                       "layout": "vertical",
-                      "gap": 10,
+                      "gap": 8,
                       "children": [
                         {
                           "type": "frame",
                           "id": "T8Bkj",
                           "name": "qa1",
                           "width": "fill_container",
-                          "fill": "$bg-input",
-                          "cornerRadius": "$radius-sm",
+                          "fill": "$bg-elevated",
+                          "cornerRadius": "$radius-md",
                           "gap": 12,
                           "padding": 14,
                           "alignItems": "center",
@@ -923,8 +957,8 @@
                           "id": "0GTnz",
                           "name": "qa2",
                           "width": "fill_container",
-                          "fill": "$bg-input",
-                          "cornerRadius": "$radius-sm",
+                          "fill": "$bg-elevated",
+                          "cornerRadius": "$radius-md",
                           "gap": 12,
                           "padding": 14,
                           "alignItems": "center",
@@ -986,8 +1020,8 @@
                           "id": "YVOtF",
                           "name": "qa3",
                           "width": "fill_container",
-                          "fill": "$bg-input",
-                          "cornerRadius": "$radius-sm",
+                          "fill": "$bg-elevated",
+                          "cornerRadius": "$radius-md",
                           "gap": 12,
                           "padding": 14,
                           "alignItems": "center",
@@ -1077,30 +1111,30 @@
               "height": "fit_content"
             },
             "aSBxR": {
-              "x": 20,
-              "y": 24
+              "x": 16,
+              "y": 20
             },
             "u50YC": {
-              "x": 6,
-              "y": 8
+              "x": 7.5,
+              "y": 9.5
             },
             "fX9GX": {
-              "x": 62,
-              "y": 30.5
+              "x": 60,
+              "y": 28
             },
             "HnHLc": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 80
+              "y": 74
             },
             "qQHnO": {
-              "x": 20,
-              "y": 12
+              "x": 16,
+              "y": 16
             },
             "2Ew7K": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 108
+              "y": 109
             },
             "n5c7q": {
               "fill": "#00000000",
@@ -1108,31 +1142,31 @@
                 "thickness": 0
               },
               "width": "fill_container",
-              "x": 12
+              "x": 8
             },
             "hwpJ4": {
               "fill": "$text-muted",
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "dtyVy": {
               "fontWeight": "400",
               "fill": "$text-secondary",
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "QJmdN": {
               "width": "fill_container",
-              "x": 12,
-              "y": 38
+              "x": 8,
+              "y": 44
             },
             "RuQOA": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "7QlNK": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "jx9yy": {
               "fill": "#1f1318",
@@ -1141,89 +1175,101 @@
                 "fill": "#ff5c5c30"
               },
               "width": "fill_container",
-              "x": 12,
-              "y": 76
+              "x": 8,
+              "y": 88
             },
             "O2kf1": {
               "fill": "$accent-primary",
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "zsx8z": {
               "fontWeight": "600",
               "fill": "$text-primary",
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "KOGPq": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 220
+              "y": 237
             },
             "6bA9Q": {
-              "x": 20,
-              "y": 16
+              "x": 16,
+              "y": 20
             },
             "vGgDK": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 252
+              "y": 276
             },
             "bsTRX": {
               "width": "fill_container",
-              "x": 12
+              "x": 8
             },
             "H8Xy5": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "RuDyK": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "G9Kdv": {
               "width": "fill_container",
-              "x": 12,
-              "y": 38
+              "x": 8,
+              "y": 44
             },
             "rjsTQ": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "46HPZ": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "Lwej7": {
               "width": "fill_container",
-              "x": 12,
-              "y": 76
+              "x": 8,
+              "y": 88
             },
             "SzKqr": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "gCY9R": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "bhmxx": {
               "width": "fill_container",
               "height": "fill_container",
-              "y": 364
+              "y": 404
             },
             "dQvMX": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 740
+              "y": 717
             },
             "gFYxI": {
-              "x": 20,
+              "x": 16,
               "y": 16
             },
+            "OGHqu": {
+              "width": "fill_container",
+              "x": 16,
+              "y": 35,
+              "height": "fit_content"
+            },
+            "IkjwR": {
+              "y": 2.5
+            },
+            "0KRBt": {
+              "x": 14
+            },
             "FPKNH": {
-              "x": 20,
-              "y": 31
+              "x": 16,
+              "y": 54
             }
           }
         },
@@ -1235,8 +1281,13 @@
           "width": "fill_container",
           "height": "fill_container",
           "layout": "vertical",
-          "gap": 24,
-          "padding": 32,
+          "gap": 20,
+          "padding": [
+            20,
+            24,
+            32,
+            24
+          ],
           "children": [
             {
               "type": "frame",
@@ -1260,8 +1311,9 @@
                       "fill": "$text-primary",
                       "content": "Environment Check",
                       "fontFamily": "Inter",
-                      "fontSize": 24,
-                      "fontWeight": "700"
+                      "fontSize": 22,
+                      "fontWeight": "650",
+                      "letterSpacing": -0.7
                     },
                     {
                       "type": "text",
@@ -1270,8 +1322,9 @@
                       "fill": "$text-secondary",
                       "content": "Verify system dependencies and runtime environment",
                       "fontFamily": "Inter",
-                      "fontSize": 14,
-                      "fontWeight": "normal"
+                      "fontSize": 13.5,
+                      "fontWeight": "normal",
+                      "letterSpacing": -0.1
                     }
                   ]
                 },
@@ -1280,15 +1333,15 @@
                   "id": "u6gQ5",
                   "name": "h2badge",
                   "fill": "#3b82f618",
-                  "cornerRadius": 12,
+                  "cornerRadius": "$radius-full",
                   "stroke": {
                     "thickness": 1,
                     "fill": "#3b82f640"
                   },
                   "gap": 6,
                   "padding": [
-                    4,
-                    10
+                    5,
+                    11
                   ],
                   "alignItems": "center",
                   "children": [
@@ -1322,15 +1375,15 @@
               "name": "banner",
               "width": "fill_container",
               "fill": "#4CAF5015",
-              "cornerRadius": "$radius-md",
+              "cornerRadius": "$radius-lg",
               "stroke": {
                 "thickness": 1,
                 "fill": "#4CAF5040"
               },
               "gap": 12,
               "padding": [
-                16,
-                20
+                14,
+                18
               ],
               "alignItems": "center",
               "children": [
@@ -1359,8 +1412,9 @@
                       "fill": "$status-success",
                       "content": "All checks passed — environment is ready",
                       "fontFamily": "Inter",
-                      "fontSize": 14,
-                      "fontWeight": "600"
+                      "fontSize": 13,
+                      "fontWeight": "600",
+                      "letterSpacing": -0.1
                     },
                     {
                       "type": "text",
@@ -1370,7 +1424,8 @@
                       "content": "5 of 5 software checks passed · .env file verified",
                       "fontFamily": "Inter",
                       "fontSize": 12,
-                      "fontWeight": "normal"
+                      "fontWeight": "normal",
+                      "letterSpacing": -0.1
                     }
                   ]
                 },
@@ -1381,7 +1436,7 @@
                   "fill": "$text-muted",
                   "content": "Last checked: just now",
                   "fontFamily": "Inter",
-                  "fontSize": 12,
+                  "fontSize": 11,
                   "fontWeight": "normal"
                 }
               ]
@@ -1391,7 +1446,7 @@
               "id": "xjy5x",
               "name": "cardsRow",
               "width": "fill_container",
-              "gap": 16,
+              "gap": 12,
               "children": [
                 {
                   "type": "frame",
@@ -1399,7 +1454,7 @@
                   "name": "ck1",
                   "width": "fill_container",
                   "fill": "$bg-card",
-                  "cornerRadius": "$radius-md",
+                  "cornerRadius": "$radius-lg",
                   "stroke": {
                     "thickness": 1,
                     "fill": "$border-default"
@@ -1466,7 +1521,7 @@
                       "id": "xEV0s",
                       "name": "ck1badge",
                       "fill": "#22c55e18",
-                      "cornerRadius": 10,
+                      "cornerRadius": "$radius-full",
                       "gap": 4,
                       "padding": [
                         2,
@@ -1502,7 +1557,7 @@
                   "name": "ck1b",
                   "width": "fill_container",
                   "fill": "$bg-card",
-                  "cornerRadius": "$radius-md",
+                  "cornerRadius": "$radius-lg",
                   "stroke": {
                     "thickness": 1,
                     "fill": "$border-default"
@@ -1569,7 +1624,7 @@
                       "id": "POaSC",
                       "name": "ck1bBadge",
                       "fill": "#22c55e18",
-                      "cornerRadius": 10,
+                      "cornerRadius": "$radius-full",
                       "gap": 4,
                       "padding": [
                         2,
@@ -1605,7 +1660,7 @@
                   "name": "ck2",
                   "width": "fill_container",
                   "fill": "$bg-card",
-                  "cornerRadius": "$radius-md",
+                  "cornerRadius": "$radius-lg",
                   "stroke": {
                     "thickness": 1,
                     "fill": "$border-default"
@@ -1672,7 +1727,7 @@
                       "id": "VMDsm",
                       "name": "ck2badge",
                       "fill": "#22c55e18",
-                      "cornerRadius": 10,
+                      "cornerRadius": "$radius-full",
                       "gap": 4,
                       "padding": [
                         2,
@@ -1708,7 +1763,7 @@
                   "name": "ck3",
                   "width": "fill_container",
                   "fill": "$bg-card",
-                  "cornerRadius": "$radius-md",
+                  "cornerRadius": "$radius-lg",
                   "stroke": {
                     "thickness": 1,
                     "fill": "$border-default"
@@ -1775,7 +1830,7 @@
                       "id": "oBAXW",
                       "name": "ck3badge",
                       "fill": "#22c55e18",
-                      "cornerRadius": 10,
+                      "cornerRadius": "$radius-full",
                       "gap": 4,
                       "padding": [
                         2,
@@ -1811,7 +1866,7 @@
                   "name": "ck4",
                   "width": "fill_container",
                   "fill": "$bg-card",
-                  "cornerRadius": "$radius-md",
+                  "cornerRadius": "$radius-lg",
                   "stroke": {
                     "thickness": 1,
                     "fill": "#ef444440"
@@ -1878,7 +1933,7 @@
                       "id": "XbE2b",
                       "name": "ck4badge",
                       "fill": "#ef444418",
-                      "cornerRadius": 10,
+                      "cornerRadius": "$radius-full",
                       "gap": 4,
                       "padding": [
                         2,
@@ -1916,15 +1971,15 @@
               "name": "envRow",
               "width": "fill_container",
               "fill": "$bg-card",
-              "cornerRadius": "$radius-md",
+              "cornerRadius": "$radius-lg",
               "stroke": {
                 "thickness": 1,
                 "fill": "$border-default"
               },
               "gap": 12,
               "padding": [
-                16,
-                20
+                14,
+                18
               ],
               "alignItems": "center",
               "children": [
@@ -1953,8 +2008,9 @@
                       "fill": "$text-primary",
                       "content": ".env Configuration File",
                       "fontFamily": "Inter",
-                      "fontSize": 14,
-                      "fontWeight": "600"
+                      "fontSize": 13,
+                      "fontWeight": "600",
+                      "letterSpacing": -0.1
                     },
                     {
                       "type": "text",
@@ -1973,7 +2029,7 @@
                   "id": "6S6Js",
                   "name": "envBadge",
                   "fill": "#22c55e18",
-                  "cornerRadius": 10,
+                  "cornerRadius": "$radius-full",
                   "gap": 4,
                   "padding": [
                     2,
@@ -2009,15 +2065,15 @@
               "name": "errBlock",
               "width": "fill_container",
               "fill": "#F4433610",
-              "cornerRadius": "$radius-md",
+              "cornerRadius": "$radius-lg",
               "stroke": {
                 "thickness": 1,
                 "fill": "#F4433630"
               },
               "gap": 12,
               "padding": [
-                16,
-                20
+                14,
+                18
               ],
               "alignItems": "center",
               "children": [
@@ -2046,8 +2102,9 @@
                       "fill": "$status-error",
                       "content": "Action Required: Install ngrok",
                       "fontFamily": "Inter",
-                      "fontSize": 14,
-                      "fontWeight": "600"
+                      "fontSize": 13,
+                      "fontWeight": "600",
+                      "letterSpacing": -0.1
                     },
                     {
                       "type": "text",
@@ -2092,30 +2149,30 @@
               "height": "fit_content"
             },
             "aSBxR": {
-              "x": 20,
-              "y": 24
+              "x": 16,
+              "y": 20
             },
             "u50YC": {
-              "x": 6,
-              "y": 8
+              "x": 7.5,
+              "y": 9.5
             },
             "fX9GX": {
-              "x": 62,
-              "y": 30.5
+              "x": 60,
+              "y": 28
             },
             "HnHLc": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 80
+              "y": 74
             },
             "qQHnO": {
-              "x": 20,
-              "y": 12
+              "x": 16,
+              "y": 16
             },
             "2Ew7K": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 108
+              "y": 109
             },
             "n5c7q": {
               "fill": "#00000000",
@@ -2123,18 +2180,18 @@
                 "thickness": 0
               },
               "width": "fill_container",
-              "x": 12
+              "x": 8
             },
             "hwpJ4": {
               "fill": "$text-muted",
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "dtyVy": {
               "fontWeight": "400",
               "fill": "$text-secondary",
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "QJmdN": {
               "fill": "#1f1318",
@@ -2143,102 +2200,114 @@
                 "fill": "#ff5c5c30"
               },
               "width": "fill_container",
-              "x": 12,
-              "y": 38
+              "x": 8,
+              "y": 44
             },
             "RuQOA": {
               "fill": "$accent-primary",
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "7QlNK": {
               "fontWeight": "600",
               "fill": "$text-primary",
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "jx9yy": {
               "width": "fill_container",
-              "x": 12,
-              "y": 76
+              "x": 8,
+              "y": 88
             },
             "O2kf1": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "zsx8z": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "KOGPq": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 220
+              "y": 237
             },
             "6bA9Q": {
-              "x": 20,
-              "y": 16
+              "x": 16,
+              "y": 20
             },
             "vGgDK": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 252
+              "y": 276
             },
             "bsTRX": {
               "width": "fill_container",
-              "x": 12
+              "x": 8
             },
             "H8Xy5": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "RuDyK": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "G9Kdv": {
               "width": "fill_container",
-              "x": 12,
-              "y": 38
+              "x": 8,
+              "y": 44
             },
             "rjsTQ": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "46HPZ": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "Lwej7": {
               "width": "fill_container",
-              "x": 12,
-              "y": 76
+              "x": 8,
+              "y": 88
             },
             "SzKqr": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "gCY9R": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "bhmxx": {
               "width": "fill_container",
               "height": "fill_container",
-              "y": 364
+              "y": 404
             },
             "dQvMX": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 740
+              "y": 717
             },
             "gFYxI": {
-              "x": 20,
+              "x": 16,
               "y": 16
             },
+            "OGHqu": {
+              "width": "fill_container",
+              "x": 16,
+              "y": 35,
+              "height": "fit_content"
+            },
+            "IkjwR": {
+              "y": 2.5
+            },
+            "0KRBt": {
+              "x": 14
+            },
             "FPKNH": {
-              "x": 20,
-              "y": 31
+              "x": 16,
+              "y": 54
             }
           }
         },
@@ -2250,8 +2319,13 @@
           "width": "fill_container",
           "height": "fill_container",
           "layout": "vertical",
-          "gap": 24,
-          "padding": 32,
+          "gap": 20,
+          "padding": [
+            20,
+            24,
+            32,
+            24
+          ],
           "children": [
             {
               "type": "frame",
@@ -2268,8 +2342,9 @@
                   "fill": "$text-primary",
                   "content": "System Initialization",
                   "fontFamily": "Inter",
-                  "fontSize": 26,
-                  "fontWeight": "700"
+                  "fontSize": 22,
+                  "fontWeight": "650",
+                  "letterSpacing": -0.7
                 },
                 {
                   "type": "text",
@@ -2278,8 +2353,9 @@
                   "fill": "$text-secondary",
                   "content": "Set up your OpenClaw environment step by step",
                   "fontFamily": "Inter",
-                  "fontSize": 14,
-                  "fontWeight": "normal"
+                  "fontSize": 13.5,
+                  "fontWeight": "normal",
+                  "letterSpacing": -0.1
                 }
               ]
             },
@@ -2328,8 +2404,9 @@
                       "fill": "$text-primary",
                       "content": "Environment",
                       "fontFamily": "Inter",
-                      "fontSize": 14,
-                      "fontWeight": "600"
+                      "fontSize": 13,
+                      "fontWeight": "600",
+                      "letterSpacing": -0.1
                     }
                   ]
                 },
@@ -2381,8 +2458,9 @@
                       "fill": "$text-muted",
                       "content": "API Keys",
                       "fontFamily": "Inter",
-                      "fontSize": 14,
-                      "fontWeight": "normal"
+                      "fontSize": 13,
+                      "fontWeight": "normal",
+                      "letterSpacing": -0.1
                     }
                   ]
                 },
@@ -2434,8 +2512,9 @@
                       "fill": "$text-muted",
                       "content": "Initialize",
                       "fontFamily": "Inter",
-                      "fontSize": 14,
-                      "fontWeight": "normal"
+                      "fontSize": 13,
+                      "fontWeight": "normal",
+                      "letterSpacing": -0.1
                     }
                   ]
                 }
@@ -2447,14 +2526,14 @@
               "name": "depPanel",
               "width": "fill_container",
               "fill": "$bg-card",
-              "cornerRadius": "$radius-md",
+              "cornerRadius": "$radius-lg",
               "stroke": {
                 "thickness": 1,
                 "fill": "$border-default"
               },
               "layout": "vertical",
-              "gap": 16,
-              "padding": 24,
+              "gap": 14,
+              "padding": 20,
               "children": [
                 {
                   "type": "frame",
@@ -2468,10 +2547,10 @@
                       "type": "frame",
                       "id": "fZS9F",
                       "name": "depIconWrap",
-                      "width": 28,
-                      "height": 28,
+                      "width": 30,
+                      "height": 30,
                       "fill": "#ff5c5c18",
-                      "cornerRadius": "$radius-sm",
+                      "cornerRadius": 8,
                       "justifyContent": "center",
                       "alignItems": "center",
                       "children": [
@@ -2494,8 +2573,9 @@
                       "fill": "$text-primary",
                       "content": "Deployment Mode",
                       "fontFamily": "Inter",
-                      "fontSize": 16,
-                      "fontWeight": "600"
+                      "fontSize": 15,
+                      "fontWeight": "600",
+                      "letterSpacing": -0.3
                     }
                   ]
                 },
@@ -2504,196 +2584,698 @@
                   "id": "aBONn",
                   "name": "radioRow",
                   "width": "fill_container",
+                  "layout": "vertical",
                   "gap": 12,
                   "children": [
                     {
                       "type": "frame",
-                      "id": "afRlS",
-                      "name": "r1",
+                      "id": "nGH5I",
+                      "name": "radioRow1",
                       "width": "fill_container",
-                      "fill": "$bg-primary",
-                      "cornerRadius": "$radius-sm",
-                      "stroke": {
-                        "thickness": 2,
-                        "fill": "$accent-primary"
-                      },
-                      "layout": "vertical",
-                      "gap": 8,
-                      "padding": 16,
+                      "gap": 12,
                       "children": [
                         {
                           "type": "frame",
-                          "id": "bIZch",
-                          "name": "r1top",
+                          "id": "afRlS",
+                          "name": "r1",
                           "width": "fill_container",
+                          "fill": "$bg-primary",
+                          "cornerRadius": "$radius-md",
+                          "stroke": {
+                            "thickness": 2,
+                            "fill": "$accent-primary"
+                          },
+                          "layout": "vertical",
                           "gap": 8,
-                          "alignItems": "center",
+                          "padding": 14,
                           "children": [
                             {
-                              "type": "ellipse",
-                              "id": "pqrqQ",
-                              "name": "r1check",
-                              "fill": "$accent-primary",
-                              "width": 18,
-                              "height": 18
+                              "type": "frame",
+                              "id": "bIZch",
+                              "name": "r1top",
+                              "width": "fill_container",
+                              "gap": 8,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "ellipse",
+                                  "id": "pqrqQ",
+                                  "name": "r1check",
+                                  "fill": "$accent-primary",
+                                  "width": 18,
+                                  "height": 18
+                                },
+                                {
+                                  "type": "icon_font",
+                                  "id": "GAKwt",
+                                  "layoutPosition": "absolute",
+                                  "x": 22,
+                                  "y": 1,
+                                  "name": "r1checkI",
+                                  "width": 16,
+                                  "height": 16,
+                                  "iconFontName": "monitor",
+                                  "iconFontFamily": "lucide",
+                                  "fill": "$accent-primary"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "fXwYO",
+                                  "name": "r1name",
+                                  "width": 1,
+                                  "height": 1
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "aIBOx",
+                                  "name": "r1namepad",
+                                  "fill": "$text-primary",
+                                  "content": "Docker Windows",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 13,
+                                  "fontWeight": "600"
+                                }
+                              ]
                             },
                             {
-                              "type": "icon_font",
-                              "id": "GAKwt",
-                              "layoutPosition": "absolute",
-                              "x": 22,
-                              "y": 1,
-                              "name": "r1checkI",
-                              "width": 16,
-                              "height": 16,
-                              "iconFontName": "monitor",
-                              "iconFontFamily": "lucide",
-                              "fill": "$accent-primary"
+                              "type": "text",
+                              "id": "0aw9S",
+                              "name": "r1desc",
+                              "fill": "$text-muted",
+                              "content": "Windows with Docker Desktop",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal",
+                              "letterSpacing": -0.1
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "d4rwU",
+                          "name": "r2",
+                          "width": "fill_container",
+                          "fill": "$bg-primary",
+                          "cornerRadius": "$radius-md",
+                          "stroke": {
+                            "thickness": 1,
+                            "fill": "$border-default"
+                          },
+                          "layout": "vertical",
+                          "gap": 8,
+                          "padding": 14,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "dpLDB",
+                              "name": "r2top",
+                              "width": "fill_container",
+                              "gap": 8,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "ellipse",
+                                  "id": "BJdXL",
+                                  "name": "r2check",
+                                  "width": 18,
+                                  "height": 18,
+                                  "stroke": {
+                                    "thickness": 1.5,
+                                    "fill": "$text-muted"
+                                  }
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "Hcby9",
+                                  "name": "r2name",
+                                  "fill": "$text-secondary",
+                                  "content": "Docker Linux/WSL2",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 13,
+                                  "fontWeight": "500"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "2z545",
+                              "name": "r2desc",
+                              "fill": "$text-muted",
+                              "content": "Linux or WSL2 with Docker",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal",
+                              "letterSpacing": -0.1
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "T5Snv",
+                      "name": "radioRow2",
+                      "width": "fill_container",
+                      "gap": 12,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "AUY3D",
+                          "name": "r3",
+                          "width": "fill_container",
+                          "fill": "$bg-primary",
+                          "cornerRadius": "$radius-md",
+                          "stroke": {
+                            "thickness": 1,
+                            "fill": "$border-default"
+                          },
+                          "layout": "vertical",
+                          "gap": 8,
+                          "padding": 14,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "8nJae",
+                              "name": "r3top",
+                              "width": "fill_container",
+                              "gap": 8,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "ellipse",
+                                  "id": "LHfhn",
+                                  "name": "r3check",
+                                  "width": 18,
+                                  "height": 18,
+                                  "stroke": {
+                                    "thickness": 1.5,
+                                    "fill": "$text-muted"
+                                  }
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "sjbt4",
+                                  "name": "r3name",
+                                  "fill": "$text-secondary",
+                                  "content": "Native Linux (systemd)",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 13,
+                                  "fontWeight": "500"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "i6qcl",
+                              "name": "r3desc",
+                              "fill": "$text-muted",
+                              "content": "Linux with systemd services",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal",
+                              "letterSpacing": -0.1
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "DtghX",
+                          "name": "r4",
+                          "width": "fill_container",
+                          "fill": "$bg-primary",
+                          "cornerRadius": "$radius-md",
+                          "stroke": {
+                            "thickness": 1,
+                            "fill": "$border-default"
+                          },
+                          "layout": "vertical",
+                          "gap": 8,
+                          "padding": 14,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "nl6Ja",
+                              "name": "r4top",
+                              "width": "fill_container",
+                              "gap": 8,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "ellipse",
+                                  "id": "CAu0G",
+                                  "name": "r4check",
+                                  "width": 18,
+                                  "height": 18,
+                                  "stroke": {
+                                    "thickness": 1.5,
+                                    "fill": "$text-muted"
+                                  }
+                                },
+                                {
+                                  "type": "icon_font",
+                                  "id": "KTKFi",
+                                  "name": "r4icon",
+                                  "width": 16,
+                                  "height": 16,
+                                  "iconFontName": "cloud",
+                                  "iconFontFamily": "lucide",
+                                  "fill": "#8b5cf6"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "5Tnk6",
+                                  "name": "r4name",
+                                  "fill": "$text-secondary",
+                                  "content": "Remote Server (SSH)",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 13,
+                                  "fontWeight": "500"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "cV87a",
+                              "name": "r4desc",
+                              "fill": "$text-muted",
+                              "content": "Manage remote Linux via SSH",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal",
+                              "letterSpacing": -0.1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "ztyVj",
+              "name": "sshPanel",
+              "width": "fill_container",
+              "fill": "$bg-card",
+              "cornerRadius": "$radius-lg",
+              "stroke": {
+                "thickness": 1,
+                "fill": "#8b5cf630"
+              },
+              "layout": "vertical",
+              "gap": 14,
+              "padding": 20,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "fz7Pl",
+                  "name": "sshHeader",
+                  "width": "fill_container",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "snuaZ",
+                      "name": "sshIconWrap",
+                      "width": 30,
+                      "height": 30,
+                      "fill": "#8b5cf618",
+                      "cornerRadius": 8,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon_font",
+                          "id": "Pf7mh",
+                          "name": "sshIconI",
+                          "width": 16,
+                          "height": 16,
+                          "iconFontName": "terminal",
+                          "iconFontFamily": "lucide",
+                          "fill": "#8b5cf6"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "np1AD",
+                      "name": "sshTitle",
+                      "fill": "$text-primary",
+                      "content": "SSH Connection",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "600",
+                      "letterSpacing": -0.3
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "m1gIo",
+                  "name": "sshDesc",
+                  "fill": "$text-muted",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Connect to your remote server via SSH",
+                  "fontFamily": "Inter",
+                  "fontSize": 12
+                },
+                {
+                  "type": "frame",
+                  "id": "xPLwh",
+                  "name": "sshGrid",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 12,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "pV6Os",
+                      "name": "sshRow1",
+                      "width": "fill_container",
+                      "gap": 12,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "YMEHM",
+                          "name": "hostField",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 6,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "CHURU",
+                              "name": "hostLabel",
+                              "fill": "$text-secondary",
+                              "content": "Host",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "500"
                             },
                             {
                               "type": "frame",
-                              "id": "fXwYO",
-                              "name": "r1name",
-                              "width": 1,
-                              "height": 1
-                            },
-                            {
-                              "type": "text",
-                              "id": "aIBOx",
-                              "name": "r1namepad",
-                              "fill": "$text-primary",
-                              "content": "Docker Windows",
-                              "fontFamily": "Inter",
-                              "fontSize": 13,
-                              "fontWeight": "600"
+                              "id": "zob2z",
+                              "name": "hostInput",
+                              "width": "fill_container",
+                              "height": 40,
+                              "fill": "$bg-input",
+                              "cornerRadius": "$radius-md",
+                              "stroke": {
+                                "thickness": 1,
+                                "fill": "$border-default"
+                              },
+                              "padding": [
+                                0,
+                                12
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "tzTEK",
+                                  "name": "hostPlaceholder",
+                                  "fill": "$text-muted",
+                                  "content": "192.168.1.100",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 13
+                                }
+                              ]
                             }
                           ]
                         },
                         {
-                          "type": "text",
-                          "id": "0aw9S",
-                          "name": "r1desc",
-                          "fill": "$text-muted",
-                          "content": "Windows with Docker Desktop",
-                          "fontFamily": "Inter",
-                          "fontSize": 12,
-                          "fontWeight": "normal"
+                          "type": "frame",
+                          "id": "K5oUx",
+                          "name": "portField",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 6,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Usv4J",
+                              "name": "portLabel",
+                              "fill": "$text-secondary",
+                              "content": "Port",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "500"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "nhIfU",
+                              "name": "portInput",
+                              "width": "fill_container",
+                              "height": 40,
+                              "fill": "$bg-input",
+                              "cornerRadius": "$radius-md",
+                              "stroke": {
+                                "thickness": 1,
+                                "fill": "$border-default"
+                              },
+                              "padding": [
+                                0,
+                                12
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "zXLvS",
+                                  "name": "portPlaceholder",
+                                  "fill": "$text-muted",
+                                  "content": "22",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 13
+                                }
+                              ]
+                            }
+                          ]
                         }
                       ]
                     },
                     {
                       "type": "frame",
-                      "id": "d4rwU",
-                      "name": "r2",
+                      "id": "V2Quo",
+                      "name": "sshRow2",
                       "width": "fill_container",
-                      "fill": "$bg-primary",
-                      "cornerRadius": "$radius-sm",
-                      "stroke": {
-                        "thickness": 1,
-                        "fill": "$border-default"
-                      },
-                      "layout": "vertical",
-                      "gap": 8,
-                      "padding": 16,
+                      "gap": 12,
                       "children": [
                         {
                           "type": "frame",
-                          "id": "dpLDB",
-                          "name": "r2top",
+                          "id": "WHbJT",
+                          "name": "userField",
                           "width": "fill_container",
-                          "gap": 8,
-                          "alignItems": "center",
+                          "layout": "vertical",
+                          "gap": 6,
                           "children": [
                             {
-                              "type": "ellipse",
-                              "id": "BJdXL",
-                              "name": "r2check",
-                              "width": 18,
-                              "height": 18,
-                              "stroke": {
-                                "thickness": 1.5,
-                                "fill": "$text-muted"
-                              }
+                              "type": "text",
+                              "id": "nnzB6",
+                              "name": "userLabel",
+                              "fill": "$text-secondary",
+                              "content": "Username",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "500"
                             },
                             {
-                              "type": "text",
-                              "id": "Hcby9",
-                              "name": "r2name",
-                              "fill": "$text-secondary",
-                              "content": "Docker Linux/WSL2",
-                              "fontFamily": "Inter",
-                              "fontSize": 13,
-                              "fontWeight": "500"
+                              "type": "frame",
+                              "id": "Apwbd",
+                              "name": "userInput",
+                              "width": "fill_container",
+                              "height": 40,
+                              "fill": "$bg-input",
+                              "cornerRadius": "$radius-md",
+                              "stroke": {
+                                "thickness": 1,
+                                "fill": "$border-default"
+                              },
+                              "padding": [
+                                0,
+                                12
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "1Ssg3",
+                                  "name": "userPlaceholder",
+                                  "fill": "$text-muted",
+                                  "content": "ubuntu",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 13
+                                }
+                              ]
                             }
                           ]
                         },
                         {
+                          "type": "frame",
+                          "id": "kRTcz",
+                          "name": "keyField",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 6,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "wzlVJ",
+                              "name": "keyLabel",
+                              "fill": "$text-secondary",
+                              "content": "SSH Key File",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "500"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "0rzGp",
+                              "name": "keyInput",
+                              "width": "fill_container",
+                              "height": 40,
+                              "fill": "$bg-input",
+                              "cornerRadius": "$radius-md",
+                              "stroke": {
+                                "thickness": 1,
+                                "fill": "$border-default"
+                              },
+                              "gap": 8,
+                              "padding": [
+                                0,
+                                12
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "3O5ov",
+                                  "name": "keyPlaceholder",
+                                  "fill": "$text-muted",
+                                  "content": "~/.ssh/id_rsa",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 13
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "aKdgb",
+                                  "name": "browseBtn",
+                                  "height": 28,
+                                  "fill": "$bg-card",
+                                  "cornerRadius": 6,
+                                  "stroke": {
+                                    "thickness": 1,
+                                    "fill": "$border-default"
+                                  },
+                                  "padding": [
+                                    0,
+                                    10
+                                  ],
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "XCSWs",
+                                      "name": "browseTxt",
+                                      "fill": "$text-secondary",
+                                      "content": "Browse",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 11,
+                                      "fontWeight": "500"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "nsmdL",
+                  "name": "testRow",
+                  "width": "fill_container",
+                  "gap": 12,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "Jfryn",
+                      "name": "testBtn",
+                      "height": 36,
+                      "fill": "$bg-primary",
+                      "cornerRadius": "$radius-md",
+                      "stroke": {
+                        "thickness": 1,
+                        "fill": "#8b5cf6"
+                      },
+                      "gap": 8,
+                      "padding": [
+                        0,
+                        14
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon_font",
+                          "id": "izwDA",
+                          "name": "testIcon",
+                          "width": 14,
+                          "height": 14,
+                          "iconFontName": "wifi",
+                          "iconFontFamily": "lucide",
+                          "fill": "#8b5cf6"
+                        },
+                        {
                           "type": "text",
-                          "id": "2z545",
-                          "name": "r2desc",
-                          "fill": "$text-muted",
-                          "content": "Linux or WSL2 with Docker",
+                          "id": "wvU3I",
+                          "name": "testTxt",
+                          "fill": "#8b5cf6",
+                          "content": "Test Connection",
                           "fontFamily": "Inter",
-                          "fontSize": 12,
-                          "fontWeight": "normal"
+                          "fontSize": 13,
+                          "fontWeight": "500"
                         }
                       ]
                     },
                     {
                       "type": "frame",
-                      "id": "AUY3D",
-                      "name": "r3",
-                      "width": "fill_container",
-                      "fill": "$bg-primary",
-                      "cornerRadius": "$radius-sm",
-                      "stroke": {
-                        "thickness": 1,
-                        "fill": "$border-default"
-                      },
-                      "layout": "vertical",
-                      "gap": 8,
-                      "padding": 16,
+                      "id": "9mbJV",
+                      "name": "statusBadge",
+                      "fill": "#22c55e18",
+                      "cornerRadius": 20,
+                      "gap": 6,
+                      "padding": [
+                        6,
+                        10
+                      ],
+                      "alignItems": "center",
                       "children": [
                         {
-                          "type": "frame",
-                          "id": "8nJae",
-                          "name": "r3top",
-                          "width": "fill_container",
-                          "gap": 8,
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "ellipse",
-                              "id": "LHfhn",
-                              "name": "r3check",
-                              "width": 18,
-                              "height": 18,
-                              "stroke": {
-                                "thickness": 1.5,
-                                "fill": "$text-muted"
-                              }
-                            },
-                            {
-                              "type": "text",
-                              "id": "sjbt4",
-                              "name": "r3name",
-                              "fill": "$text-secondary",
-                              "content": "Native Linux (systemd)",
-                              "fontFamily": "Inter",
-                              "fontSize": 13,
-                              "fontWeight": "500"
-                            }
-                          ]
+                          "type": "ellipse",
+                          "id": "QjfDc",
+                          "name": "statusDot",
+                          "fill": "$status-success",
+                          "width": 8,
+                          "height": 8
                         },
                         {
                           "type": "text",
-                          "id": "i6qcl",
-                          "name": "r3desc",
-                          "fill": "$text-muted",
-                          "content": "Linux with systemd services",
+                          "id": "3FuRO",
+                          "name": "statusTxt",
+                          "fill": "$status-success",
+                          "content": "Connected — Ubuntu 22.04, 4 cores, 8GB",
                           "fontFamily": "Inter",
-                          "fontSize": 12,
-                          "fontWeight": "normal"
+                          "fontSize": 11,
+                          "fontWeight": "500"
                         }
                       ]
                     }
@@ -2707,14 +3289,14 @@
               "name": "gwPanel",
               "width": "fill_container",
               "fill": "$bg-card",
-              "cornerRadius": "$radius-md",
+              "cornerRadius": "$radius-lg",
               "stroke": {
                 "thickness": 1,
                 "fill": "$border-default"
               },
               "layout": "vertical",
-              "gap": 16,
-              "padding": 24,
+              "gap": 14,
+              "padding": 20,
               "children": [
                 {
                   "type": "frame",
@@ -2728,10 +3310,10 @@
                       "type": "frame",
                       "id": "q4bI4",
                       "name": "gwIconWrap",
-                      "width": 28,
-                      "height": 28,
+                      "width": 30,
+                      "height": 30,
                       "fill": "#14b8a618",
-                      "cornerRadius": "$radius-sm",
+                      "cornerRadius": 8,
                       "justifyContent": "center",
                       "alignItems": "center",
                       "children": [
@@ -2754,8 +3336,9 @@
                       "fill": "$text-primary",
                       "content": "Gateway & Directory",
                       "fontFamily": "Inter",
-                      "fontSize": 16,
-                      "fontWeight": "600"
+                      "fontSize": 15,
+                      "fontWeight": "600",
+                      "letterSpacing": -0.3
                     }
                   ]
                 },
@@ -3198,7 +3781,8 @@
                           "content": "Advanced Settings (Timezone, Docker Image, Sandbox)",
                           "fontFamily": "Inter",
                           "fontSize": 12,
-                          "fontWeight": "500"
+                          "fontWeight": "500",
+                          "letterSpacing": -0.1
                         }
                       ]
                     }
@@ -3242,18 +3826,19 @@
                   "content": "Step 1 of 3",
                   "fontFamily": "Inter",
                   "fontSize": 13,
-                  "fontWeight": "normal"
+                  "fontWeight": "normal",
+                  "letterSpacing": -0.1
                 },
                 {
                   "type": "frame",
                   "id": "DnJKQ",
                   "name": "nextBtn",
                   "fill": "$accent-primary",
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": "$radius-md",
                   "gap": 8,
                   "padding": [
-                    10,
-                    20
+                    9,
+                    18
                   ],
                   "alignItems": "center",
                   "children": [
@@ -3308,30 +3893,30 @@
               "height": "fit_content"
             },
             "aSBxR": {
-              "x": 20,
-              "y": 24
+              "x": 16,
+              "y": 20
             },
             "u50YC": {
-              "x": 6,
-              "y": 8
+              "x": 7.5,
+              "y": 9.5
             },
             "fX9GX": {
-              "x": 62,
-              "y": 30.5
+              "x": 60,
+              "y": 28
             },
             "HnHLc": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 80
+              "y": 74
             },
             "qQHnO": {
-              "x": 20,
-              "y": 12
+              "x": 16,
+              "y": 16
             },
             "2Ew7K": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 108
+              "y": 109
             },
             "n5c7q": {
               "fill": "#00000000",
@@ -3339,18 +3924,18 @@
                 "thickness": 0
               },
               "width": "fill_container",
-              "x": 12
+              "x": 8
             },
             "hwpJ4": {
               "fill": "$text-muted",
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "dtyVy": {
               "fontWeight": "400",
               "fill": "$text-secondary",
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "QJmdN": {
               "fill": "#1f1318",
@@ -3359,102 +3944,114 @@
                 "fill": "#ff5c5c30"
               },
               "width": "fill_container",
-              "x": 12,
-              "y": 38
+              "x": 8,
+              "y": 44
             },
             "RuQOA": {
               "fill": "$accent-primary",
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "7QlNK": {
               "fontWeight": "600",
               "fill": "$text-primary",
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "jx9yy": {
               "width": "fill_container",
-              "x": 12,
-              "y": 76
+              "x": 8,
+              "y": 88
             },
             "O2kf1": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "zsx8z": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "KOGPq": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 220
+              "y": 237
             },
             "6bA9Q": {
-              "x": 20,
-              "y": 16
+              "x": 16,
+              "y": 20
             },
             "vGgDK": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 252
+              "y": 276
             },
             "bsTRX": {
               "width": "fill_container",
-              "x": 12
+              "x": 8
             },
             "H8Xy5": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "RuDyK": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "G9Kdv": {
               "width": "fill_container",
-              "x": 12,
-              "y": 38
+              "x": 8,
+              "y": 44
             },
             "rjsTQ": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "46HPZ": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "Lwej7": {
               "width": "fill_container",
-              "x": 12,
-              "y": 76
+              "x": 8,
+              "y": 88
             },
             "SzKqr": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "gCY9R": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "bhmxx": {
               "width": "fill_container",
               "height": "fill_container",
-              "y": 364
+              "y": 404
             },
             "dQvMX": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 740
+              "y": 717
             },
             "gFYxI": {
-              "x": 20,
+              "x": 16,
               "y": 16
             },
+            "OGHqu": {
+              "width": "fill_container",
+              "x": 16,
+              "y": 35,
+              "height": "fit_content"
+            },
+            "IkjwR": {
+              "y": 2.5
+            },
+            "0KRBt": {
+              "x": 14
+            },
             "FPKNH": {
-              "x": 20,
-              "y": 31
+              "x": 16,
+              "y": 54
             }
           }
         },
@@ -3467,7 +4064,12 @@
           "height": "fill_container",
           "layout": "vertical",
           "gap": 20,
-          "padding": 32,
+          "padding": [
+            20,
+            24,
+            32,
+            24
+          ],
           "children": [
             {
               "type": "frame",
@@ -3484,8 +4086,9 @@
                   "fill": "$text-primary",
                   "content": "System Initialization",
                   "fontFamily": "Inter",
-                  "fontSize": 26,
-                  "fontWeight": "700"
+                  "fontSize": 22,
+                  "fontWeight": "650",
+                  "letterSpacing": -0.7
                 },
                 {
                   "type": "text",
@@ -3494,8 +4097,9 @@
                   "fill": "$text-secondary",
                   "content": "Set up your OpenClaw environment step by step",
                   "fontFamily": "Inter",
-                  "fontSize": 14,
-                  "fontWeight": "normal"
+                  "fontSize": 13.5,
+                  "fontWeight": "normal",
+                  "letterSpacing": -0.1
                 }
               ]
             },
@@ -3660,14 +4264,14 @@
               "name": "provPanel",
               "width": "fill_container",
               "fill": "$bg-card",
-              "cornerRadius": "$radius-md",
+              "cornerRadius": "$radius-lg",
               "stroke": {
                 "thickness": 1,
                 "fill": "$border-default"
               },
               "layout": "vertical",
-              "gap": 16,
-              "padding": 24,
+              "gap": 14,
+              "padding": 20,
               "children": [
                 {
                   "type": "frame",
@@ -4141,14 +4745,14 @@
               "name": "chPanel",
               "width": "fill_container",
               "fill": "$bg-card",
-              "cornerRadius": "$radius-md",
+              "cornerRadius": "$radius-lg",
               "stroke": {
                 "thickness": 1,
                 "fill": "$border-default"
               },
               "layout": "vertical",
-              "gap": 16,
-              "padding": 24,
+              "gap": 14,
+              "padding": 20,
               "children": [
                 {
                   "type": "frame",
@@ -4784,15 +5388,15 @@
               "name": "toolPanel",
               "width": "fill_container",
               "fill": "$bg-card",
-              "cornerRadius": "$radius-md",
+              "cornerRadius": "$radius-lg",
               "stroke": {
                 "thickness": 1,
                 "fill": "$border-default"
               },
               "gap": 10,
               "padding": [
-                16,
-                24
+                14,
+                20
               ],
               "alignItems": "center",
               "children": [
@@ -4880,7 +5484,8 @@
                   "content": "All keys are encrypted and stored securely using your operating system's credential manager.",
                   "fontFamily": "Inter",
                   "fontSize": 12,
-                  "fontWeight": "normal"
+                  "fontWeight": "normal",
+                  "letterSpacing": -0.1
                 }
               ]
             },
@@ -4916,15 +5521,15 @@
                   "id": "hVsjg",
                   "name": "backBtn",
                   "fill": "$bg-input",
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": "$radius-md",
                   "stroke": {
                     "thickness": 1,
                     "fill": "$border-default"
                   },
                   "gap": 8,
                   "padding": [
-                    10,
-                    16
+                    9,
+                    14
                   ],
                   "alignItems": "center",
                   "children": [
@@ -4965,18 +5570,19 @@
                   "content": "Step 2 of 3",
                   "fontFamily": "Inter",
                   "fontSize": 13,
-                  "fontWeight": "normal"
+                  "fontWeight": "normal",
+                  "letterSpacing": -0.1
                 },
                 {
                   "type": "frame",
                   "id": "oGsVD",
                   "name": "nextBtn2",
                   "fill": "$accent-primary",
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": "$radius-md",
                   "gap": 8,
                   "padding": [
-                    10,
-                    20
+                    9,
+                    18
                   ],
                   "alignItems": "center",
                   "children": [
@@ -5031,30 +5637,30 @@
               "height": "fit_content"
             },
             "aSBxR": {
-              "x": 20,
-              "y": 24
+              "x": 16,
+              "y": 20
             },
             "u50YC": {
-              "x": 6,
-              "y": 8
+              "x": 7.5,
+              "y": 9.5
             },
             "fX9GX": {
-              "x": 62,
-              "y": 30.5
+              "x": 60,
+              "y": 28
             },
             "HnHLc": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 80
+              "y": 74
             },
             "qQHnO": {
-              "x": 20,
-              "y": 12
+              "x": 16,
+              "y": 16
             },
             "2Ew7K": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 108
+              "y": 109
             },
             "n5c7q": {
               "fill": "#00000000",
@@ -5062,18 +5668,18 @@
                 "thickness": 0
               },
               "width": "fill_container",
-              "x": 12
+              "x": 8
             },
             "hwpJ4": {
               "fill": "$text-muted",
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "dtyVy": {
               "fontWeight": "400",
               "fill": "$text-secondary",
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "QJmdN": {
               "fill": "#1f1318",
@@ -5082,102 +5688,114 @@
                 "fill": "#ff5c5c30"
               },
               "width": "fill_container",
-              "x": 12,
-              "y": 38
+              "x": 8,
+              "y": 44
             },
             "RuQOA": {
               "fill": "$accent-primary",
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "7QlNK": {
               "fontWeight": "600",
               "fill": "$text-primary",
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "jx9yy": {
               "width": "fill_container",
-              "x": 12,
-              "y": 76
+              "x": 8,
+              "y": 88
             },
             "O2kf1": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "zsx8z": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "KOGPq": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 220
+              "y": 237
             },
             "6bA9Q": {
-              "x": 20,
-              "y": 16
+              "x": 16,
+              "y": 20
             },
             "vGgDK": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 252
+              "y": 276
             },
             "bsTRX": {
               "width": "fill_container",
-              "x": 12
+              "x": 8
             },
             "H8Xy5": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "RuDyK": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "G9Kdv": {
               "width": "fill_container",
-              "x": 12,
-              "y": 38
+              "x": 8,
+              "y": 44
             },
             "rjsTQ": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "46HPZ": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "Lwej7": {
               "width": "fill_container",
-              "x": 12,
-              "y": 76
+              "x": 8,
+              "y": 88
             },
             "SzKqr": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "gCY9R": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "bhmxx": {
               "width": "fill_container",
               "height": "fill_container",
-              "y": 364
+              "y": 404
             },
             "dQvMX": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 740
+              "y": 717
             },
             "gFYxI": {
-              "x": 20,
+              "x": 16,
               "y": 16
             },
+            "OGHqu": {
+              "width": "fill_container",
+              "x": 16,
+              "y": 35,
+              "height": "fit_content"
+            },
+            "IkjwR": {
+              "y": 2.5
+            },
+            "0KRBt": {
+              "x": 14
+            },
             "FPKNH": {
-              "x": 20,
-              "y": 31
+              "x": 16,
+              "y": 54
             }
           }
         },
@@ -5190,7 +5808,12 @@
           "height": "fill_container",
           "layout": "vertical",
           "gap": 20,
-          "padding": 32,
+          "padding": [
+            20,
+            24,
+            32,
+            24
+          ],
           "children": [
             {
               "type": "frame",
@@ -5207,8 +5830,9 @@
                   "fill": "$text-primary",
                   "content": "System Initialization",
                   "fontFamily": "Inter",
-                  "fontSize": 26,
-                  "fontWeight": "700"
+                  "fontSize": 22,
+                  "fontWeight": "650",
+                  "letterSpacing": -0.7
                 },
                 {
                   "type": "text",
@@ -5217,8 +5841,9 @@
                   "fill": "$text-secondary",
                   "content": "Set up your OpenClaw environment step by step",
                   "fontFamily": "Inter",
-                  "fontSize": 14,
-                  "fontWeight": "normal"
+                  "fontSize": 13.5,
+                  "fontWeight": "normal",
+                  "letterSpacing": -0.1
                 }
               ]
             },
@@ -5388,14 +6013,14 @@
                   "name": "progPanel",
                   "width": "fill_container",
                   "fill": "$bg-card",
-                  "cornerRadius": "$radius-md",
+                  "cornerRadius": "$radius-lg",
                   "stroke": {
                     "thickness": 1,
                     "fill": "$border-default"
                   },
                   "layout": "vertical",
-                  "gap": 16,
-                  "padding": 24,
+                  "gap": 14,
+                  "padding": 20,
                   "children": [
                     {
                       "type": "frame",
@@ -6319,14 +6944,14 @@
                   "name": "dashPanel",
                   "width": 340,
                   "fill": "$bg-card",
-                  "cornerRadius": "$radius-md",
+                  "cornerRadius": "$radius-lg",
                   "stroke": {
                     "thickness": 1,
                     "fill": "$border-default"
                   },
                   "layout": "vertical",
-                  "gap": 16,
-                  "padding": 24,
+                  "gap": 14,
+                  "padding": 20,
                   "children": [
                     {
                       "type": "frame",
@@ -6614,15 +7239,15 @@
                   "id": "Tm90a",
                   "name": "backBtn3",
                   "fill": "$bg-input",
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": "$radius-md",
                   "stroke": {
                     "thickness": 1,
                     "fill": "$border-default"
                   },
                   "gap": 8,
                   "padding": [
-                    10,
-                    16
+                    9,
+                    14
                   ],
                   "alignItems": "center",
                   "children": [
@@ -6663,7 +7288,8 @@
                   "content": "Step 3 of 3",
                   "fontFamily": "Inter",
                   "fontSize": 13,
-                  "fontWeight": "normal"
+                  "fontWeight": "normal",
+                  "letterSpacing": -0.1
                 },
                 {
                   "type": "frame",
@@ -6671,11 +7297,11 @@
                   "name": "initBtn",
                   "opacity": 0.5,
                   "fill": "$accent-primary",
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": "$radius-md",
                   "gap": 8,
                   "padding": [
-                    10,
-                    20
+                    9,
+                    18
                   ],
                   "alignItems": "center",
                   "children": [
@@ -6730,30 +7356,30 @@
               "height": "fit_content"
             },
             "aSBxR": {
-              "x": 20,
-              "y": 24
+              "x": 16,
+              "y": 20
             },
             "u50YC": {
-              "x": 6,
-              "y": 8
+              "x": 7.5,
+              "y": 9.5
             },
             "fX9GX": {
-              "x": 62,
-              "y": 30.5
+              "x": 60,
+              "y": 28
             },
             "HnHLc": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 80
+              "y": 74
             },
             "qQHnO": {
-              "x": 20,
-              "y": 12
+              "x": 16,
+              "y": 16
             },
             "2Ew7K": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 108
+              "y": 109
             },
             "n5c7q": {
               "fill": "#00000000",
@@ -6761,58 +7387,58 @@
                 "thickness": 0
               },
               "width": "fill_container",
-              "x": 12
+              "x": 8
             },
             "hwpJ4": {
               "fill": "$text-muted",
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "dtyVy": {
               "fontWeight": "400",
               "fill": "$text-secondary",
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "QJmdN": {
               "width": "fill_container",
-              "x": 12,
-              "y": 38
+              "x": 8,
+              "y": 44
             },
             "RuQOA": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "7QlNK": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "jx9yy": {
               "width": "fill_container",
-              "x": 12,
-              "y": 76
+              "x": 8,
+              "y": 88
             },
             "O2kf1": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "zsx8z": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "KOGPq": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 220
+              "y": 237
             },
             "6bA9Q": {
-              "x": 20,
-              "y": 16
+              "x": 16,
+              "y": 20
             },
             "vGgDK": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 252
+              "y": 276
             },
             "bsTRX": {
               "fill": "#1f1318",
@@ -6821,62 +7447,74 @@
                 "fill": "#ff5c5c30"
               },
               "width": "fill_container",
-              "x": 12
+              "x": 8
             },
             "H8Xy5": {
               "fill": "$accent-primary",
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "RuDyK": {
               "fontWeight": "600",
               "fill": "$text-primary",
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "G9Kdv": {
               "width": "fill_container",
-              "x": 12,
-              "y": 38
+              "x": 8,
+              "y": 44
             },
             "rjsTQ": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "46HPZ": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "Lwej7": {
               "width": "fill_container",
-              "x": 12,
-              "y": 76
+              "x": 8,
+              "y": 88
             },
             "SzKqr": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "gCY9R": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "bhmxx": {
               "width": "fill_container",
               "height": "fill_container",
-              "y": 364
+              "y": 404
             },
             "dQvMX": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 740
+              "y": 717
             },
             "gFYxI": {
-              "x": 20,
+              "x": 16,
               "y": 16
             },
+            "OGHqu": {
+              "width": "fill_container",
+              "x": 16,
+              "y": 35,
+              "height": "fit_content"
+            },
+            "IkjwR": {
+              "y": 2.5
+            },
+            "0KRBt": {
+              "x": 14
+            },
             "FPKNH": {
-              "x": 20,
-              "y": 31
+              "x": 16,
+              "y": 54
             }
           }
         },
@@ -6888,8 +7526,13 @@
           "width": "fill_container",
           "height": "fill_container",
           "layout": "vertical",
-          "gap": 24,
-          "padding": 32,
+          "gap": 20,
+          "padding": [
+            20,
+            24,
+            32,
+            24
+          ],
           "children": [
             {
               "type": "frame",
@@ -6913,8 +7556,9 @@
                       "fill": "$text-primary",
                       "content": "Deploy Skills",
                       "fontFamily": "Inter",
-                      "fontSize": 24,
-                      "fontWeight": "700"
+                      "fontSize": 22,
+                      "fontWeight": "650",
+                      "letterSpacing": -0.7
                     },
                     {
                       "type": "text",
@@ -6923,8 +7567,9 @@
                       "fill": "$text-secondary",
                       "content": "Select and deploy skill modules to your OpenClaw instance",
                       "fontFamily": "Inter",
-                      "fontSize": 14,
-                      "fontWeight": "normal"
+                      "fontSize": 13.5,
+                      "fontWeight": "normal",
+                      "letterSpacing": -0.1
                     }
                   ]
                 },
@@ -6933,11 +7578,11 @@
                   "id": "MuFVe",
                   "name": "h6badge",
                   "fill": "#22c55e18",
-                  "cornerRadius": 12,
+                  "cornerRadius": "$radius-full",
                   "gap": 4,
                   "padding": [
-                    4,
-                    10
+                    5,
+                    11
                   ],
                   "alignItems": "center",
                   "children": [
@@ -6969,15 +7614,15 @@
               "name": "skBanner",
               "width": "fill_container",
               "fill": "#4CAF5015",
-              "cornerRadius": "$radius-md",
+              "cornerRadius": "$radius-lg",
               "stroke": {
                 "thickness": 1,
                 "fill": "#4CAF5040"
               },
               "gap": 12,
               "padding": [
-                16,
-                20
+                14,
+                18
               ],
               "alignItems": "center",
               "children": [
@@ -7031,7 +7676,7 @@
               "width": "fill_container",
               "height": "fill_container",
               "fill": "$bg-card",
-              "cornerRadius": "$radius-md",
+              "cornerRadius": "$radius-lg",
               "stroke": {
                 "thickness": 1,
                 "fill": "$border-default"
@@ -7060,10 +7705,10 @@
                       "type": "frame",
                       "id": "zCCDa",
                       "name": "skPIW",
-                      "width": 28,
-                      "height": 28,
+                      "width": 30,
+                      "height": 30,
                       "fill": "#ff5c5c18",
-                      "cornerRadius": "$radius-sm",
+                      "cornerRadius": 8,
                       "justifyContent": "center",
                       "alignItems": "center",
                       "children": [
@@ -7094,8 +7739,9 @@
                           "fill": "$text-primary",
                           "content": "Available Skills",
                           "fontFamily": "Inter",
-                          "fontSize": 16,
-                          "fontWeight": "600"
+                          "fontSize": 15,
+                          "fontWeight": "600",
+                          "letterSpacing": -0.3
                         },
                         {
                           "type": "text",
@@ -7105,7 +7751,8 @@
                           "content": "Scanned from module_pack/ (custom) and openclaw/skills/ (community)",
                           "fontFamily": "Inter",
                           "fontSize": 12,
-                          "fontWeight": "normal"
+                          "fontWeight": "normal",
+                          "letterSpacing": -0.1
                         }
                       ]
                     }
@@ -7784,8 +8431,9 @@
                   "fill": "$text-secondary",
                   "content": "3 skills selected",
                   "fontFamily": "Inter",
-                  "fontSize": 14,
-                  "fontWeight": "normal"
+                  "fontSize": 13,
+                  "fontWeight": "normal",
+                  "letterSpacing": -0.1
                 },
                 {
                   "type": "frame",
@@ -7799,15 +8447,15 @@
                   "id": "uA2T5",
                   "name": "rmBtn",
                   "fill": "$bg-input",
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": "$radius-md",
                   "stroke": {
                     "thickness": 1,
                     "fill": "#ef444440"
                   },
                   "gap": 8,
                   "padding": [
-                    10,
-                    16
+                    9,
+                    14
                   ],
                   "alignItems": "center",
                   "children": [
@@ -7839,11 +8487,11 @@
                   "name": "depBtn",
                   "opacity": 0.5,
                   "fill": "$accent-primary",
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": "$radius-md",
                   "gap": 8,
                   "padding": [
-                    10,
-                    20
+                    9,
+                    18
                   ],
                   "alignItems": "center",
                   "children": [
@@ -7898,30 +8546,30 @@
               "height": "fit_content"
             },
             "aSBxR": {
-              "x": 20,
-              "y": 24
+              "x": 16,
+              "y": 20
             },
             "u50YC": {
-              "x": 6,
-              "y": 8
+              "x": 7.5,
+              "y": 9.5
             },
             "fX9GX": {
-              "x": 62,
-              "y": 30.5
+              "x": 60,
+              "y": 28
             },
             "HnHLc": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 80
+              "y": 74
             },
             "qQHnO": {
-              "x": 20,
-              "y": 12
+              "x": 16,
+              "y": 16
             },
             "2Ew7K": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 108
+              "y": 109
             },
             "n5c7q": {
               "fill": "#00000000",
@@ -7929,70 +8577,70 @@
                 "thickness": 0
               },
               "width": "fill_container",
-              "x": 12
+              "x": 8
             },
             "hwpJ4": {
               "fill": "$text-muted",
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "dtyVy": {
               "fontWeight": "400",
               "fill": "$text-secondary",
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "QJmdN": {
               "width": "fill_container",
-              "x": 12,
-              "y": 38
+              "x": 8,
+              "y": 44
             },
             "RuQOA": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "7QlNK": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "jx9yy": {
               "width": "fill_container",
-              "x": 12,
-              "y": 76
+              "x": 8,
+              "y": 88
             },
             "O2kf1": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "zsx8z": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "KOGPq": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 220
+              "y": 237
             },
             "6bA9Q": {
-              "x": 20,
-              "y": 16
+              "x": 16,
+              "y": 20
             },
             "vGgDK": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 252
+              "y": 276
             },
             "bsTRX": {
               "width": "fill_container",
-              "x": 12
+              "x": 8
             },
             "H8Xy5": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "RuDyK": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "G9Kdv": {
               "fill": "#1f1318",
@@ -8001,50 +8649,62 @@
                 "fill": "#ff5c5c30"
               },
               "width": "fill_container",
-              "x": 12,
-              "y": 38
+              "x": 8,
+              "y": 44
             },
             "rjsTQ": {
               "fill": "$accent-primary",
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "46HPZ": {
               "fontWeight": "600",
               "fill": "$text-primary",
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "Lwej7": {
               "width": "fill_container",
-              "x": 12,
-              "y": 76
+              "x": 8,
+              "y": 88
             },
             "SzKqr": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "gCY9R": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "bhmxx": {
               "width": "fill_container",
               "height": "fill_container",
-              "y": 364
+              "y": 404
             },
             "dQvMX": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 740
+              "y": 717
             },
             "gFYxI": {
-              "x": 20,
+              "x": 16,
               "y": 16
             },
+            "OGHqu": {
+              "width": "fill_container",
+              "x": 16,
+              "y": 35,
+              "height": "fit_content"
+            },
+            "IkjwR": {
+              "y": 2.5
+            },
+            "0KRBt": {
+              "x": 14
+            },
             "FPKNH": {
-              "x": 20,
-              "y": 31
+              "x": 16,
+              "y": 54
             }
           }
         },
@@ -8056,8 +8716,13 @@
           "width": "fill_container",
           "height": "fill_container",
           "layout": "vertical",
-          "gap": 24,
-          "padding": 32,
+          "gap": 20,
+          "padding": [
+            20,
+            24,
+            32,
+            24
+          ],
           "children": [
             {
               "type": "frame",
@@ -8081,8 +8746,9 @@
                       "fill": "$text-primary",
                       "content": "Install Plugins",
                       "fontFamily": "Inter",
-                      "fontSize": 24,
-                      "fontWeight": "700"
+                      "fontSize": 22,
+                      "fontWeight": "650",
+                      "letterSpacing": -0.7
                     },
                     {
                       "type": "text",
@@ -8091,8 +8757,9 @@
                       "fill": "$text-secondary",
                       "content": "Select and install plugin modules for OpenClaw",
                       "fontFamily": "Inter",
-                      "fontSize": 14,
-                      "fontWeight": "normal"
+                      "fontSize": 13.5,
+                      "fontWeight": "normal",
+                      "letterSpacing": -0.1
                     }
                   ]
                 },
@@ -8101,11 +8768,11 @@
                   "id": "3XAZq",
                   "name": "h7badge",
                   "fill": "#22c55e18",
-                  "cornerRadius": 12,
+                  "cornerRadius": "$radius-full",
                   "gap": 4,
                   "padding": [
-                    4,
-                    10
+                    5,
+                    11
                   ],
                   "alignItems": "center",
                   "children": [
@@ -8137,15 +8804,15 @@
               "name": "plBanner",
               "width": "fill_container",
               "fill": "#4CAF5015",
-              "cornerRadius": "$radius-md",
+              "cornerRadius": "$radius-lg",
               "stroke": {
                 "thickness": 1,
                 "fill": "#4CAF5040"
               },
               "gap": 12,
               "padding": [
-                16,
-                20
+                14,
+                18
               ],
               "alignItems": "center",
               "children": [
@@ -8199,7 +8866,7 @@
               "width": "fill_container",
               "height": "fill_container",
               "fill": "$bg-card",
-              "cornerRadius": "$radius-md",
+              "cornerRadius": "$radius-lg",
               "stroke": {
                 "thickness": 1,
                 "fill": "$border-default"
@@ -8228,10 +8895,10 @@
                       "type": "frame",
                       "id": "qnivz",
                       "name": "plPIW",
-                      "width": 28,
-                      "height": 28,
+                      "width": 30,
+                      "height": 30,
                       "fill": "#14b8a618",
-                      "cornerRadius": "$radius-sm",
+                      "cornerRadius": 8,
                       "justifyContent": "center",
                       "alignItems": "center",
                       "children": [
@@ -8262,8 +8929,9 @@
                           "fill": "$text-primary",
                           "content": "Available Plugins",
                           "fontFamily": "Inter",
-                          "fontSize": 16,
-                          "fontWeight": "600"
+                          "fontSize": 15,
+                          "fontWeight": "600",
+                          "letterSpacing": -0.3
                         },
                         {
                           "type": "text",
@@ -8273,7 +8941,8 @@
                           "content": "Extensions from openclaw/extensions/ (76+ available, config-driven)",
                           "fontFamily": "Inter",
                           "fontSize": 12,
-                          "fontWeight": "normal"
+                          "fontWeight": "normal",
+                          "letterSpacing": -0.1
                         }
                       ]
                     }
@@ -9021,8 +9690,9 @@
                   "fill": "$text-secondary",
                   "content": "1 plugin selected",
                   "fontFamily": "Inter",
-                  "fontSize": 14,
-                  "fontWeight": "normal"
+                  "fontSize": 13,
+                  "fontWeight": "normal",
+                  "letterSpacing": -0.1
                 },
                 {
                   "type": "frame",
@@ -9036,15 +9706,15 @@
                   "id": "BoPt2",
                   "name": "plUnBtn",
                   "fill": "$bg-input",
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": "$radius-md",
                   "stroke": {
                     "thickness": 1,
                     "fill": "#ef444440"
                   },
                   "gap": 8,
                   "padding": [
-                    10,
-                    16
+                    9,
+                    14
                   ],
                   "alignItems": "center",
                   "children": [
@@ -9076,11 +9746,11 @@
                   "name": "plInstBtn",
                   "opacity": 0.5,
                   "fill": "$accent-primary",
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": "$radius-md",
                   "gap": 8,
                   "padding": [
-                    10,
-                    20
+                    9,
+                    18
                   ],
                   "alignItems": "center",
                   "children": [
@@ -9135,30 +9805,30 @@
               "height": "fit_content"
             },
             "aSBxR": {
-              "x": 20,
-              "y": 24
+              "x": 16,
+              "y": 20
             },
             "u50YC": {
-              "x": 6,
-              "y": 8
+              "x": 7.5,
+              "y": 9.5
             },
             "fX9GX": {
-              "x": 62,
-              "y": 30.5
+              "x": 60,
+              "y": 28
             },
             "HnHLc": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 80
+              "y": 74
             },
             "qQHnO": {
-              "x": 20,
-              "y": 12
+              "x": 16,
+              "y": 16
             },
             "2Ew7K": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 108
+              "y": 109
             },
             "n5c7q": {
               "fill": "#00000000",
@@ -9166,83 +9836,83 @@
                 "thickness": 0
               },
               "width": "fill_container",
-              "x": 12
+              "x": 8
             },
             "hwpJ4": {
               "fill": "$text-muted",
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "dtyVy": {
               "fontWeight": "400",
               "fill": "$text-secondary",
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "QJmdN": {
               "width": "fill_container",
-              "x": 12,
-              "y": 38
+              "x": 8,
+              "y": 44
             },
             "RuQOA": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "7QlNK": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "jx9yy": {
               "width": "fill_container",
-              "x": 12,
-              "y": 76
+              "x": 8,
+              "y": 88
             },
             "O2kf1": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "zsx8z": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "KOGPq": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 220
+              "y": 237
             },
             "6bA9Q": {
-              "x": 20,
-              "y": 16
+              "x": 16,
+              "y": 20
             },
             "vGgDK": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 252
+              "y": 276
             },
             "bsTRX": {
               "width": "fill_container",
-              "x": 12
+              "x": 8
             },
             "H8Xy5": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "RuDyK": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "G9Kdv": {
               "width": "fill_container",
-              "x": 12,
-              "y": 38
+              "x": 8,
+              "y": 44
             },
             "rjsTQ": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "46HPZ": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "Lwej7": {
               "fill": "#1f1318",
@@ -9251,37 +9921,49 @@
                 "fill": "#ff5c5c30"
               },
               "width": "fill_container",
-              "x": 12,
-              "y": 76
+              "x": 8,
+              "y": 88
             },
             "SzKqr": {
               "fill": "$accent-primary",
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "gCY9R": {
               "fontWeight": "600",
               "fill": "$text-primary",
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "bhmxx": {
               "width": "fill_container",
               "height": "fill_container",
-              "y": 364
+              "y": 404
             },
             "dQvMX": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 740
+              "y": 717
             },
             "gFYxI": {
-              "x": 20,
+              "x": 16,
               "y": 16
             },
+            "OGHqu": {
+              "width": "fill_container",
+              "x": 16,
+              "y": 35,
+              "height": "fit_content"
+            },
+            "IkjwR": {
+              "y": 2.5
+            },
+            "0KRBt": {
+              "x": 14
+            },
             "FPKNH": {
-              "x": 20,
-              "y": 31
+              "x": 16,
+              "y": 54
             }
           }
         },
@@ -9293,8 +9975,13 @@
           "width": "fill_container",
           "height": "fill_container",
           "layout": "vertical",
-          "gap": 24,
-          "padding": 32,
+          "gap": 20,
+          "padding": [
+            20,
+            24,
+            32,
+            24
+          ],
           "children": [
             {
               "type": "frame",
@@ -9318,8 +10005,9 @@
                       "fill": "$text-primary",
                       "content": "Fix Plugins",
                       "fontFamily": "Inter",
-                      "fontSize": 24,
-                      "fontWeight": "700"
+                      "fontSize": 22,
+                      "fontWeight": "650",
+                      "letterSpacing": -0.7
                     },
                     {
                       "type": "text",
@@ -9328,8 +10016,9 @@
                       "fill": "$text-secondary",
                       "content": "Diagnose and repair plugin issues",
                       "fontFamily": "Inter",
-                      "fontSize": 14,
-                      "fontWeight": "normal"
+                      "fontSize": 13.5,
+                      "fontWeight": "normal",
+                      "letterSpacing": -0.1
                     }
                   ]
                 },
@@ -9338,7 +10027,7 @@
                   "id": "XafMQ",
                   "name": "diagBtn",
                   "fill": "$bg-input",
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": "$radius-md",
                   "stroke": {
                     "thickness": 1,
                     "fill": "$border-default"
@@ -9380,15 +10069,15 @@
               "name": "fxBanner",
               "width": "fill_container",
               "fill": "#F4433610",
-              "cornerRadius": "$radius-md",
+              "cornerRadius": "$radius-lg",
               "stroke": {
                 "thickness": 1,
                 "fill": "#F4433630"
               },
               "gap": 12,
               "padding": [
-                16,
-                20
+                14,
+                18
               ],
               "alignItems": "center",
               "children": [
@@ -9452,7 +10141,7 @@
               "width": "fill_container",
               "height": "fill_container",
               "fill": "$bg-card",
-              "cornerRadius": "$radius-md",
+              "cornerRadius": "$radius-lg",
               "stroke": {
                 "thickness": 1,
                 "fill": "$border-default"
@@ -9481,10 +10170,10 @@
                       "type": "frame",
                       "id": "VeCJZ",
                       "name": "fxPIW",
-                      "width": 28,
-                      "height": 28,
+                      "width": 30,
+                      "height": 30,
                       "fill": "#ff5c5c18",
-                      "cornerRadius": "$radius-sm",
+                      "cornerRadius": 8,
                       "justifyContent": "center",
                       "alignItems": "center",
                       "children": [
@@ -9515,8 +10204,9 @@
                           "fill": "$text-primary",
                           "content": "Diagnostic Report",
                           "fontFamily": "Inter",
-                          "fontSize": 16,
-                          "fontWeight": "600"
+                          "fontSize": 15,
+                          "fontWeight": "600",
+                          "letterSpacing": -0.3
                         },
                         {
                           "type": "text",
@@ -9526,7 +10216,8 @@
                           "content": "Health status of installed plugins",
                           "fontFamily": "Inter",
                           "fontSize": 12,
-                          "fontWeight": "normal"
+                          "fontWeight": "normal",
+                          "letterSpacing": -0.1
                         }
                       ]
                     }
@@ -9856,14 +10547,14 @@
               "name": "fxActionBar",
               "width": "fill_container",
               "fill": "$bg-card",
-              "cornerRadius": "$radius-md",
+              "cornerRadius": "$radius-lg",
               "stroke": {
                 "thickness": 1,
                 "fill": "$border-default"
               },
               "padding": [
-                16,
-                24
+                14,
+                20
               ],
               "alignItems": "center",
               "children": [
@@ -9875,7 +10566,8 @@
                   "content": "1 healthy · 1 broken",
                   "fontFamily": "Inter",
                   "fontSize": 13,
-                  "fontWeight": "normal"
+                  "fontWeight": "normal",
+                  "letterSpacing": -0.1
                 },
                 {
                   "type": "frame",
@@ -9889,11 +10581,11 @@
                   "id": "KJxPb",
                   "name": "fixAllBtn",
                   "fill": "$accent-primary",
-                  "cornerRadius": "$radius-sm",
+                  "cornerRadius": "$radius-md",
                   "gap": 8,
                   "padding": [
-                    10,
-                    20
+                    9,
+                    18
                   ],
                   "alignItems": "center",
                   "children": [
@@ -9934,7 +10626,7 @@
       "reusable": true,
       "width": 260,
       "height": 800,
-      "fill": "$bg-primary",
+      "fill": "$bg-accent",
       "stroke": {
         "thickness": {
           "right": 1
@@ -9950,8 +10642,8 @@
           "width": "fill_container",
           "gap": 10,
           "padding": [
-            24,
-            20
+            20,
+            16
           ],
           "alignItems": "center",
           "children": [
@@ -9959,10 +10651,10 @@
               "type": "frame",
               "id": "aSBxR",
               "name": "logoBg",
-              "width": 32,
-              "height": 32,
+              "width": 34,
+              "height": 34,
               "fill": "$accent-primary",
-              "cornerRadius": "$radius-sm",
+              "cornerRadius": 8,
               "justifyContent": "center",
               "alignItems": "center",
               "children": [
@@ -9973,8 +10665,8 @@
                   "fill": "$text-on-accent",
                   "content": "OC",
                   "fontFamily": "Inter",
-                  "fontSize": 13,
-                  "fontWeight": "700"
+                  "fontSize": 12,
+                  "fontWeight": "800"
                 }
               ]
             },
@@ -9985,8 +10677,9 @@
               "fill": "$text-primary",
               "content": "OpenClaw",
               "fontFamily": "Inter",
-              "fontSize": 16,
-              "fontWeight": "600"
+              "fontSize": 15,
+              "fontWeight": "650",
+              "letterSpacing": -0.3
             }
           ]
         },
@@ -9996,10 +10689,10 @@
           "name": "mainLabelWrap",
           "width": "fill_container",
           "padding": [
-            12,
-            20,
-            4,
-            20
+            16,
+            16,
+            6,
+            16
           ],
           "children": [
             {
@@ -10009,9 +10702,9 @@
               "fill": "$text-muted",
               "content": "MAIN",
               "fontFamily": "Inter",
-              "fontSize": 10,
+              "fontSize": 11,
               "fontWeight": "700",
-              "letterSpacing": 1.2
+              "letterSpacing": 0.7
             }
           ]
         },
@@ -10021,10 +10714,10 @@
           "name": "mainNav",
           "width": "fill_container",
           "layout": "vertical",
-          "gap": 2,
+          "gap": 4,
           "padding": [
             0,
-            12
+            8
           ],
           "children": [
             {
@@ -10032,12 +10725,12 @@
               "id": "n5c7q",
               "name": "NavItem/Dashboard/Active",
               "width": "fill_container",
-              "height": 36,
-              "fill": "#1f1318",
-              "cornerRadius": "$radius-sm",
+              "height": 40,
+              "fill": "$accent-subtle",
+              "cornerRadius": 12,
               "stroke": {
                 "thickness": 1,
-                "fill": "#ff5c5c30"
+                "fill": "$accent-glow"
               },
               "gap": 10,
               "padding": [
@@ -10073,8 +10766,8 @@
               "id": "QJmdN",
               "name": "NavItem/Configuration",
               "width": "fill_container",
-              "height": 36,
-              "cornerRadius": "$radius-sm",
+              "height": 40,
+              "cornerRadius": 12,
               "gap": 10,
               "padding": [
                 0,
@@ -10109,8 +10802,8 @@
               "id": "jx9yy",
               "name": "NavItem/Environment",
               "width": "fill_container",
-              "height": 36,
-              "cornerRadius": "$radius-sm",
+              "height": 40,
+              "cornerRadius": 12,
               "gap": 10,
               "padding": [
                 0,
@@ -10148,10 +10841,10 @@
           "name": "opsLabelWrap",
           "width": "fill_container",
           "padding": [
-            16,
             20,
-            4,
-            20
+            16,
+            6,
+            16
           ],
           "children": [
             {
@@ -10161,9 +10854,9 @@
               "fill": "$text-muted",
               "content": "OPERATIONS",
               "fontFamily": "Inter",
-              "fontSize": 10,
+              "fontSize": 11,
               "fontWeight": "700",
-              "letterSpacing": 1.2
+              "letterSpacing": 0.7
             }
           ]
         },
@@ -10173,10 +10866,10 @@
           "name": "opsNav",
           "width": "fill_container",
           "layout": "vertical",
-          "gap": 2,
+          "gap": 4,
           "padding": [
             0,
-            12
+            8
           ],
           "children": [
             {
@@ -10184,8 +10877,8 @@
               "id": "bsTRX",
               "name": "NavItem/DeploySkills",
               "width": "fill_container",
-              "height": 36,
-              "cornerRadius": "$radius-sm",
+              "height": 40,
+              "cornerRadius": 12,
               "gap": 10,
               "padding": [
                 0,
@@ -10220,8 +10913,8 @@
               "id": "G9Kdv",
               "name": "NavItem/InstallPlugins",
               "width": "fill_container",
-              "height": 36,
-              "cornerRadius": "$radius-sm",
+              "height": 40,
+              "cornerRadius": 12,
               "gap": 10,
               "padding": [
                 0,
@@ -10256,8 +10949,8 @@
               "id": "Lwej7",
               "name": "NavItem/FixPlugins",
               "width": "fill_container",
-              "height": 36,
-              "cornerRadius": "$radius-sm",
+              "height": 40,
+              "cornerRadius": 12,
               "gap": 10,
               "padding": [
                 0,
@@ -10302,11 +10995,8 @@
           "name": "versionWrap",
           "width": "fill_container",
           "layout": "vertical",
-          "gap": 2,
-          "padding": [
-            16,
-            20
-          ],
+          "gap": 6,
+          "padding": 16,
           "children": [
             {
               "type": "text",
@@ -10316,17 +11006,45 @@
               "content": "OpenClaw v1.0.0",
               "fontFamily": "Inter",
               "fontSize": 11,
-              "fontWeight": "normal"
+              "fontWeight": "500"
+            },
+            {
+              "type": "frame",
+              "id": "OGHqu",
+              "name": "connStatus",
+              "width": "fill_container",
+              "gap": 6,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "ellipse",
+                  "id": "IkjwR",
+                  "name": "connDot",
+                  "fill": "$status-success",
+                  "width": 8,
+                  "height": 8
+                },
+                {
+                  "type": "text",
+                  "id": "0KRBt",
+                  "name": "connTxt",
+                  "fill": "$status-success",
+                  "content": "Connected",
+                  "fontFamily": "Inter",
+                  "fontSize": 11,
+                  "fontWeight": "500"
+                }
+              ]
             },
             {
               "type": "text",
               "id": "FPKNH",
               "name": "ver2",
               "fill": "$text-muted",
-              "content": "Docker · Windows",
+              "content": "Remote · SSH",
               "fontFamily": "Inter",
               "fontSize": 11,
-              "fontWeight": "normal"
+              "fontWeight": "500"
             }
           ]
         }
@@ -10355,30 +11073,30 @@
               "height": "fit_content"
             },
             "aSBxR": {
-              "x": 20,
-              "y": 24
+              "x": 16,
+              "y": 20
             },
             "u50YC": {
-              "x": 6,
-              "y": 8
+              "x": 7.5,
+              "y": 9.5
             },
             "fX9GX": {
-              "x": 62,
-              "y": 30.5
+              "x": 60,
+              "y": 28
             },
             "HnHLc": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 80
+              "y": 74
             },
             "qQHnO": {
-              "x": 20,
-              "y": 12
+              "x": 16,
+              "y": 16
             },
             "2Ew7K": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 108
+              "y": 109
             },
             "n5c7q": {
               "fill": "#00000000",
@@ -10386,31 +11104,31 @@
                 "thickness": 0
               },
               "width": "fill_container",
-              "x": 12
+              "x": 8
             },
             "hwpJ4": {
               "fill": "$text-muted",
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "dtyVy": {
               "fontWeight": "400",
               "fill": "$text-secondary",
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "QJmdN": {
               "width": "fill_container",
-              "x": 12,
-              "y": 38
+              "x": 8,
+              "y": 44
             },
             "RuQOA": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "7QlNK": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "jx9yy": {
               "fill": "#1f1318",
@@ -10419,89 +11137,101 @@
                 "fill": "#ff5c5c30"
               },
               "width": "fill_container",
-              "x": 12,
-              "y": 76
+              "x": 8,
+              "y": 88
             },
             "O2kf1": {
               "fill": "$accent-primary",
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "zsx8z": {
               "fontWeight": "600",
               "fill": "$text-primary",
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "KOGPq": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 220
+              "y": 237
             },
             "6bA9Q": {
-              "x": 20,
-              "y": 16
+              "x": 16,
+              "y": 20
             },
             "vGgDK": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 252
+              "y": 276
             },
             "bsTRX": {
               "width": "fill_container",
-              "x": 12
+              "x": 8
             },
             "H8Xy5": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "RuDyK": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "G9Kdv": {
               "width": "fill_container",
-              "x": 12,
-              "y": 38
+              "x": 8,
+              "y": 44
             },
             "rjsTQ": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "46HPZ": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "Lwej7": {
               "width": "fill_container",
-              "x": 12,
-              "y": 76
+              "x": 8,
+              "y": 88
             },
             "SzKqr": {
               "x": 12,
-              "y": 9
+              "y": 11
             },
             "gCY9R": {
               "x": 40,
-              "y": 9.5
+              "y": 11.5
             },
             "bhmxx": {
               "width": "fill_container",
               "height": "fill_container",
-              "y": 364
+              "y": 404
             },
             "dQvMX": {
               "width": "fill_container",
               "height": "fit_content",
-              "y": 740
+              "y": 717
             },
             "gFYxI": {
-              "x": 20,
+              "x": 16,
               "y": 16
             },
+            "OGHqu": {
+              "width": "fill_container",
+              "x": 16,
+              "y": 35,
+              "height": "fit_content"
+            },
+            "IkjwR": {
+              "y": 2.5
+            },
+            "0KRBt": {
+              "x": 14
+            },
             "FPKNH": {
-              "x": 20,
-              "y": 31,
+              "x": 16,
+              "y": 54,
               "content": "Native · Linux (systemd)"
             }
           }
@@ -10514,8 +11244,13 @@
           "width": "fill_container",
           "height": "fill_container",
           "layout": "vertical",
-          "gap": 24,
-          "padding": 32,
+          "gap": 20,
+          "padding": [
+            20,
+            24,
+            32,
+            24
+          ],
           "children": [
             {
               "type": "frame",
@@ -10539,8 +11274,9 @@
                       "fill": "$text-primary",
                       "content": "Environment Check",
                       "fontFamily": "Inter",
-                      "fontSize": 24,
-                      "fontWeight": "700"
+                      "fontSize": 22,
+                      "fontWeight": "650",
+                      "letterSpacing": -0.7
                     },
                     {
                       "type": "text",
@@ -10549,8 +11285,9 @@
                       "fill": "$text-secondary",
                       "content": "Verify system dependencies and runtime environment",
                       "fontFamily": "Inter",
-                      "fontSize": 14,
-                      "fontWeight": "normal"
+                      "fontSize": 13.5,
+                      "fontWeight": "normal",
+                      "letterSpacing": -0.1
                     }
                   ]
                 },
@@ -10559,15 +11296,15 @@
                   "id": "AGDAA",
                   "name": "h2badge",
                   "fill": "#3b82f618",
-                  "cornerRadius": 12,
+                  "cornerRadius": "$radius-full",
                   "stroke": {
                     "thickness": 1,
                     "fill": "#3b82f640"
                   },
                   "gap": 6,
                   "padding": [
-                    4,
-                    10
+                    5,
+                    11
                   ],
                   "alignItems": "center",
                   "children": [
@@ -10601,15 +11338,15 @@
               "name": "banner",
               "width": "fill_container",
               "fill": "#4CAF5015",
-              "cornerRadius": "$radius-md",
+              "cornerRadius": "$radius-lg",
               "stroke": {
                 "thickness": 1,
                 "fill": "#4CAF5040"
               },
               "gap": 12,
               "padding": [
-                16,
-                20
+                14,
+                18
               ],
               "alignItems": "center",
               "children": [
@@ -10670,7 +11407,7 @@
               "id": "15bel",
               "name": "cardsRow",
               "width": "fill_container",
-              "gap": 16,
+              "gap": 12,
               "children": [
                 {
                   "type": "frame",
@@ -10678,7 +11415,7 @@
                   "name": "ckNode",
                   "width": "fill_container",
                   "fill": "$bg-card",
-                  "cornerRadius": "$radius-md",
+                  "cornerRadius": "$radius-lg",
                   "stroke": {
                     "thickness": 1,
                     "fill": "$border-default"
@@ -10781,7 +11518,7 @@
                   "name": "ckCli",
                   "width": "fill_container",
                   "fill": "$bg-card",
-                  "cornerRadius": "$radius-md",
+                  "cornerRadius": "$radius-lg",
                   "stroke": {
                     "thickness": 1,
                     "fill": "$border-default"
@@ -10884,7 +11621,7 @@
                   "name": "ckJq",
                   "width": "fill_container",
                   "fill": "$bg-card",
-                  "cornerRadius": "$radius-md",
+                  "cornerRadius": "$radius-lg",
                   "stroke": {
                     "thickness": 1,
                     "fill": "$border-default"
@@ -10987,7 +11724,7 @@
                   "name": "ckVscode",
                   "width": "fill_container",
                   "fill": "$bg-card",
-                  "cornerRadius": "$radius-md",
+                  "cornerRadius": "$radius-lg",
                   "stroke": {
                     "thickness": 1,
                     "fill": "$border-default"
@@ -11090,7 +11827,7 @@
                   "name": "ckNgrok",
                   "width": "fill_container",
                   "fill": "$bg-card",
-                  "cornerRadius": "$radius-md",
+                  "cornerRadius": "$radius-lg",
                   "stroke": {
                     "thickness": 1,
                     "fill": "#ef444440"
@@ -11193,7 +11930,7 @@
                   "name": "ckSystemd",
                   "width": "fill_container",
                   "fill": "$bg-card",
-                  "cornerRadius": "$radius-md",
+                  "cornerRadius": "$radius-lg",
                   "stroke": {
                     "thickness": 1,
                     "fill": "$border-default"
@@ -11298,15 +12035,15 @@
               "name": "envRow",
               "width": "fill_container",
               "fill": "$bg-card",
-              "cornerRadius": "$radius-md",
+              "cornerRadius": "$radius-lg",
               "stroke": {
                 "thickness": 1,
                 "fill": "$border-default"
               },
               "gap": 12,
               "padding": [
-                16,
-                20
+                14,
+                18
               ],
               "alignItems": "center",
               "children": [
@@ -11355,7 +12092,7 @@
                   "id": "SzmoQ",
                   "name": "envBadge",
                   "fill": "#22c55e18",
-                  "cornerRadius": 10,
+                  "cornerRadius": "$radius-full",
                   "gap": 4,
                   "padding": [
                     2,
@@ -11391,15 +12128,15 @@
               "name": "errBlock",
               "width": "fill_container",
               "fill": "#F4433610",
-              "cornerRadius": "$radius-md",
+              "cornerRadius": "$radius-lg",
               "stroke": {
                 "thickness": 1,
                 "fill": "#F4433630"
               },
               "gap": 12,
               "padding": [
-                16,
-                20
+                14,
+                18
               ],
               "alignItems": "center",
               "children": [
@@ -11512,6 +12249,62 @@
     "text-secondary": {
       "type": "color",
       "value": "#d4d4d8"
+    },
+    "accent-glow": {
+      "type": "color",
+      "value": "#ff5c5c33"
+    },
+    "accent-subtle": {
+      "type": "color",
+      "value": "#ff5c5c1a"
+    },
+    "bg-accent": {
+      "type": "color",
+      "value": "#13151b"
+    },
+    "bg-elevated": {
+      "type": "color",
+      "value": "#191c24"
+    },
+    "bg-hover": {
+      "type": "color",
+      "value": "#1f2330"
+    },
+    "border-strong": {
+      "type": "color",
+      "value": "#2e3040"
+    },
+    "danger-subtle": {
+      "type": "color",
+      "value": "#ef444414"
+    },
+    "ok-subtle": {
+      "type": "color",
+      "value": "#22c55e14"
+    },
+    "radius-full": {
+      "type": "number",
+      "value": 9999
+    },
+    "radius-lg": {
+      "type": "number",
+      "value": 14
+    },
+    "radius-xl": {
+      "type": "number",
+      "value": 20
+    },
+    "text-strong": {
+      "type": "color",
+      "value": "#f4f4f5"
+    },
+    "warn": {
+      "type": "color",
+      "value": "#f59e0b"
+    },
+    "warn-subtle": {
+      "type": "color",
+      "value": "#f59e0b14"
     }
   }
 }
