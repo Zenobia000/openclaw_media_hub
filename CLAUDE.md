@@ -1,13 +1,13 @@
 # CLAUDE.md - OpenClaw GUI
 
 > **版本**：2.0 - 原生 Python 架構 + PyWebView
-> **更新**：2026-03-23
+> **更新**：2026-03-24
 > **專案**：OpenClaw GUI 應用程式
 > **目標**：圖形化介面取代命令列腳本，單一可執行檔部署，降低使用門檻
 > **架構**：PyWebView Bridge 模式 + Tailwind CSS 前端 + 原生 Python 操作邏輯
 > **模式**：人類駕駛，AI 協助
 > **工具**：PyWebView, PyInstaller, Tailwind CSS, keyring, uv
-> **ADR**：ADR-003 廢棄 Shell 腳本，所有操作邏輯以原生 Python 實作
+> **ADR**：ADR-003 廢棄 Shell 腳本，所有操作邏輯以原生 Python 實作; ADR-004 SSH 遠端管理 Transport Layer
 
 ---
 
@@ -142,6 +142,11 @@ openclaw/                            # 專案根目錄
 │   ├── skill_manager.py             # 技能部署邏輯 (目錄掃描、SKILL.md 解析、複製/移除)
 │   ├── plugin_manager.py            # 外掛管理邏輯
 │   ├── service_controller.py        # 服務啟停控制 (docker compose / systemctl)
+│   ├── executor.py                  # Executor Protocol 定義 + CommandResult (ADR-004)
+│   ├── local_executor.py            # 本機操作實作 (subprocess/pathlib/shutil)
+│   ├── remote_executor.py           # 遠端操作實作 (paramiko SSH/SFTP)
+│   ├── ssh_connection.py            # SSH 連線管理 (連線/重連/心跳/狀態)
+│   ├── transfer_service.py          # 跨本機/遠端檔案傳輸 (技能部署用)
 │   └── frontend/                    # 前端靜態資源
 │       ├── index.html               # 主頁面
 │       ├── css/
@@ -174,7 +179,12 @@ openclaw/                            # 專案根目錄
 8. **Skill Manager (skill_manager.py)**: 掃描 `module_pack/`、解析 SKILL.md frontmatter、`shutil.copytree/rmtree`。
 9. **Plugin Manager (plugin_manager.py)**: 外掛安裝與修復邏輯。
 10. **Service Controller (service_controller.py)**: Docker Compose / systemctl 服務啟停與狀態查詢。
-11. **Frontend (frontend/)**: HTML/JS/CSS 介面，Tailwind CSS 樣式，結構化 UI（狀態卡片、表單、勾選清單），完全無狀態。
+11. **Executor Protocol (executor.py)**: 統一操作介面定義（`run_command`, `read_file`, `write_file`, `mkdir`, `copy_tree`, `remove_tree`, `file_exists`, `list_dir`, `which`），上層模組透過此介面操作 (ADR-004)。
+12. **Local Executor (local_executor.py)**: 封裝 `subprocess`, `pathlib`, `shutil`，用於本機模式。
+13. **Remote Executor (remote_executor.py)**: 封裝 `paramiko.SSHClient` + `SFTPClient`，用於 SSH 遠端模式。
+14. **SSH Connection (ssh_connection.py)**: SSH 連線生命週期管理（建立/斷線/重連/心跳/狀態）。
+15. **Transfer Service (transfer_service.py)**: 跨本機/遠端檔案傳輸（技能部署用）。
+16. **Frontend (frontend/)**: HTML/JS/CSS 介面，Tailwind CSS 樣式，結構化 UI（狀態卡片、表單、勾選清單），完全無狀態。
 
 ### 功能實作對照
 
@@ -200,23 +210,25 @@ openclaw/                            # 專案根目錄
 | **套件管理**     | uv                          | Python 版本管理 + 虛擬環境 + 依賴鎖定 (All-in-one) |
 | **打包工具**     | PyInstaller                 | 編譯為獨立執行檔，零依賴部署                 |
 | **金鑰儲存**     | keyring                     | 跨平台安全儲存 (DPAPI / libsecret)          |
+| **SSH 連線**     | paramiko                    | 純 Python SSH2 實作，用於 RemoteExecutor (ADR-004) |
 | **容器管理**     | Docker Compose              | Docker 環境下的服務編排                      |
 
 ---
 
 ## 里程碑與進度
 
-| 里程碑                                      | 預定日期   | 狀態       |
-| :------------------------------------------ | :--------- | :--------- |
-| **M1: PRD 與 WBS 完成 (Gate 1)**            | 2026-03-24 | 🔄 進行中  |
-| **M2: 架構設計與 UI Mockup 完成 (Gate 2)**  | 2026-03-27 | ⬜ 未開始  |
-| **M3: 核心功能開發完成與打包測試 (Gate 3)** | 2026-04-16 | ⬜ 未開始  |
-| **M4: 應用程式正式發佈上線 (Launch)**       | 2026-04-24 | ⬜ 未開始  |
+| 里程碑                                              | 預定日期   | 狀態       |
+| :-------------------------------------------------- | :--------- | :--------- |
+| **M1: PRD + WBS 完成 (Gate 1)**                     | 2026-03-24 | ✅ 完成    |
+| **M2: 架構設計 + UI Mockup + 前端規格書 (Gate 2)**  | 2026-03-28 | 🔄 進行中  |
+| **M3: 核心功能開發完成 (Gate 3)**                    | 2026-04-18 | ⬜ 未開始  |
+| **M4: 全功能開發 + 打包測試 (Gate 4)**               | 2026-05-01 | ⬜ 未開始  |
+| **M5: 應用程式正式發佈上線 (Launch)**                | 2026-05-08 | ⬜ 未開始  |
 
 ### 總工期
 
-- **時間**：約 5 週 (2026-03-23 ~ 2026-04-24)
-- **總工時**：116 小時
+- **時間**：約 7 週 (2026-03-22 ~ 2026-05-08)
+- **總工時**：182 小時
 
 ---
 

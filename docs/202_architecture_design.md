@@ -89,6 +89,7 @@ graph TD
   - User 點擊「檢查環境」按鈕 → Frontend 呼叫 Bridge API `check_env()` → Backend `env_checker.py` 以 `shutil.which()` 偵測各軟體是否安裝、以 `subprocess.run()` 取得版本號 → 回傳結構化結果 `[{name, installed, version, message}]` → Frontend 渲染為狀態卡片列表（綠色通過/紅色缺失）。
 - **初始化資料流 (Init)**:
   - User 於步驟精靈填寫金鑰與設定 → Frontend 呼叫 Bridge API `initialize()` → Backend `initializer.py` 依序執行 11 步流程（對齊 `openclaw/scripts/docker/setup.sh` 實際行為）：
+    > **前端合併顯示**：Step 1 與 Step 2 在 UI 合併為單一 ProgressItem「Validate environment」，前端共顯示 **10 個步驟**（詳見 208 §4.4）。
     1. 驗證 Docker + Docker Compose 可用性
     2. 驗證/設定環境變數（`OPENCLAW_CONFIG_DIR`, `OPENCLAW_WORKSPACE_DIR`, `OPENCLAW_GATEWAY_PORT`, `OPENCLAW_GATEWAY_BIND` 等）
     3. `pathlib` 建立目錄結構（`~/.openclaw/identity/`, `agents/main/agent/`, `agents/main/sessions/`, `workspace/`）
@@ -207,4 +208,4 @@ Docker 設定流程管理的環境變數，GUI 初始化步驟需讀寫這些值
 | `OPENCLAW_SANDBOX` | *(空)* | 設為 `1` 啟用 sandbox 模式 |
 | `OPENCLAW_DOCKER_SOCKET` | `/var/run/docker.sock` | Docker socket 路徑 |
 
-> **SSH 遠端模式備註 (ADR-004)**: SSH 連線設定（`ssh_host`, `ssh_port`, `ssh_username`, `ssh_key_path`）儲存於本機 `gui-settings.json`（與部署模式設定並列），不儲存於環境變數。SSH 私鑰密碼（passphrase）若需要，透過本機 `keyring` 安全儲存。遠端伺服器的環境變數透過 `RemoteExecutor.write_file()` 寫入遠端 `.env`。
+> **SSH 遠端模式備註 (ADR-004)**: SSH 連線設定（`ssh_host`, `ssh_port`, `ssh_username`, `ssh_key_path`）儲存於本機 `{app_data}/openclaw-gui/gui-settings.json`（如 `%APPDATA%/openclaw-gui/` 或 `~/.config/openclaw-gui/`，與部署模式設定並列），不儲存於環境變數。SSH 私鑰密碼（passphrase）若需要，透過本機 `keyring` 安全儲存。遠端伺服器的環境變數透過 `RemoteExecutor.write_file()` 寫入遠端 `.env`。v1.0 遠端僅支援 Native Linux 模式。

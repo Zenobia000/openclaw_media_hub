@@ -188,8 +188,6 @@
 
 **狀態:** ✅ 完成 | 🔄 進行中 | ⏳ 計劃中 | ⬜ 未開始
 
-**狀態:** ✅ 完成 | 🔄 進行中 | ⏳ 計劃中 | ⬜ 未開始
-
 ---
 
 ## 3. 詳細任務分解
@@ -263,7 +261,7 @@
 
 | ID    | 任務                                                                                                        | 負責人 | 工時 | 狀態      | 開始日 | 完成日 | 備註                                       |
 | :---- | :---------------------------------------------------------------------------------------------------------- | :----- | :--- | :-------- | :----- | :----- | :----------------------------------------- |
-| 3.5.1 | config_manager.py：gui-settings.json 讀寫（deployment_mode 持久化，路徑 `{project_root}/.openclaw/`）       | DEV    | 1h   | ⬜ 未開始 | 04/05  | 04/05  | 與 openclaw.json 分開                      |
+| 3.5.1 | config_manager.py：gui-settings.json 讀寫（deployment_mode 持久化，路徑 `{app_data}/openclaw-gui/`，如 `%APPDATA%/openclaw-gui/` 或 `~/.config/openclaw-gui/`） | DEV    | 1h   | ⬜ 未開始 | 04/05  | 04/05  | 與 openclaw.json 分開                      |
 | 3.5.2 | config_manager.py：keyring 整合 — 金鑰安全儲存/讀取/刪除（Windows DPAPI + Linux libsecret）                  | DEV    | 2h   | ⬜ 未開始 | 04/05  | 04/06  | 禁止明文儲存                               |
 | 3.5.3 | config_manager.py：openclaw.json 讀寫 — deep merge 策略、寫入前備份 (.bak)、sections 操作 (meta/agents/channels/gateway/plugins/tools/commands) | DEV | 2h | ⬜ 未開始 | 04/06 | 04/07 | 多層巢狀 JSON，需確保不破壞既有設定 |
 | 3.5.4 | config_manager.py：.env 檔案管理 — 16+ 環境變數 upsert 邏輯（讀取、新增、更新、保留未列變數）               | DEV    | 1h   | ⬜ 未開始 | 04/07  | 04/07  | 202 §8 環境變數清單                        |

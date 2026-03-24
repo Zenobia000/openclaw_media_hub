@@ -49,7 +49,7 @@
 - [x] 是否有指定的前端 UI 框架風格（例如：Tailwind CSS、Bootstrap，或是純手工 Vanilla CSS）以符合現代美學？
   - **決議:** 使用 Tailwind CSS。
 - [x] 服務的「啟動」與「停止」具體是對應哪個尚未列出的腳本？還是針對 docker-compose / 系統服務做直接控制？
-  - **決議:** 啟動與停止沒有專屬腳本，依據環境直接控制：Docker 環境使用 `docker-compose up -d` / `docker-compose down` 起停；Linux 原生環境使用 `systemctl start/stop` 起停；Windows 原生環境使用背景程序管理 (`Start-Process` / `Stop-Process`) 起停。
+  - **決議:** 啟動與停止沒有專屬腳本，依據環境直接控制：Docker 環境（Windows/Linux）使用 `docker compose up -d` / `docker compose down` 起停；Linux 原生環境使用 `systemctl start/stop` 起停。Windows 僅支援 Docker 模式，不支援 Native 模式（v1.0 範圍限制）。
 - [ ] GUI 是否需要支援 `openclaw channels login`（WhatsApp QR 登入）和 `openclaw channels add`（Telegram/Discord token 新增）的等價功能？
   - **背景:** Docker 設定流程結束後，setup.sh 會提示使用者手動執行 `docker compose run --rm openclaw-cli channels login`（WhatsApp）或 `channels add --channel telegram --token "<token>"`。GUI 是否需要整合這些管道註冊流程？
 - [ ] SSH 遠端模式下，技能部署需要將本機 `module_pack/` 目錄上傳至遠端伺服器。若自訂業務模組體積較大（例如包含二進位資產），是否需要設定上傳大小限制或提供進度百分比回饋？

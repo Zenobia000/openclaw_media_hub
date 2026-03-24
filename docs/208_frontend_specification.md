@@ -246,7 +246,7 @@ Root (SPA - Single Page Application)
 // 觸發環境檢查（後端根據 persisted deployment_mode 決定檢查項目）
 const result = await window.pywebview.api.check_env();
 // 回傳: { checks: [{name, installed, version, message}], env_file: {exists, message} }
-// Docker 模式回傳 4 項 checks，Native 模式回傳 6 項 checks
+// Docker 模式回傳 5 項 checks，Native 模式回傳 6 項 checks
 ```
 
 **驗收標準 (Acceptance Criteria)**:
@@ -301,7 +301,7 @@ const result = await window.pywebview.api.check_env();
        - 失敗: `Connection failed: reason`（紅色 badge）
    - **Next 按鈕**: 當 Deployment Mode = `remote-ssh` 時，需 SSH 測試通過（`test_connection` 成功）才啟用
 
-4. **Gateway & Directory 區塊** (SectionPanel)
+5. **Gateway & Directory 區塊** (SectionPanel)
    - Icon: `globe` (teal), 標題: "Gateway & Directory"
    - 3×2 表單 Grid (gap: 16px):
      - Row 1: Config Directory (`placeholder: ~/.openclaw`, 對應 `OPENCLAW_CONFIG_DIR`) + Workspace Directory (`placeholder: ~/.openclaw/workspace`, 對應 `OPENCLAW_WORKSPACE_DIR`)
@@ -312,7 +312,7 @@ const result = await window.pywebview.api.check_env();
      - Docker Image (`placeholder: openclaw:local`, 對應 `OPENCLAW_IMAGE`)
      - Enable Sandbox (toggle, 對應 `OPENCLAW_SANDBOX`)
 
-5. **Action Bar** — 底部固定，上方 `1px` 分隔線
+6. **Action Bar** — 底部固定，上方 `1px` 分隔線
    - 右側: "Step 1 of 3" 文字 + "Next" Button/Primary (帶 `arrow-right` icon)
 
 **Bridge API 呼叫**:
@@ -328,7 +328,7 @@ const platform = await window.pywebview.api.detect_platform();
 **模式選擇行為**:
 
 使用者選擇 Radio Card 後立即：
-1. 呼叫 `save_config({"deployment_mode": selected_mode})` 持久化至 `gui-settings.json`
+1. 呼叫 `save_config({"deployment_mode": selected_mode})` 持久化至 `{app_data}/openclaw-gui/gui-settings.json`
 2. 更新前端全域狀態 `window.__currentMode`
 3. 即時更新 Sidebar footer 環境模式文字
 
@@ -407,7 +407,7 @@ await window.pywebview.api.connect_remote({
 5. **Security Note** — 底部安全提示
    - `shield-check` icon (紅) + 文字: "All keys are encrypted and stored securely using your operating system's credential manager (DPAPI / libsecret). Keys are never written to plain text files."
 
-5. **Action Bar**
+6. **Action Bar**
    - 左側: "Back" Button/Secondary (帶 `arrow-left` icon)
    - 右側: "Step 2 of 3" + "Next" Button/Primary (帶 `arrow-right` icon)
 
@@ -923,9 +923,9 @@ const result = await window.pywebview.api.fix_all_plugins();
 | Docker Windows | **Docker** | `docker compose up/down/restart` | `docker compose run --rm openclaw-cli <cmd>` |
 | Docker Linux/WSL2 | **Docker** | 同上 | 同上 |
 | Native Linux (systemd) | **Native** | `systemctl start/stop/restart openclaw-gateway` | `openclaw <cmd>`（直接呼叫） |
-| Remote Server (SSH) | **Remote** | 透過 `RemoteExecutor` 在遠端執行 `systemctl` 指令 | 透過 SSH 在遠端執行 `openclaw <cmd>` |
+| Remote Server (SSH) | **Remote** | 透過 `RemoteExecutor` 在遠端執行 `systemctl` 指令 (**v1.0 限制：遠端僅支援 Native Linux**) | 透過 SSH 在遠端執行 `openclaw <cmd>` |
 
-**模式持久化**: 使用者選擇的模式儲存於 `{project_root}/.openclaw/gui-settings.json`（與 `openclaw.json` 分開），所有後端 API 自動讀取此設定決定分流邏輯，前端不需在每次 API 呼叫傳遞 mode 參數。Remote SSH 模式額外儲存 `ssh_host`, `ssh_port`, `ssh_username`, `ssh_key_file` 欄位。
+**模式持久化**: 使用者選擇的模式儲存於 `{app_data}/openclaw-gui/gui-settings.json`（如 `%APPDATA%/openclaw-gui/` 或 `~/.config/openclaw-gui/`，與 `openclaw.json` 分開），所有後端 API 自動讀取此設定決定分流邏輯，前端不需在每次 API 呼叫傳遞 mode 參數。Remote SSH 模式額外儲存 `ssh_host`, `ssh_port`, `ssh_username`, `ssh_key_file` 欄位。
 
 **影響範圍**:
 - `check_env()`: Docker 模式檢查 4 項（Docker, Docker Desktop, VS Code, ngrok），Native 模式檢查 6 項（Node.js, OpenClaw CLI, jq, VS Code, ngrok, systemd），Remote 模式透過 SSH 在遠端執行 Native 模式檢查
@@ -1008,10 +1008,10 @@ window.updateConnectionStatus = function(status, message) {
 | `start_service()` | `service_controller.py` | `{success, message}` |
 | `stop_service()` | `service_controller.py` | `{success, message}` |
 | `restart_service()` | `service_controller.py` | `{success, message}` |
-| `list_skills()` | `skill_manager.py` | `[{name, emoji, description, installed}]` |
+| `list_skills()` | `skill_manager.py` | `[{name, emoji, description, installed, source}]` |
 | `deploy_skills(names)` | `skill_manager.py` | 透過回呼逐項回報，最終 `{success, deployed, failed}` |
 | `remove_skills(names)` | `skill_manager.py` | 透過回呼逐項回報，最終 `{success, removed, failed}` |
-| `list_plugins()` | `plugin_manager.py` | `[{name, description, installed, icon, icon_color}]` |
+| `list_plugins()` | `plugin_manager.py` | `[{name, category, description, installed, icon, icon_color}]` |
 | `install_plugins(names)` | `plugin_manager.py` | 透過回呼逐項回報，最終 `{success, installed, failed}` |
 | `uninstall_plugins(names)` | `plugin_manager.py` | 透過回呼逐項回報，最終 `{success, uninstalled, failed}` |
 | `diagnose_plugins()` | `plugin_manager.py` | `[{name, status, issues, icon, icon_color}]` |
