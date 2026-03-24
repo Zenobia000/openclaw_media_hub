@@ -2,7 +2,7 @@
 """Google Sheets 認證模組。
 
 統一處理 OAuth2 Desktop App 與 Service Account 兩種認證方式，
-供 gsheets_append.py、gsheets_query.py、gsheets_update.py 共用。
+供 gsheets_setup.py、gsheets_append.py、gsheets_query.py、gsheets_update.py 共用。
 
 與 gmail_auth.py 同模式：scopes 由呼叫端傳入，不硬編碼。
 """

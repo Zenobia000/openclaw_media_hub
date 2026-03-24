@@ -10,7 +10,7 @@
     "database_name": "客戶管理 CRM",
     "database_id": "",
     "token": "",
-    "script": "scripts/notion_create.py"
+    "script": "skill_hub/notion/scripts/notion_create_page.py"
   },
   "sheets": {
     "spreadsheet_id": "",

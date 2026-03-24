@@ -121,7 +121,7 @@ python3 -m pip install --break-system-packages google-api-python-client google-a
 #### Step 1：產生授權網址
 
 ```bash
-python3 {skill_dir}/scripts/gcal_setup.py \
+python3 skill_hub/gcal/scripts/gcal_setup.py \
   --credentials "{skill_dir}/{credentials_file}" \
   --token "{skill_dir}/{token_file}" \
   --step auth-url
@@ -134,7 +134,7 @@ python3 {skill_dir}/scripts/gcal_setup.py \
 用戶提供授權碼後執行：
 
 ```bash
-python3 {skill_dir}/scripts/gcal_setup.py \
+python3 skill_hub/gcal/scripts/gcal_setup.py \
   --credentials "{skill_dir}/{credentials_file}" \
   --token "{skill_dir}/{token_file}" \
   --step exchange \
@@ -146,7 +146,7 @@ python3 {skill_dir}/scripts/gcal_setup.py \
 #### Step 3：驗證連線
 
 ```bash
-python3 {skill_dir}/scripts/gcal_setup.py \
+python3 skill_hub/gcal/scripts/gcal_setup.py \
   --credentials "{skill_dir}/{credentials_file}" \
   --token "{skill_dir}/{token_file}" \
   --step verify \
@@ -190,7 +190,7 @@ python3 {skill_dir}/scripts/gcal_setup.py \
 ### Step 3：查詢空檔
 
 ```bash
-python3 {skill_dir}/scripts/gcal_freebusy.py \
+python3 skill_hub/gcal/scripts/gcal_freebusy.py \
   --credentials "{skill_dir}/{credentials_file}" \
   --token "{skill_dir}/{token_file}" \
   --calendar-id "{calendar_id}" \
@@ -217,7 +217,7 @@ python3 {skill_dir}/scripts/gcal_freebusy.py \
 ### Step 6：建立事件
 
 ```bash
-python3 {skill_dir}/scripts/gcal_create_event.py \
+python3 skill_hub/gcal/scripts/gcal_create_event.py \
   --credentials "{skill_dir}/{credentials_file}" \
   --token "{skill_dir}/{token_file}" \
   --calendar-id "{calendar_id}" \
@@ -279,15 +279,12 @@ python3 {skill_dir}/scripts/gcal_create_event.py \
 - `references/calendar_fields.json` — 每次預約流程開始時載入，包含所有營業設定。
 - `references/confirmation_prompts.md` — 組合回覆訊息時載入，包含 system prompt、回覆模板、邊界處理模板。
 
-## 腳本架構
+## 工具依賴
 
-```
-scripts/
-├── gcal_setup.py          # OAuth2 初始化（auth-url → exchange → verify）
-├── gcal_auth.py           # 共用認證模組（OAuth2 + Service Account）
-├── gcal_freebusy.py       # 查詢空檔時段
-└── gcal_create_event.py   # 建立日曆事件
-```
+本 Skill 使用 `skill_hub/gcal/` 提供的 Google Calendar API 工具，無自有腳本。
 
-- `gcal_setup.py` 負責首次授權流程，分三步驟執行（非互動式，適合 agent 調用）。
-- `gcal_auth.py` 提供 `load_credentials()` 函數，自動偵測認證類型，供 freebusy 與 create_event 共用。
+| 工具 | 用途 |
+|------|------|
+| `skill_hub/gcal/scripts/gcal_setup.py` | OAuth2 初始化 |
+| `skill_hub/gcal/scripts/gcal_freebusy.py` | 查詢空檔時段 |
+| `skill_hub/gcal/scripts/gcal_create_event.py` | 建立日曆事件 |

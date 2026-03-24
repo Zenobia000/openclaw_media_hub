@@ -1,27 +1,35 @@
 #!/usr/bin/env python3
-"""Google Calendar 共用認證模組。
+"""Google Calendar 認證模組。
 
-自動偵測 OAuth2 Desktop App / Service Account，供所有 gcal 腳本共用。
+統一處理 OAuth2 Desktop App 與 Service Account 兩種認證方式，
+供 gcal_setup.py、gcal_freebusy.py、gcal_create_event.py 共用。
+
+與 gmail_auth.py 同模式：scopes 由呼叫端傳入，不硬編碼。
 """
 
 import json
 import os
 import sys
 
-SCOPES = ["https://www.googleapis.com/auth/calendar"]
+
+DEFAULT_SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
 
-def load_credentials(credentials_path: str, token_path: str | None = None):
-    """載入認證，依 JSON 內容自動判斷類型。"""
+def load_credentials(credentials_path: str, token_path: str | None = None, scopes: list[str] | None = None):
+    """載入 Google API 認證，自動偵測 OAuth2 Desktop 或 Service Account。"""
+    if not scopes:
+        scopes = DEFAULT_SCOPES
+
     with open(credentials_path, "r") as f:
         cred_data = json.load(f)
 
-    is_oauth2 = "installed" in cred_data or "web" in cred_data
-    return _load_oauth2(credentials_path, token_path) if is_oauth2 else _load_service_account(credentials_path)
+    if "installed" in cred_data or "web" in cred_data:
+        return _load_oauth2(credentials_path, token_path, scopes)
+    return _load_service_account(credentials_path, scopes)
 
 
-def _load_oauth2(credentials_path: str, token_path: str | None):
-    """載入 OAuth2 認證，自動刷新過期 token。"""
+def _load_oauth2(credentials_path: str, token_path: str | None, scopes: list[str]):
+    """載入 OAuth2 Desktop App 認證，自動刷新過期 token。"""
     try:
         from google.oauth2.credentials import Credentials
         from google.auth.transport.requests import Request
@@ -30,13 +38,13 @@ def _load_oauth2(credentials_path: str, token_path: str | None):
 
     creds = None
     if token_path and os.path.exists(token_path):
-        creds = Credentials.from_authorized_user_file(token_path, SCOPES)
+        creds = Credentials.from_authorized_user_file(token_path, scopes)
 
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            creds = _run_auth_flow(credentials_path)
+            creds = _run_auth_flow(credentials_path, scopes)
 
         if token_path:
             with open(token_path, "w") as f:
@@ -46,11 +54,11 @@ def _load_oauth2(credentials_path: str, token_path: str | None):
     return creds
 
 
-def _run_auth_flow(credentials_path: str):
+def _run_auth_flow(credentials_path: str, scopes: list[str]):
     """執行 OAuth2 授權流程（優先本地伺服器，備援手動貼網址）。"""
     from google_auth_oauthlib.flow import InstalledAppFlow
 
-    flow = InstalledAppFlow.from_client_secrets_file(credentials_path, SCOPES)
+    flow = InstalledAppFlow.from_client_secrets_file(credentials_path, scopes)
 
     # 嘗試本地伺服器授權
     if os.environ.get("DISPLAY") or os.environ.get("BROWSER"):
@@ -76,14 +84,14 @@ def _run_auth_flow(credentials_path: str):
     return flow.credentials
 
 
-def _load_service_account(credentials_path: str):
+def _load_service_account(credentials_path: str, scopes: list[str]):
     """載入 Service Account 認證。"""
     try:
         from google.oauth2 import service_account
     except ImportError:
         _exit("google-auth 未安裝。執行: pip install google-auth")
     return service_account.Credentials.from_service_account_file(
-        credentials_path, scopes=SCOPES
+        credentials_path, scopes=scopes
     )
 
 

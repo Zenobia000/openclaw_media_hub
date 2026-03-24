@@ -14,21 +14,29 @@ import json
 import os
 import sys
 
-from gcal_auth import SCOPES
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from gcal_auth import DEFAULT_SCOPES
 
 REDIRECT_URI = "urn:ietf:wg:oauth:2.0:oob"
 
 
 # --- 共用工具 ---
 
-def _create_flow(credentials_path: str):
+def _parse_scopes(scopes_str: str | None) -> list[str]:
+    """解析逗號分隔的 scopes 字串，回傳 list。"""
+    if not scopes_str:
+        return DEFAULT_SCOPES
+    return [s.strip() for s in scopes_str.split(",") if s.strip()]
+
+
+def _create_flow(credentials_path: str, scopes: list[str]):
     """建立 OAuth2 Flow，含檔案存在檢查。回傳 (flow, error_dict)。"""
     from google_auth_oauthlib.flow import InstalledAppFlow
 
     if not os.path.exists(credentials_path):
         return None, {"ok": False, "error": f"找不到認證檔案：{credentials_path}"}
 
-    flow = InstalledAppFlow.from_client_secrets_file(credentials_path, SCOPES)
+    flow = InstalledAppFlow.from_client_secrets_file(credentials_path, scopes)
     flow.redirect_uri = REDIRECT_URI
     return flow, None
 
@@ -40,9 +48,9 @@ def _verifier_path(token_path: str) -> str:
 
 # --- 步驟函數 ---
 
-def step_auth_url(credentials_path: str, token_path: str) -> dict:
+def step_auth_url(credentials_path: str, token_path: str, scopes: list[str]) -> dict:
     """產生 OAuth2 授權網址，儲存 PKCE code_verifier。"""
-    flow, err = _create_flow(credentials_path)
+    flow, err = _create_flow(credentials_path, scopes)
     if err:
         return err
 
@@ -60,9 +68,9 @@ def step_auth_url(credentials_path: str, token_path: str) -> dict:
     }
 
 
-def step_exchange(credentials_path: str, token_path: str, code: str) -> dict:
+def step_exchange(credentials_path: str, token_path: str, code: str, scopes: list[str]) -> dict:
     """用授權碼換取 token 並儲存。"""
-    flow, err = _create_flow(credentials_path)
+    flow, err = _create_flow(credentials_path, scopes)
     if err:
         return err
 
@@ -87,7 +95,7 @@ def step_exchange(credentials_path: str, token_path: str, code: str) -> dict:
     return {"ok": True, "step": "exchange", "token_path": token_path, "message": "Token 已成功儲存。"}
 
 
-def step_verify(credentials_path: str, token_path: str, calendar_id: str) -> dict:
+def step_verify(credentials_path: str, token_path: str, calendar_id: str, scopes: list[str]) -> dict:
     """驗證 token 有效性，讀取行事曆資訊。"""
     from google.oauth2.credentials import Credentials
     from google.auth.transport.requests import Request
@@ -96,7 +104,7 @@ def step_verify(credentials_path: str, token_path: str, calendar_id: str) -> dic
     if not os.path.exists(token_path):
         return {"ok": False, "error": f"找不到 token 檔案：{token_path}。請先完成授權步驟。"}
 
-    creds = Credentials.from_authorized_user_file(token_path, SCOPES)
+    creds = Credentials.from_authorized_user_file(token_path, scopes)
 
     # 自動刷新過期 token
     if creds.expired and creds.refresh_token:
@@ -125,28 +133,30 @@ def step_verify(credentials_path: str, token_path: str, calendar_id: str) -> dic
 
 # --- 主程式 ---
 
-STEP_HANDLERS = {
-    "auth-url": lambda args: step_auth_url(args.credentials, args.token),
-    "exchange": lambda args: step_exchange(args.credentials, args.token, args.code),
-    "verify": lambda args: step_verify(args.credentials, args.token, args.calendar_id),
-}
-
-
 def main():
     parser = argparse.ArgumentParser(description="Google Calendar OAuth2 初始化")
     parser.add_argument("--credentials", required=True, help="OAuth2 client secret JSON 路徑")
     parser.add_argument("--token", default="token.json", help="Token 儲存路徑")
-    parser.add_argument("--step", required=True, choices=STEP_HANDLERS.keys(),
+    parser.add_argument("--scopes", default=None, help="OAuth2 scopes（逗號分隔，預設 calendar）")
+    parser.add_argument("--step", required=True, choices=["auth-url", "exchange", "verify"],
                         help="執行步驟：auth-url | exchange | verify")
     parser.add_argument("--code", default="", help="授權碼（exchange 用）")
     parser.add_argument("--calendar-id", default="primary", help="驗證用行事曆 ID")
     args = parser.parse_args()
 
-    # exchange 需要 --code
-    if args.step == "exchange" and not args.code:
-        result = {"ok": False, "error": "exchange 步驟需要 --code 參數。"}
+    scopes = _parse_scopes(args.scopes)
+
+    if args.step == "auth-url":
+        result = step_auth_url(args.credentials, args.token, scopes)
+    elif args.step == "exchange":
+        if not args.code:
+            result = {"ok": False, "error": "exchange 步驟需要 --code 參數。"}
+        else:
+            result = step_exchange(args.credentials, args.token, args.code, scopes)
+    elif args.step == "verify":
+        result = step_verify(args.credentials, args.token, args.calendar_id, scopes)
     else:
-        result = STEP_HANDLERS[args.step](args)
+        result = {"ok": False, "error": f"未知步驟：{args.step}"}
 
     print(json.dumps(result, indent=2, ensure_ascii=False))
     sys.exit(0 if result.get("ok") else 1)

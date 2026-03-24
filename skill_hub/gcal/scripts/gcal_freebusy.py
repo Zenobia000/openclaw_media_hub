@@ -11,8 +11,11 @@
 
 import argparse
 import json
+import os
+import sys
 from datetime import datetime
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from gcal_auth import load_credentials
 
 try:
@@ -106,16 +109,16 @@ def _get_now_minutes(date_str: str, timezone: str) -> int | None:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="查詢 Google Calendar 可用預約時段")
+    parser = argparse.ArgumentParser(description="查詢 Google Calendar 可用時段")
     parser.add_argument("--credentials", required=True, help="認證檔路徑")
     parser.add_argument("--token", help="OAuth2 token 快取路徑")
     parser.add_argument("--calendar-id", required=True, help="Google Calendar ID")
     parser.add_argument("--date", required=True, help="查詢日期（YYYY-MM-DD）")
     parser.add_argument("--timezone", default="Asia/Taipei", help="時區")
-    parser.add_argument("--start-hour", default="09:00", help="營業開始時間")
-    parser.add_argument("--end-hour", default="18:00", help="營業結束時間")
-    parser.add_argument("--duration", type=int, default=60, help="預約時長（分鐘）")
-    parser.add_argument("--buffer", type=int, default=15, help="預約間隔（分鐘）")
+    parser.add_argument("--start-hour", default="09:00", help="查詢開始時間")
+    parser.add_argument("--end-hour", default="18:00", help="查詢結束時間")
+    parser.add_argument("--duration", type=int, default=60, help="時段長度（分鐘）")
+    parser.add_argument("--buffer", type=int, default=15, help="時段間隔（分鐘）")
     parser.add_argument("--dry-run", action="store_true", help="跳過 API，回傳所有可能時段")
     args = parser.parse_args()
 

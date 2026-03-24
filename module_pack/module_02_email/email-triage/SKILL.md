@@ -98,7 +98,7 @@ python3 -m pip install --break-system-packages google-api-python-client google-a
 > ⚠️ **注意**：授權時必須包含 `gmail.modify` scope（而非 `gmail.readonly`），否則加標籤步驟會因權限不足（403 insufficientPermissions）失敗。`email_fields.json` 預設的 `gmail_scopes` 已設為 `gmail.modify` + `gmail.labels`，直接使用即可。
 
 ```bash
-python3 {skill_dir}/scripts/gmail_setup.py \
+python3 skill_hub/gmail/scripts/gmail_setup.py \
   --credentials "{skill_dir}/{credentials_file}" \
   --token "{skill_dir}/{token_file}" \
   --scopes "{gmail_scopes 以逗號分隔}" \
@@ -110,7 +110,7 @@ python3 {skill_dir}/scripts/gmail_setup.py \
 #### Step 2：用授權碼換取 Token
 
 ```bash
-python3 {skill_dir}/scripts/gmail_setup.py \
+python3 skill_hub/gmail/scripts/gmail_setup.py \
   --credentials "{skill_dir}/{credentials_file}" \
   --token "{skill_dir}/{token_file}" \
   --scopes "{gmail_scopes 以逗號分隔}" \
@@ -121,7 +121,7 @@ python3 {skill_dir}/scripts/gmail_setup.py \
 #### Step 3：驗證連線
 
 ```bash
-python3 {skill_dir}/scripts/gmail_setup.py \
+python3 skill_hub/gmail/scripts/gmail_setup.py \
   --credentials "{skill_dir}/{credentials_file}" \
   --token "{skill_dir}/{token_file}" \
   --scopes "{gmail_scopes 以逗號分隔}" \
@@ -143,7 +143,7 @@ python3 {skill_dir}/scripts/gmail_setup.py \
 ### Step 2：列出未讀郵件
 
 ```bash
-python3 {skill_dir}/scripts/gmail_list_messages.py \
+python3 skill_hub/gmail/scripts/gmail_list_messages.py \
   --credentials "{skill_dir}/{credentials_file}" \
   --token "{skill_dir}/{token_file}" \
   --scopes "{gmail_scopes 以逗號分隔}" \
@@ -159,7 +159,7 @@ python3 {skill_dir}/scripts/gmail_list_messages.py \
 對每個 message_id 執行：
 
 ```bash
-python3 {skill_dir}/scripts/gmail_get_message.py \
+python3 skill_hub/gmail/scripts/gmail_get_message.py \
   --credentials "{skill_dir}/{credentials_file}" \
   --token "{skill_dir}/{token_file}" \
   --scopes "{gmail_scopes 以逗號分隔}" \
@@ -187,11 +187,12 @@ python3 {skill_dir}/scripts/gmail_get_message.py \
 若用戶同意，對每封郵件加上對應的 Gmail 標籤：
 
 ```bash
-python3 {skill_dir}/scripts/gmail_modify_labels.py \
+python3 skill_hub/gmail/scripts/gmail_manage_message.py \
   --credentials "{skill_dir}/{credentials_file}" \
   --token "{skill_dir}/{token_file}" \
   --scopes "{gmail_scopes 以逗號分隔}" \
   --message-id "{message_id}" \
+  --action modify-labels \
   --add-labels "{category_label}" \
   --create-if-missing
 ```
@@ -224,16 +225,13 @@ python3 {skill_dir}/scripts/gmail_modify_labels.py \
 - `references/email_fields.json` — 每次流程開始時載入，包含分類規則、Gmail 設定等。
 - `references/triage_prompts.md` — 組合輸出時載入，包含 system prompt、輸出模板、邊界處理模板。
 
-## 腳本架構
+## 工具依賴
 
-```
-scripts/
-├── gmail_setup.py          # OAuth2 初始化（auth-url → exchange → verify）
-├── gmail_auth.py           # 共用認證模組（OAuth2 + Service Account，scopes 參數化）
-├── gmail_list_messages.py  # 列出未讀郵件
-├── gmail_get_message.py    # 取得單封郵件詳情
-└── gmail_modify_labels.py  # 為郵件加標籤
-```
+本 Skill 使用 `skill_hub/gmail/` 提供的 Gmail API 工具，無自有腳本。
 
-- `gmail_setup.py` 負責首次授權流程，分三步驟執行（非互動式，適合 agent 調用）。
-- `gmail_auth.py` 提供 `load_credentials(credentials_path, token_path, scopes)` 函數，scopes 由呼叫端傳入。
+| 工具 | 用途 |
+|------|------|
+| `skill_hub/gmail/scripts/gmail_setup.py` | OAuth2 初始化 |
+| `skill_hub/gmail/scripts/gmail_list_messages.py` | 列出未讀郵件 |
+| `skill_hub/gmail/scripts/gmail_get_message.py` | 取得單封郵件詳情 |
+| `skill_hub/gmail/scripts/gmail_manage_message.py` | 為郵件加標籤（`--action modify-labels`） |

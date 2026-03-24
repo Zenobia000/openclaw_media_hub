@@ -115,7 +115,7 @@ python3 -m pip install --break-system-packages google-api-python-client google-a
 ##### Step 1：產生授權網址
 
 ```bash
-python3 {skill_dir}/scripts/gsheets_setup.py \
+python3 skill_hub/gsheets/scripts/gsheets_setup.py \
   --credentials "{skill_dir}/{sheets.credentials_file}" \
   --token "{skill_dir}/{sheets.token_file}" \
   --step auth-url
@@ -126,7 +126,7 @@ python3 {skill_dir}/scripts/gsheets_setup.py \
 ##### Step 2：用授權碼換取 Token
 
 ```bash
-python3 {skill_dir}/scripts/gsheets_setup.py \
+python3 skill_hub/gsheets/scripts/gsheets_setup.py \
   --credentials "{skill_dir}/{sheets.credentials_file}" \
   --token "{skill_dir}/{sheets.token_file}" \
   --step exchange \
@@ -136,7 +136,7 @@ python3 {skill_dir}/scripts/gsheets_setup.py \
 ##### Step 3：驗證連線
 
 ```bash
-python3 {skill_dir}/scripts/gsheets_setup.py \
+python3 skill_hub/gsheets/scripts/gsheets_setup.py \
   --credentials "{skill_dir}/{sheets.credentials_file}" \
   --token "{skill_dir}/{sheets.token_file}" \
   --step verify \
@@ -181,18 +181,26 @@ python3 {skill_dir}/scripts/lead_scorer.py \
 
 依 `backend_type` 分路：
 
-**Path A — Notion MCP：**
+**Path A — Notion：**
 
-使用 Notion MCP 的 create page 功能，對應 `notion_crm_database_template.md` 的 11 個欄位。
+使用 `skill_hub/notion/scripts/notion_create_page.py`，由 SKILL.md 組合 `--properties` JSON，對應 `notion_crm_database_template.md` 的 11 個欄位：
+
+```bash
+python3 skill_hub/notion/scripts/notion_create_page.py \
+  --token "{notion_token}" \
+  --database-id "{notion.database_id}" \
+  --properties '{"客戶姓名":{"title":[{"text":{"content":"{name}"}}]},"聯絡方式":{"rich_text":[{"text":{"content":"{contact}"}}]},"需求摘要":{"rich_text":[{"text":{"content":"{summary}"}}]},"狀態":{"select":{"name":"新詢問"}},"優先級":{"select":{"name":"{priority}"}},"負責人":{"rich_text":[{"text":{"content":"{owner}"}}]},"備註":{"rich_text":[{"text":{"content":""}}]},"AI評分記錄":{"rich_text":[{"text":{"content":"{score_log}"}}]},"建立日期":{"date":{"start":"{date}"}},"來源":{"select":{"name":"{source}"}},"追蹤日期":{"date":{"start":"{followup_date}"}}}'
+```
 
 **Path B — Google Sheets：**
 
 ```bash
-python3 {skill_dir}/scripts/gsheets_append.py \
+python3 skill_hub/gsheets/scripts/gsheets_append.py \
   --credentials "{skill_dir}/{sheets.credentials_file}" \
   --token "{skill_dir}/{sheets.token_file}" \
   --spreadsheet-id "{sheets.spreadsheet_id}" \
   --sheet-name "{sheets.sheet_name}" \
+  --fields "date,client_name,contact,source,needs_summary,status,priority,owner,followup_date,notes,ai_log" \
   --data '{"date":"{date}","client_name":"{name}","contact":"{contact}","source":"{source}","needs_summary":"{summary}","status":"新詢問","priority":"{priority}","owner":"{owner}","followup_date":"{followup_date}","notes":"","ai_log":"{score_log}"}'
 ```
 
@@ -245,16 +253,30 @@ python3 {skill_dir}/scripts/gsheets_append.py \
 
 ## 腳本架構
 
+### 自有腳本（業務邏輯）
+
 ```
 scripts/
-├── gsheets_auth.py     # 共用認證模組（OAuth2 + Service Account，scopes 參數化）
-├── gsheets_setup.py    # OAuth2 初始化（auth-url → exchange → verify）
-├── gsheets_append.py   # 新增 lead 至 CRM Sheet
-├── gsheets_query.py    # 查詢 leads（按欄位過濾、逾期追蹤）
-├── gsheets_update.py   # 更新紀錄欄位（僅限可更新欄位，支援 append-mode）
 └── lead_scorer.py      # Lead 評分計算器（純運算，無 API 依賴）
 ```
 
-- `gsheets_setup.py` 負責首次授權流程，分三步驟執行（非互動式，適合 agent 調用）。
-- `gsheets_auth.py` 提供 `load_credentials()` 函數，自動偵測認證類型，供 append/query/update 共用。
 - `lead_scorer.py` 為純運算腳本，接受四維度等級 JSON 與設定檔，輸出評分結果。
+
+### 工具依賴
+
+| 工具 | 用途 |
+|------|------|
+| `skill_hub/gsheets/scripts/gsheets_setup.py` | Google Sheets OAuth2 初始化 |
+| `skill_hub/gsheets/scripts/gsheets_append.py` | 新增 lead 至 CRM Sheet |
+| `skill_hub/gsheets/scripts/gsheets_query.py` | 查詢 leads（按欄位過濾、逾期追蹤） |
+| `skill_hub/gsheets/scripts/gsheets_update.py` | 更新紀錄欄位（支援保護欄位、追加模式） |
+| `skill_hub/notion/scripts/notion_create_page.py` | 新增 lead 至 Notion CRM |
+
+#### CRM 欄位對應
+
+gsheets_update.py 呼叫時須傳入 CRM 欄位對應：
+
+```
+--field-map '{"date":"A","client_name":"B","contact":"C","source":"D","needs_summary":"E","status":"F","priority":"G","owner":"H","followup_date":"I","notes":"J","ai_log":"K"}'
+--protected-fields "date,client_name,contact,source"
+```

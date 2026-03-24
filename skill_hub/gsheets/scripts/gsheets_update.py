@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
-"""更新 Google Sheets CRM_Pipeline 現有紀錄的特定欄位。
-
-僅允許更新：status、priority、owner、followup_date、notes、ai_log。
-拒絕修改：client_name、contact、date、source。
+"""更新 Google Sheets 現有紀錄的特定欄位。
 
 用法：
     python3 gsheets_update.py \
         --credentials creds.json --token token.json \
         --spreadsheet-id ID \
-        --row 5 --field status --value "跟進中" \
+        --sheet-name Sheet1 \
+        --field-map '{"name":"A","email":"B","status":"C","notes":"D"}' \
+        --row 5 --field status --value "active" \
+        [--protected-fields "name,email"] \
         [--append-mode] [--dry-run]
 
---append-mode 用於 ai_log 欄位追加（非覆蓋）。
+--field-map：JSON 物件，key 為欄位名稱，value 為對應的欄號（A, B, C...）。
+--protected-fields：受保護欄位（逗號分隔），拒絕更新。
+--append-mode：追加模式（在現有值後追加而非覆蓋）。
 
 輸出：JSON 格式（stdout）。
 """
@@ -24,46 +26,45 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import gsheets_auth
 
-# A-K 欄位對應
-FIELD_TO_COL = {
-    "date": "A", "client_name": "B", "contact": "C", "source": "D",
-    "needs_summary": "E", "status": "F", "priority": "G", "owner": "H",
-    "followup_date": "I", "notes": "J", "ai_log": "K",
-}
-
-# 允許更新的欄位
-UPDATABLE_FIELDS = {"status", "priority", "owner", "followup_date", "notes", "ai_log"}
-
-# 禁止修改的欄位
-PROTECTED_FIELDS = {"date", "client_name", "contact", "source"}
-
 
 def main():
-    parser = argparse.ArgumentParser(description="更新 CRM Sheet 紀錄")
+    parser = argparse.ArgumentParser(description="更新 Google Sheets 紀錄")
     parser.add_argument("--credentials", required=True, help="OAuth2 client secret JSON 路徑")
     parser.add_argument("--token", required=True, help="Token 路徑")
     parser.add_argument("--spreadsheet-id", required=True, help="Google Sheets ID")
-    parser.add_argument("--sheet-name", default="CRM_Pipeline", help="目標 Sheet 名稱")
+    parser.add_argument("--sheet-name", default="Sheet1", help="目標 Sheet 名稱")
+    parser.add_argument("--field-map", required=True, help="欄位→欄號對應 JSON（如 {\"name\":\"A\",\"status\":\"C\"}）")
     parser.add_argument("--row", required=True, type=int, help="要更新的列號（1-based，含表頭）")
     parser.add_argument("--field", required=True, help="要更新的欄位名稱")
     parser.add_argument("--value", required=True, help="新值")
+    parser.add_argument("--protected-fields", default="", help="受保護欄位（逗號分隔），不允許更新")
     parser.add_argument("--append-mode", action="store_true",
-                        help="追加模式（用於 ai_log），在現有值後追加而非覆蓋")
+                        help="追加模式，在現有值後追加而非覆蓋")
     parser.add_argument("--dry-run", action="store_true", help="僅顯示將更新的內容，不實際執行")
     args = parser.parse_args()
 
+    # 解析 field-map
+    try:
+        field_map = json.loads(args.field_map)
+    except json.JSONDecodeError as e:
+        print(json.dumps({"ok": False, "error": f"field-map JSON 解析失敗：{e}"}, ensure_ascii=False))
+        sys.exit(1)
+
+    # 解析 protected-fields
+    protected = set(f.strip() for f in args.protected_fields.split(",") if f.strip())
+
     # 驗證欄位
-    if args.field in PROTECTED_FIELDS:
+    if args.field in protected:
         print(json.dumps({
             "ok": False,
-            "error": f"欄位 '{args.field}' 為受保護欄位，不允許修改。受保護欄位：{', '.join(sorted(PROTECTED_FIELDS))}",
+            "error": f"欄位 '{args.field}' 為受保護欄位，不允許修改。受保護欄位：{', '.join(sorted(protected))}",
         }, ensure_ascii=False))
         sys.exit(1)
 
-    if args.field not in UPDATABLE_FIELDS:
+    if args.field not in field_map:
         print(json.dumps({
             "ok": False,
-            "error": f"欄位 '{args.field}' 不在允許更新的清單中。允許更新的欄位：{', '.join(sorted(UPDATABLE_FIELDS))}",
+            "error": f"欄位 '{args.field}' 不在 field-map 中。可用欄位：{', '.join(sorted(field_map.keys()))}",
         }, ensure_ascii=False))
         sys.exit(1)
 
@@ -71,7 +72,7 @@ def main():
         print(json.dumps({"ok": False, "error": "row 必須 >= 2（第 1 列是表頭）"}, ensure_ascii=False))
         sys.exit(1)
 
-    col = FIELD_TO_COL[args.field]
+    col = field_map[args.field]
     cell = f"{args.sheet_name}!{col}{args.row}"
 
     if args.dry_run:
@@ -113,7 +114,7 @@ def main():
                 final_value = args.value
 
         body = {"values": [[final_value]]}
-        result = service.spreadsheets().values().update(
+        service.spreadsheets().values().update(
             spreadsheetId=args.spreadsheet_id,
             range=cell,
             valueInputOption="USER_ENTERED",

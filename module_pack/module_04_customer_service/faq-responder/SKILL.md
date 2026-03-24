@@ -107,7 +107,7 @@ NOTIFY_CHAT_ID=987654321
 #### Step 0-C：測試通知
 
 ```bash
-python3 {skill_dir}/scripts/tg_notify.py \
+python3 skill_hub/telegram/scripts/tg_send_message.py \
   --bot-token "$TELEGRAM_BOT_TOKEN" \
   --chat-id "$NOTIFY_CHAT_ID" \
   --message "✅ FAQ Responder 通知測試成功"
@@ -186,7 +186,7 @@ python3 {skill_dir}/scripts/check_hours.py \
 組合通知內容（§ 4.1 模板），選擇對應負責人（`escalation_handlers`），發送：
 
 ```bash
-python3 {skill_dir}/scripts/tg_notify.py \
+python3 skill_hub/telegram/scripts/tg_send_message.py \
   --bot-token "$TELEGRAM_BOT_TOKEN" \
   --chat-id "{handler_chat_id}" \
   --message "{notification_content}"
@@ -217,11 +217,12 @@ python3 {skill_dir}/scripts/tg_notify.py \
 **新客戶（首次互動）：**
 
 ```bash
-python3 {crm_skill_dir}/scripts/gsheets_append.py \
+python3 skill_hub/gsheets/scripts/gsheets_append.py \
   --credentials "{crm_skill_dir}/{sheets.credentials_file}" \
   --token "{crm_skill_dir}/{sheets.token_file}" \
   --spreadsheet-id "{sheets.spreadsheet_id}" \
   --sheet-name "{sheets.sheet_name}" \
+  --fields "date,client_name,contact,source,needs_summary,status,priority,owner,followup_date,notes,ai_log" \
   --data '{"date":"{date}","client_name":"{name}","contact":"{contact}","source":"Telegram","needs_summary":"{summary}","status":"{status}","priority":"","owner":"{default_handler}","followup_date":"","notes":"","ai_log":"{ai_log}"}'
 ```
 
@@ -232,21 +233,24 @@ python3 {crm_skill_dir}/scripts/gsheets_append.py \
 
 先查詢是否已存在：
 ```bash
-python3 {crm_skill_dir}/scripts/gsheets_query.py \
+python3 skill_hub/gsheets/scripts/gsheets_query.py \
   --credentials "{crm_skill_dir}/{sheets.credentials_file}" \
   --token "{crm_skill_dir}/{sheets.token_file}" \
   --spreadsheet-id "{sheets.spreadsheet_id}" \
   --sheet-name "{sheets.sheet_name}" \
+  --fields "date,client_name,contact,source,needs_summary,status,priority,owner,followup_date,notes,ai_log" \
   --filter-field "contact" --filter-value "{contact}"
 ```
 
 若已存在，更新 AI 互動記錄：
 ```bash
-python3 {crm_skill_dir}/scripts/gsheets_update.py \
+python3 skill_hub/gsheets/scripts/gsheets_update.py \
   --credentials "{crm_skill_dir}/{sheets.credentials_file}" \
   --token "{crm_skill_dir}/{sheets.token_file}" \
   --spreadsheet-id "{sheets.spreadsheet_id}" \
   --sheet-name "{sheets.sheet_name}" \
+  --field-map '{"date":"A","client_name":"B","contact":"C","source":"D","needs_summary":"E","status":"F","priority":"G","owner":"H","followup_date":"I","notes":"J","ai_log":"K"}' \
+  --protected-fields "date,client_name,contact,source" \
   --row "{existing_row}" \
   --field "ai_log" --value "{ai_log_entry}" --append-mode
 ```
@@ -289,12 +293,20 @@ python3 {crm_skill_dir}/scripts/gsheets_update.py \
 
 ## 腳本架構
 
+### 自有腳本
+
 ```
 scripts/
-├── check_hours.py    # 檢查工作時間（timezone-aware，stdlib only）
-└── tg_notify.py      # Telegram Bot API 通知（stdlib only，無外部依賴）
+└── check_hours.py    # 檢查工作時間（timezone-aware，stdlib only）
 ```
 
 - `check_hours.py` 使用 `zoneinfo` + `datetime` 計算當前是否為工作時間，輸出 JSON。
-- `tg_notify.py` 使用 `urllib.request` POST 到 Telegram Bot API，支援 rate limit 處理。
-- CRM 操作複用 `lead-capture/scripts/` 的 `gsheets_append.py`、`gsheets_query.py`、`gsheets_update.py`，不重複實作。
+
+### 工具依賴
+
+| 工具 | 用途 |
+|------|------|
+| `skill_hub/telegram/scripts/tg_send_message.py` | Telegram Bot API 訊息發送 |
+| `skill_hub/gsheets/scripts/gsheets_append.py` | 新增客戶至 CRM Sheet |
+| `skill_hub/gsheets/scripts/gsheets_query.py` | 查詢既有客戶 |
+| `skill_hub/gsheets/scripts/gsheets_update.py` | 更新 AI 互動記錄 |

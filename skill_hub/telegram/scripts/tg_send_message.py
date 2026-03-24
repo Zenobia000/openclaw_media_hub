@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""透過 Telegram Bot API 發送通知訊息。
+"""透過 Telegram Bot API 發送訊息。
 
 用法：
-    python3 tg_notify.py \
+    python3 tg_send_message.py \
         --bot-token "123456:ABC-DEF" \
         --chat-id "987654321" \
-        --message "升級通知：客戶詢問報價"
+        --message "Hello, World!"
 
 輸出：JSON 含 ok、message_id 或 error
 """
@@ -73,7 +73,7 @@ def send_message(bot_token: str, chat_id: str, message: str,
 
 
 def main():
-    parser = argparse.ArgumentParser(description="透過 Telegram Bot API 發送通知")
+    parser = argparse.ArgumentParser(description="透過 Telegram Bot API 發送訊息")
     parser.add_argument("--bot-token", required=True, help="Telegram Bot Token")
     parser.add_argument("--chat-id", required=True, help="目標 Chat ID")
     parser.add_argument("--message", required=True, help="訊息內容")

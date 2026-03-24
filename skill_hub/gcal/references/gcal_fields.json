@@ -1,0 +1,7 @@
+{
+  "calendar_scopes": [
+    "https://www.googleapis.com/auth/calendar"
+  ],
+  "credentials_file": "credentials.json",
+  "token_file": "token.json"
+}

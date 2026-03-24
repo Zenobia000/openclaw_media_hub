@@ -5,7 +5,7 @@
     python3 gcal_create_event.py \
         --credentials client_secret.json --token token.json \
         --calendar-id primary \
-        --title "桑尼工作室 - 王小明 預約" \
+        --title "會議標題" \
         --start "2026-03-18T14:00:00" --end "2026-03-18T15:00:00" \
         --timezone "Asia/Taipei"
 
@@ -14,7 +14,10 @@
 
 import argparse
 import json
+import os
+import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from gcal_auth import load_credentials
 
 
