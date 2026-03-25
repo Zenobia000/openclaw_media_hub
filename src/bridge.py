@@ -599,6 +599,63 @@ class Bridge:
             "uptime": None,  # TODO: track connect timestamp
         })
 
+    # ── 服務控制 API (3.9, US-003) ────────────────────────
+
+    def _build_service_controller(self):
+        """建構 ServiceController（根據當前 deployment_mode）。"""
+        from src.service_controller import ServiceController
+
+        mode = self._config_manager.get_deployment_mode() or "docker-windows"
+        settings = self._config_manager.read_gui_settings()
+        config_dir = settings.get("config_dir", "~/.openclaw")
+        return ServiceController(
+            self._executor, deployment_mode=mode, config_dir=config_dir,
+        )
+
+    def get_service_status(self) -> dict:
+        """查詢服務狀態 — Dashboard 用。
+
+        Returns:
+            {running, services: [{name, status}], uptime, skills_count, plugins_count}
+        """
+        def _do() -> dict:
+            ctrl = self._build_service_controller()
+            result = self._run_async(ctrl.status())
+            return _ok(result)
+
+        return self._safe_call(_do)
+
+    def start_service(self) -> dict:
+        """啟動服務。
+
+        Returns:
+            {success, message}
+        """
+        def _do() -> dict:
+            ctrl = self._build_service_controller()
+            result = self._run_async(ctrl.start())
+            return _ok(result)
+
+        return self._safe_call(_do)
+
+    def stop_service(self) -> dict:
+        """停止服務。"""
+        def _do() -> dict:
+            ctrl = self._build_service_controller()
+            result = self._run_async(ctrl.stop())
+            return _ok(result)
+
+        return self._safe_call(_do)
+
+    def restart_service(self) -> dict:
+        """重啟服務。"""
+        def _do() -> dict:
+            ctrl = self._build_service_controller()
+            result = self._run_async(ctrl.restart())
+            return _ok(result)
+
+        return self._safe_call(_do)
+
 
 def _js_escape(s: str) -> str:
     """轉義字串以安全嵌入 JavaScript 單引號字串。"""

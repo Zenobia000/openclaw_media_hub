@@ -578,6 +578,215 @@ function renderInto(containerId, html) {
 }
 
 /* ============================================================
+ * 5.0 Dashboard Page — Lifecycle Hook (US-003, 3.9.5–3.9.9)
+ * ============================================================ */
+
+/** Dashboard polling timer */
+let dashboardPollTimer = null;
+
+/** Whether a service action is currently in progress */
+let dashboardActionPending = false;
+
+/**
+ * Render the full Dashboard page content.
+ * @param {Object} status - from get_service_status() API
+ */
+function renderDashboardPage(status) {
+  const running = status?.running ?? false;
+  const services = status?.services ?? [{ name: "gateway", status: "stopped" }];
+  const uptime = status?.uptime ?? "—";
+  const skillsCount = status?.skills_count ?? 0;
+  const pluginsCount = status?.plugins_count ?? 0;
+  const runningCount = services.filter(s => s.status === "running").length;
+
+  // Update header StatusBadge
+  const badgeEl = document.getElementById("dashboard-status-badge");
+  if (badgeEl) {
+    badgeEl.innerHTML = running
+      ? renderStatusBadge({ status: "success", text: "Running" })
+      : renderStatusBadge({ status: "error", text: "Stopped" });
+    lucide.createIcons({ nameAttr: "data-lucide" });
+  }
+
+  // StatCards row
+  const statsRow = `<div class="flex gap-3">
+    ${renderStatCard({ icon: "server", value: `${runningCount}/${services.length}`, label: "Services Running", status: running ? "success" : "error" })}
+    ${renderStatCard({ icon: "clock", iconColor: "text-accent-secondary", value: uptime, label: "Uptime", status: "info" })}
+    ${renderStatCard({ icon: "zap", iconColor: "text-status-info", value: String(skillsCount), label: "Skills Deployed", status: "info" })}
+    ${renderStatCard({ icon: "puzzle", iconColor: "text-accent-secondary", value: String(pluginsCount), label: "Plugins Installed", status: "info" })}
+  </div>`;
+
+  // Service list rows
+  const serviceListHtml = services.map(svc => {
+    const svcStatus = svc.status === "running" ? "success" : "error";
+    const svcLabel = svc.status === "running" ? "Running" : "Stopped";
+    return `<div class="flex items-center justify-between py-3 border-b border-border-default last:border-b-0">
+      <div class="flex items-center gap-3">
+        <i data-lucide="radio" class="w-4 h-4 text-accent-primary"></i>
+        <span class="text-sm font-medium capitalize">${escapeHtml(svc.name)}</span>
+      </div>
+      ${renderStatusBadge({ status: svcStatus, text: svcLabel })}
+    </div>`;
+  }).join("");
+
+  // Service control buttons
+  const btnHtml = dashboardActionPending
+    ? `<div class="flex gap-3 mt-4">
+        ${renderButton({ variant: "secondary", icon: "loader", label: "Processing...", disabled: true, loading: true })}
+      </div>`
+    : running
+      ? `<div class="flex gap-3 mt-4">
+          ${renderButton({ variant: "secondary", icon: "refresh-cw", label: "Restart Services", onclick: "handleServiceAction('restart')" })}
+          ${renderButton({ variant: "danger", icon: "square", label: "Stop Services", onclick: "handleServiceAction('stop')" })}
+        </div>`
+      : `<div class="flex gap-3 mt-4">
+          ${renderButton({ variant: "primary", icon: "play", label: "Start Services", onclick: "handleServiceAction('start')" })}
+        </div>`;
+
+  // Service Control panel
+  const serviceControlPanel = renderSectionPanel({
+    icon: "activity",
+    iconColor: "text-accent-primary",
+    title: "Service Control",
+    description: "Start or stop the OpenClaw service stack",
+    children: serviceListHtml + btnHtml,
+    id: "dashboard-svc-panel",
+  });
+
+  // Quick Actions cards
+  const actionCards = [
+    { icon: "monitor", iconColor: "text-status-info", title: "Check Environment", desc: "Verify dependencies", view: "environment" },
+    { icon: "zap", iconColor: "text-accent-primary", title: "Deploy Skills", desc: "Manage skill modules", view: "deploy-skills" },
+    { icon: "puzzle", iconColor: "text-accent-secondary", title: "Install Plugins", desc: "Manage plugin modules", view: "install-plugins" },
+  ];
+  const actionCardsHtml = actionCards.map(a =>
+    `<div class="bg-bg-input border border-border-default rounded-sm p-4 flex items-center gap-3 cursor-pointer hover:border-accent-primary hover:bg-bg-card transition-colors flex-1 min-w-0"
+         onclick="navigateTo('${a.view}')">
+      <div class="w-9 h-9 rounded-sm bg-bg-card flex items-center justify-center flex-shrink-0">
+        <i data-lucide="${a.icon}" class="w-[18px] h-[18px] ${a.iconColor}"></i>
+      </div>
+      <div class="min-w-0">
+        <div class="text-sm font-semibold">${escapeHtml(a.title)}</div>
+        <div class="text-xs text-text-muted mt-0.5">${escapeHtml(a.desc)}</div>
+      </div>
+    </div>`
+  ).join("");
+
+  // Quick Actions panel
+  const quickActionsPanel = renderSectionPanel({
+    icon: "compass",
+    iconColor: "text-accent-secondary",
+    title: "Quick Actions",
+    description: "Navigate to common tasks",
+    children: `<div class="flex flex-col gap-2">${actionCardsHtml}</div>`,
+    id: "dashboard-qa-panel",
+  });
+
+  // Bottom row — two columns
+  const bottomRow = `<div class="flex gap-4 flex-1 min-h-0">
+    <div class="flex-1 min-w-0">${serviceControlPanel}</div>
+    <div class="flex-1 min-w-0">${quickActionsPanel}</div>
+  </div>`;
+
+  renderInto("dashboard-content", statsRow + bottomRow);
+}
+
+/**
+ * Update Dashboard UI in-place (for polling — avoids full re-render flicker).
+ */
+function updateDashboardUI(status) {
+  renderDashboardPage(status);
+}
+
+/**
+ * Handle service start/stop/restart actions.
+ * @param {"start"|"stop"|"restart"} action
+ */
+async function handleServiceAction(action) {
+  dashboardActionPending = true;
+
+  // Re-render buttons to show loading state
+  const svcPanel = document.getElementById("dashboard-svc-panel");
+  if (svcPanel) {
+    const btnContainer = svcPanel.querySelector(".flex.gap-3.mt-4");
+    if (btnContainer) {
+      btnContainer.innerHTML = renderButton({
+        variant: "secondary", icon: "loader", label: "Processing...", disabled: true, loading: true,
+      });
+      lucide.createIcons({ nameAttr: "data-lucide" });
+    }
+  }
+
+  try {
+    const apiMap = {
+      start: () => window.pywebview.api.start_service(),
+      stop: () => window.pywebview.api.stop_service(),
+      restart: () => window.pywebview.api.restart_service(),
+    };
+    await apiMap[action]();
+  } catch {
+    // Will be reflected in next status refresh
+  }
+
+  dashboardActionPending = false;
+
+  // Refresh status after action
+  try {
+    const resp = await window.pywebview.api.get_service_status();
+    if (resp?.success) updateDashboardUI(resp.data);
+  } catch {
+    // Silently handle — next poll will catch it
+  }
+}
+
+function startDashboardPolling() {
+  stopDashboardPolling();
+  dashboardPollTimer = setInterval(async () => {
+    try {
+      const resp = await window.pywebview.api.get_service_status();
+      if (resp?.success) updateDashboardUI(resp.data);
+    } catch {
+      // Silently handle polling errors
+    }
+  }, 10000);
+}
+
+function stopDashboardPolling() {
+  if (dashboardPollTimer) {
+    clearInterval(dashboardPollTimer);
+    dashboardPollTimer = null;
+  }
+}
+
+registerPage("dashboard", {
+  onEnter: async () => {
+    // Show loading state
+    renderInto("dashboard-content", `
+      <div class="flex items-center gap-3 text-text-muted py-8">
+        <i data-lucide="loader" class="w-5 h-5 animate-spin"></i>
+        <span class="text-sm">Loading dashboard...</span>
+      </div>
+    `);
+
+    try {
+      const resp = await window.pywebview.api.get_service_status();
+      if (resp?.success) {
+        renderDashboardPage(resp.data);
+      } else {
+        renderDashboardPage({});
+      }
+    } catch {
+      renderDashboardPage({});
+    }
+
+    startDashboardPolling();
+  },
+  onLeave: () => {
+    stopDashboardPolling();
+  },
+});
+
+/* ============================================================
  * 5.1 Environment Page — Lifecycle Hook (US-001, 3.4.5–3.4.8)
  * ============================================================ */
 
