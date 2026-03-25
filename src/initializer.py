@@ -224,7 +224,11 @@ class Initializer:
             "mode": params.gateway_mode,
             "bind": params.gateway_bind,
             "controlUi": {
-                "allowedOrigins": [f"http://127.0.0.1:{params.bridge_port}"],
+                "allowedOrigins": [
+                    f"http://127.0.0.1:{params.gateway_port}",
+                    f"http://localhost:{params.gateway_port}",
+                    f"http://127.0.0.1:{params.bridge_port}",
+                ],
             },
         }
         self._config_manager.write_openclaw_config(

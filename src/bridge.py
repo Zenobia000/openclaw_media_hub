@@ -387,6 +387,68 @@ class Bridge:
 
         return self._safe_call(_do)
 
+    # ── Device Pairing API ───────────────────────────────
+
+    def _build_openclaw_cmd(self, subcmd: list[str]) -> list[str]:
+        """組合 openclaw CLI 指令（自動判斷 Docker/Native 前綴）。"""
+        mode = self._config_manager.get_deployment_mode() or "docker-windows"
+        if mode in ("docker-windows", "docker-linux", "remote-ssh"):
+            return [
+                "docker", "compose", "exec", "openclaw-gateway",
+                "openclaw", *subcmd,
+            ]
+        return ["openclaw", *subcmd]
+
+    def list_pending_devices(self) -> dict:
+        """列出等待核准的裝置配對請求。
+
+        Returns:
+            {devices: [{requestId, deviceId, displayName, roles, remoteIp, ...}]}
+        """
+        import json as _json
+
+        def _do() -> dict:
+            args = self._build_openclaw_cmd(["devices", "list", "--json"])
+            result = self._run_async(
+                self._executor.run_command(args, timeout=30)
+            )
+            if not result.success:
+                return _err(ErrorType.INTERNAL, f"Failed to list devices: {result.stderr[:200]}")
+
+            try:
+                parsed = _json.loads(result.stdout)
+            except _json.JSONDecodeError:
+                return _err(ErrorType.INTERNAL, "Failed to parse device list output")
+
+            return _ok({"devices": parsed.get("pending", [])})
+
+        return self._safe_call(_do)
+
+    def approve_device(self, params: dict) -> dict:
+        """核准指定裝置配對請求。
+
+        Args:
+            params: {request_id: str}
+
+        Returns:
+            {message, output}
+        """
+        def _do() -> dict:
+            request_id = (params.get("request_id") or "").strip()
+            if not request_id:
+                return _err(ErrorType.INTERNAL, "Device request ID is required")
+
+            args = self._build_openclaw_cmd(["devices", "approve", request_id])
+            result = self._run_async(
+                self._executor.run_command(args, timeout=30)
+            )
+            if not result.success:
+                return _err(ErrorType.INTERNAL, f"Failed to approve device: {result.stderr[:200]}")
+
+            return _ok({"message": "Device approved", "output": result.stdout})
+
+        return self._safe_call(_do)
+
     # ── 檔案選擇 API ────────────────────────────────────
 
     def browse_file(

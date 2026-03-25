@@ -7203,6 +7203,152 @@
                               "fontWeight": "500"
                             }
                           ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "25JT6",
+                          "name": "dPairResult",
+                          "width": "fill_container",
+                          "fill": "#1a1a2e",
+                          "cornerRadius": 6,
+                          "stroke": {
+                            "thickness": 1,
+                            "fill": "$border-default"
+                          },
+                          "layout": "vertical",
+                          "gap": 6,
+                          "padding": 10,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "19rLB",
+                              "name": "dPairStatus",
+                              "fill": "$text-secondary",
+                              "content": "1 pending device found",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "wCVli",
+                              "name": "dPairItem",
+                              "width": "fill_container",
+                              "fill": "#ffffff08",
+                              "cornerRadius": 4,
+                              "stroke": {
+                                "thickness": 1,
+                                "fill": "$border-default"
+                              },
+                              "gap": 8,
+                              "padding": [
+                                8,
+                                10
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon_font",
+                                  "id": "Ibits",
+                                  "name": "dPairDevIc",
+                                  "width": 14,
+                                  "height": 14,
+                                  "iconFontName": "monitor-smartphone",
+                                  "iconFontFamily": "lucide",
+                                  "fill": "$text-muted"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "F4KUw",
+                                  "name": "dPairDevInfo",
+                                  "width": "fill_container",
+                                  "layout": "vertical",
+                                  "gap": 2,
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "G0e2X",
+                                      "name": "dPairDevName",
+                                      "fill": "$text-primary",
+                                      "content": "My Phone",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 12,
+                                      "fontWeight": "500"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "gV8vx",
+                                      "name": "dPairDevIp",
+                                      "fill": "$text-muted",
+                                      "content": "192.168.1.100",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 11,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "vH1Hd",
+                                  "name": "dPairApproveBtn",
+                                  "fill": "$accent-primary",
+                                  "cornerRadius": 4,
+                                  "gap": 4,
+                                  "padding": [
+                                    6,
+                                    10
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "r2zkS",
+                                      "name": "dPairApproveTxt",
+                                      "fill": "#FFFFFF",
+                                      "content": "Approve",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 12,
+                                      "fontWeight": "500"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "VAeS5",
+                              "name": "dPairSuccess",
+                              "width": "fill_container",
+                              "gap": 6,
+                              "padding": [
+                                6,
+                                0
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon_font",
+                                  "id": "JFmbJ",
+                                  "name": "dPairSuccIc",
+                                  "width": 14,
+                                  "height": 14,
+                                  "iconFontName": "circle-check",
+                                  "iconFontFamily": "lucide",
+                                  "fill": "#22c55e"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "2V1jw",
+                                  "name": "dPairSuccTxt",
+                                  "fill": "#22c55e",
+                                  "content": "Device approved successfully",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            }
+                          ]
                         }
                       ]
                     }

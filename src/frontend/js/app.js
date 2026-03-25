@@ -1719,6 +1719,7 @@ function renderDashboardInfoPanel() {
         <div class="mt-4 pt-4 border-t border-border-default">
           <p class="text-xs text-text-secondary mb-3">Open the Dashboard URL in your browser, then approve the pending device request.</p>
           ${renderButton({ variant: "secondary", icon: "smartphone", label: "Approve Pending Device", onclick: "approvePendingDevice()" })}
+          <div id="device-pairing-result" class="mt-3"></div>
         </div>
       </div>`,
     id: "dashboard-info-panel",
@@ -1874,8 +1875,107 @@ async function copyGatewayToken() {
   }
 }
 
-function approvePendingDevice() {
-  // Placeholder — will be implemented with device pairing Bridge API
+/* ---------- 5.4.9 Device Pairing ---------- */
+
+let deviceApprovalLoading = false;
+
+/**
+ * Render device pairing result area.
+ * @param {"loading"|"empty"|"list"|"success"|"error"} state
+ * @param {string} message
+ * @param {Array} [devices]
+ */
+function renderDevicePairingResult(state, message, devices) {
+  const container = document.getElementById("device-pairing-result");
+  if (!container) return;
+
+  let html = "";
+  if (state === "loading") {
+    html = `<div class="flex items-center gap-2 text-text-muted">
+      <i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i>
+      <span class="text-xs">${message}</span>
+    </div>`;
+  } else if (state === "empty") {
+    html = `<div class="flex items-center gap-2 text-text-muted">
+      <i data-lucide="info" class="w-3.5 h-3.5"></i>
+      <span class="text-xs">${message}</span>
+    </div>`;
+  } else if (state === "list") {
+    const rows = (devices || []).map((d) => {
+      const name = d.displayName || d.deviceId || "Unknown";
+      const ip = d.remoteIp || "";
+      const rid = d.requestId || "";
+      return `<div id="device-row-${rid}" class="flex items-center gap-2 p-2 rounded bg-bg-elevated border border-border-default">
+        <i data-lucide="monitor-smartphone" class="w-3.5 h-3.5 text-text-muted flex-shrink-0"></i>
+        <div class="flex-1 min-w-0">
+          <div class="text-xs font-medium text-text-primary truncate">${name}</div>
+          ${ip ? `<div class="text-[11px] text-text-muted">${ip}</div>` : ""}
+        </div>
+        ${renderButton({ variant: "primary", label: "Approve", size: "sm", onclick: `approveDevice('${rid}')` })}
+      </div>`;
+    }).join("");
+    html = `<div class="flex flex-col gap-2">
+      <span class="text-xs text-text-secondary">${message}</span>
+      ${rows}
+    </div>`;
+  } else if (state === "success") {
+    html = `<div class="flex items-center gap-2">
+      <i data-lucide="circle-check" class="w-3.5 h-3.5 text-green-500"></i>
+      <span class="text-xs text-green-500">${message}</span>
+    </div>`;
+  } else if (state === "error") {
+    html = `<div class="flex items-center gap-2">
+      <i data-lucide="circle-x" class="w-3.5 h-3.5 text-red-400"></i>
+      <span class="text-xs text-red-400">${message}</span>
+    </div>`;
+  }
+
+  container.innerHTML = html;
+  lucide.createIcons({ nameAttr: "data-lucide" });
+}
+
+async function approvePendingDevice() {
+  if (deviceApprovalLoading) return;
+  deviceApprovalLoading = true;
+  renderDevicePairingResult("loading", "Fetching pending devices...");
+
+  try {
+    const result = await window.pywebview.api.list_pending_devices();
+    if (!result?.success) {
+      renderDevicePairingResult("error", result?.error?.message || "Failed to list devices");
+      return;
+    }
+
+    const devices = result.data?.devices || [];
+    if (devices.length === 0) {
+      renderDevicePairingResult("empty", "No pending devices found");
+    } else {
+      renderDevicePairingResult("list", `${devices.length} pending device(s) found`, devices);
+    }
+  } catch {
+    renderDevicePairingResult("error", "Connection error");
+  } finally {
+    deviceApprovalLoading = false;
+  }
+}
+
+async function approveDevice(requestId) {
+  const row = document.getElementById(`device-row-${requestId}`);
+  if (row) {
+    const btn = row.querySelector("button");
+    if (btn) { btn.disabled = true; btn.classList.add("opacity-50"); }
+  }
+
+  try {
+    const result = await window.pywebview.api.approve_device({ request_id: requestId });
+    if (result?.success) {
+      renderDevicePairingResult("success", "Device approved successfully");
+    } else {
+      renderDevicePairingResult("error", result?.error?.message || "Approval failed");
+    }
+  } catch {
+    renderDevicePairingResult("error", "Connection error during approval");
+  }
 }
 
 /* ---------- 5.2.9 Page Lifecycle Registration ---------- */
