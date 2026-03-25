@@ -165,28 +165,28 @@ class TestSaveKeys:
 
             b = Bridge()
             b._config_manager = MagicMock()
-            b._config_manager.set_secrets_batch.return_value = 3
+            b._config_manager.read_gui_settings.return_value = {"config_dir": "~/.openclaw"}
             return b
 
     def test_save_keys_flattens_categories(self, bridge):
         keys = {
-            "providers": {"openai_api_key": "sk-test"},
-            "channels": {"discord_bot_token": "disc-test"},
-            "tools": {"brave_api_key": "bsa-test"},
+            "providers": {"OPENAI_API_KEY": "sk-test"},
+            "channels": {"DISCORD_BOT_TOKEN": "disc-test"},
+            "tools": {"BRAVE_API_KEY": "bsa-test"},
         }
         result = bridge.save_keys(keys)
         assert result["success"] is True
         assert result["data"]["saved_count"] == 3
 
-        call_args = bridge._config_manager.set_secrets_batch.call_args[0][0]
-        assert call_args == {
-            "openai_api_key": "sk-test",
-            "discord_bot_token": "disc-test",
-            "brave_api_key": "bsa-test",
+        call_args = bridge._config_manager.write_env.call_args[0]
+        assert call_args[0] == "~/.openclaw/.env"
+        assert call_args[1] == {
+            "OPENAI_API_KEY": "sk-test",
+            "DISCORD_BOT_TOKEN": "disc-test",
+            "BRAVE_API_KEY": "bsa-test",
         }
 
     def test_save_keys_empty(self, bridge):
-        bridge._config_manager.set_secrets_batch.return_value = 0
         result = bridge.save_keys({})
         assert result["success"] is True
         assert result["data"]["saved_count"] == 0

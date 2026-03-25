@@ -1,7 +1,7 @@
-"""Config Manager — 設定與金鑰管理 (keyring 整合)。
+"""Config Manager — 設定與金鑰管理。
 
 管理 gui-settings.json（GUI 自身設定）、openclaw.json（主設定檔）、
-.env 環境變數檔案，以及透過 keyring 安全儲存金鑰。
+.env 環境變數檔案（含 API 金鑰儲存，ADR-005）。
 """
 
 from __future__ import annotations
@@ -10,11 +10,6 @@ import json
 import os
 import platform
 from pathlib import Path
-
-import keyring
-import keyring.errors
-
-KEYRING_SERVICE = "openclaw-gui"
 
 
 def _default_app_data_dir() -> Path:
@@ -87,32 +82,6 @@ class ConfigManager:
             data["ssh_key_path"] = key_path
         self.write_gui_settings(data)
 
-    # ── keyring (3.5.2) ──────────────────────────────────
-
-    def get_secret(self, key: str) -> str | None:
-        """從 keyring 安全儲存讀取金鑰。"""
-        return keyring.get_password(KEYRING_SERVICE, key)
-
-    def set_secret(self, key: str, value: str) -> None:
-        """將金鑰寫入 keyring 安全儲存。"""
-        keyring.set_password(KEYRING_SERVICE, key, value)
-
-    def delete_secret(self, key: str) -> None:
-        """刪除 keyring 中的金鑰。"""
-        try:
-            keyring.delete_password(KEYRING_SERVICE, key)
-        except keyring.errors.PasswordDeleteError:
-            pass
-
-    def set_secrets_batch(self, secrets: dict[str, str]) -> int:
-        """批量寫入金鑰，回傳成功數。空值跳過。"""
-        count = 0
-        for key, value in secrets.items():
-            if value:
-                self.set_secret(key, value)
-                count += 1
-        return count
-
     # ── openclaw.json (3.5.3) ────────────────────────────
 
     def read_openclaw_config(
@@ -152,15 +121,13 @@ class ConfigManager:
         )
         tmp.replace(path)
 
-    # ── .env (3.5.4) ────────────────────────────────────
+    # ── .env (3.5.4, ADR-005: API 金鑰統一儲存) ─────────
 
-    def read_env(self, env_path: str) -> dict[str, str]:
-        """解析 .env，回傳 {KEY: VALUE}。忽略註解和空行。"""
-        path = Path(env_path).expanduser()
-        if not path.exists():
-            return {}
+    @staticmethod
+    def parse_env_content(content: str) -> dict[str, str]:
+        """解析 .env 內容字串，回傳 {KEY: VALUE}。忽略註解和空行。"""
         result: dict[str, str] = {}
-        for line in path.read_text("utf-8").splitlines():
+        for line in content.splitlines():
             stripped = line.strip()
             if not stripped or stripped.startswith("#"):
                 continue
@@ -168,6 +135,13 @@ class ConfigManager:
                 k, _, v = stripped.partition("=")
                 result[k.strip()] = v.strip().strip('"').strip("'")
         return result
+
+    def read_env(self, env_path: str) -> dict[str, str]:
+        """讀取並解析 .env 檔案，回傳 {KEY: VALUE}。"""
+        path = Path(env_path).expanduser()
+        if not path.exists():
+            return {}
+        return self.parse_env_content(path.read_text("utf-8"))
 
     def write_env(self, env_path: str, values: dict[str, str]) -> None:
         """Upsert .env — 更新已有 key，新增不存在的，保留未指定的行。"""

@@ -1304,7 +1304,7 @@ function renderProvidersSection(providers) {
     icon: "cpu",
     iconColor: "text-accent-primary",
     title: "Model Providers",
-    description: "Select providers and enter API keys \u2014 stored securely via system keyring",
+    description: "Select providers and enter API keys \u2014 stored in .env with restricted permissions",
     children: `<div class="grid gap-1">${primaryCards}</div>${moreSection}`,
   });
 }
@@ -1363,7 +1363,7 @@ function renderSecurityNote() {
   return `<div class="flex items-start gap-3 px-2 py-3">
     <i data-lucide="shield-check" class="w-5 h-5 text-accent-primary flex-shrink-0 mt-0.5"></i>
     <p class="text-xs text-text-secondary leading-relaxed">
-      All keys are encrypted and stored securely using your operating system's credential manager (DPAPI / libsecret). Keys are never written to plain text files.
+      All keys are stored in .env with restricted file permissions (owner-only access). Each server maintains its own independent .env configuration.
     </p>
   </div>`;
 }
@@ -1401,6 +1401,39 @@ async function renderConfigStep2() {
       cachedProviders = [];
       cachedChannels = [];
       cachedTools = [];
+    }
+  }
+
+  // Load existing keys from .env on first entry (avoid overwriting user edits)
+  const isFirstLoad = Object.keys(step2KeyValues).length === 0
+    && step2CheckedProviders.size === 0
+    && step2CheckedChannels.size === 0;
+  if (isFirstLoad) {
+    try {
+      const envRes = await window.pywebview.api.load_env_keys();
+      const envKeys = envRes?.data || {};
+      // Pre-fill provider keys and auto-check
+      for (const [envVar, val] of Object.entries(envKeys.providers || {})) {
+        if (!val) continue;
+        step2KeyValues[`key-${envVar}`] = val;
+        const provider = cachedProviders.find((p) => p.env_var === envVar);
+        if (provider) step2CheckedProviders.add(provider.name);
+      }
+      // Pre-fill channel keys and auto-check
+      for (const [envVar, val] of Object.entries(envKeys.channels || {})) {
+        if (!val) continue;
+        step2KeyValues[`key-${envVar}`] = val;
+        const channel = cachedChannels.find((c) =>
+          c.fields && c.fields.some((f) => f.key === envVar)
+        );
+        if (channel) step2CheckedChannels.add(channel.name);
+      }
+      // Pre-fill tool keys
+      for (const [envVar, val] of Object.entries(envKeys.tools || {})) {
+        if (val) step2KeyValues[`key-${envVar}`] = val;
+      }
+    } catch {
+      // .env read failed — continue with empty form
     }
   }
 
@@ -1524,7 +1557,7 @@ function collectStep2Keys() {
     if (!provider?.env_var) continue;
     const input = document.getElementById(`key-${provider.env_var}`);
     const val = input?.value?.trim();
-    if (val) keys.providers[provider.env_var.toLowerCase()] = val;
+    if (val) keys.providers[provider.env_var] = val;
   }
 
   // Channels
@@ -1534,7 +1567,7 @@ function collectStep2Keys() {
     for (const f of channel.fields) {
       const input = document.getElementById(`key-${f.key}`);
       const val = input?.value?.trim();
-      if (val) keys.channels[f.key.toLowerCase()] = val;
+      if (val) keys.channels[f.key] = val;
     }
   }
 
@@ -1542,7 +1575,7 @@ function collectStep2Keys() {
   for (const tool of cachedTools || []) {
     const input = document.getElementById(`key-${tool.env_var}`);
     const val = input?.value?.trim();
-    if (val) keys.tools[tool.env_var.toLowerCase()] = val;
+    if (val) keys.tools[tool.env_var] = val;
   }
 
   return keys;

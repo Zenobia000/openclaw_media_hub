@@ -1,18 +1,16 @@
 """ConfigManager 單元測試 (WBS 3.5.6)。
 
-測試 gui-settings.json、keyring、openclaw.json、.env 四大功能。
-keyring 以 unittest.mock.patch 模擬。
+測試 gui-settings.json、openclaw.json、.env 三大功能 (ADR-005: keyring 已廢棄)。
 """
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.config_manager import KEYRING_SERVICE, ConfigManager, _deep_merge
+from src.config_manager import ConfigManager, _deep_merge
 
 
 # ── Deep Merge ─────────────────────────────────────────
@@ -79,47 +77,26 @@ class TestGuiSettings:
         assert ssh["host"] is None
 
 
-# ── Keyring ────────────────────────────────────────────
+# ── parse_env_content ─────────────────────────────────
 
 
-class TestKeyring:
-    @patch("src.config_manager.keyring")
-    def test_get_secret(self, mock_kr: MagicMock, tmp_path: Path):
-        mock_kr.get_password.return_value = "sk-123"
-        mgr = ConfigManager(app_data_dir=tmp_path)
-        assert mgr.get_secret("openai_api_key") == "sk-123"
-        mock_kr.get_password.assert_called_once_with(KEYRING_SERVICE, "openai_api_key")
+class TestParseEnvContent:
+    def test_basic_parsing(self):
+        content = "FOO=bar\nBAZ=qux\n"
+        assert ConfigManager.parse_env_content(content) == {"FOO": "bar", "BAZ": "qux"}
 
-    @patch("src.config_manager.keyring")
-    def test_set_secret(self, mock_kr: MagicMock, tmp_path: Path):
-        mgr = ConfigManager(app_data_dir=tmp_path)
-        mgr.set_secret("openai_api_key", "sk-456")
-        mock_kr.set_password.assert_called_once_with(KEYRING_SERVICE, "openai_api_key", "sk-456")
+    def test_ignores_comments_and_blanks(self):
+        content = "# comment\n\nKEY=val\n"
+        assert ConfigManager.parse_env_content(content) == {"KEY": "val"}
 
-    @patch("src.config_manager.keyring")
-    def test_delete_secret_exists(self, mock_kr: MagicMock, tmp_path: Path):
-        mgr = ConfigManager(app_data_dir=tmp_path)
-        mgr.delete_secret("old_key")
-        mock_kr.delete_password.assert_called_once_with(KEYRING_SERVICE, "old_key")
+    def test_strips_quotes(self):
+        content = 'A="quoted"\nB=\'single\'\n'
+        result = ConfigManager.parse_env_content(content)
+        assert result["A"] == "quoted"
+        assert result["B"] == "single"
 
-    @patch("src.config_manager.keyring")
-    def test_delete_secret_not_found(self, mock_kr: MagicMock, tmp_path: Path):
-        import keyring.errors
-        mock_kr.delete_password.side_effect = keyring.errors.PasswordDeleteError
-        mock_kr.errors = keyring.errors
-        mgr = ConfigManager(app_data_dir=tmp_path)
-        mgr.delete_secret("nonexistent")  # should not raise
-
-    @patch("src.config_manager.keyring")
-    def test_set_secrets_batch(self, mock_kr: MagicMock, tmp_path: Path):
-        mgr = ConfigManager(app_data_dir=tmp_path)
-        count = mgr.set_secrets_batch({
-            "key_a": "val_a",
-            "key_b": "",       # 空值跳過
-            "key_c": "val_c",
-        })
-        assert count == 2
-        assert mock_kr.set_password.call_count == 2
+    def test_empty_string(self):
+        assert ConfigManager.parse_env_content("") == {}
 
 
 # ── openclaw.json ──────────────────────────────────────

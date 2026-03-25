@@ -260,7 +260,7 @@ class TestHealthCheck:
             with patch("src.initializer.asyncio.sleep", new_callable=AsyncMock):
                 result = await initializer._step_health_check(_make_params())
         assert result["success"] is False
-        assert "3 attempts" in result["message"]
+        assert "6 attempts" in result["message"]
 
 
 # ── run_all Orchestration ────────────────────────────────
@@ -275,7 +275,7 @@ class TestRunAll:
         with patch("src.initializer.urllib.request.urlopen", return_value=mock_resp):
             result = await initializer.run_all(_make_params())
         assert result["success"] is True
-        assert len(result["steps"]) == 11
+        assert len(result["steps"]) == 10
         assert result["gateway_token"] is not None
 
     @pytest.mark.asyncio
@@ -296,7 +296,7 @@ class TestRunAll:
         with patch("src.initializer.urllib.request.urlopen", return_value=mock_resp):
             result = await initializer.run_all(_make_params(mode="native-linux"))
         assert result["success"] is True
-        assert len(result["steps"]) == 9  # 9 steps for native
+        assert len(result["steps"]) == 8  # 8 steps for native
 
     @pytest.mark.asyncio
     async def test_on_step_callbacks(self, initializer, mock_executor, mock_config_manager):
@@ -307,7 +307,7 @@ class TestRunAll:
         with patch("src.initializer.urllib.request.urlopen", return_value=mock_resp):
             await initializer.run_all(_make_params(), on_step=on_step)
         # Each step calls on_step twice: "running" + "done"
-        assert on_step.call_count == 22  # 11 steps × 2
+        assert on_step.call_count == 20  # 10 steps × 2
         # First call: step 1, running
         first_call = on_step.call_args_list[0]
         assert first_call[0] == ("1", "running", "Validate environment")
@@ -325,18 +325,18 @@ class TestRunAll:
 
 
 class TestStepList:
-    def test_docker_has_11_steps(self, initializer):
+    def test_docker_has_10_steps(self, initializer):
         steps = initializer._get_steps("docker-windows")
-        assert len(steps) == 11
+        assert len(steps) == 10
 
-    def test_native_has_9_steps(self, initializer):
+    def test_native_has_8_steps(self, initializer):
         steps = initializer._get_steps("native-linux")
-        assert len(steps) == 9
+        assert len(steps) == 8
 
     def test_remote_ssh_uses_docker_steps(self, initializer):
         steps = initializer._get_steps("remote-ssh")
-        assert len(steps) == 11
+        assert len(steps) == 10
 
     def test_docker_linux_uses_docker_steps(self, initializer):
         steps = initializer._get_steps("docker-linux")
-        assert len(steps) == 11
+        assert len(steps) == 10

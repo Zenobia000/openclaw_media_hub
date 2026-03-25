@@ -226,6 +226,71 @@ class Bridge:
 
     # ── 設定管理 API (3.5, US-002) ────────────────────────
 
+    def load_env_keys(self) -> dict:
+        """從目標機器 .env 讀取已有的 API 金鑰，依 registry 分類回傳 (ADR-005)。
+
+        本機模式：直接讀取本機 .env。
+        SSH 模式：透過 RemoteExecutor 讀取遠端 .env。
+
+        Returns:
+            {providers: {ENV_VAR: val}, channels: {ENV_VAR: val}, tools: {ENV_VAR: val}}
+        """
+        def _do() -> dict:
+            from src.config_manager import ConfigManager
+            from src.registries import (
+                CHANNEL_REGISTRY,
+                PROVIDER_REGISTRY,
+                TOOL_REGISTRY,
+            )
+
+            settings = self._config_manager.read_gui_settings()
+            config_dir = settings.get("config_dir", "~/.openclaw")
+            env_path = f"{config_dir}/.env"
+
+            # Read .env — local or remote depending on executor
+            if isinstance(self._executor, RemoteExecutor):
+                try:
+                    content = self._run_async(self._executor.read_file(env_path))
+                    env_data = ConfigManager.parse_env_content(
+                        content if isinstance(content, str) else content.decode("utf-8")
+                    )
+                except Exception:
+                    env_data = {}
+            else:
+                env_data = self._config_manager.read_env(env_path)
+
+            if not env_data:
+                return _ok({"providers": {}, "channels": {}, "tools": {}})
+
+            # Collect known env_var names per category
+            provider_vars = {
+                p["env_var"] for p in PROVIDER_REGISTRY if p.get("env_var")
+            }
+            channel_vars: set[str] = set()
+            for ch in CHANNEL_REGISTRY:
+                for f in ch.get("fields", []):
+                    channel_vars.add(f["key"])
+            tool_vars = {
+                t["env_var"] for t in TOOL_REGISTRY if t.get("env_var")
+            }
+
+            result: dict[str, dict[str, str]] = {
+                "providers": {},
+                "channels": {},
+                "tools": {},
+            }
+            for key, value in env_data.items():
+                if key in provider_vars:
+                    result["providers"][key] = value
+                elif key in channel_vars:
+                    result["channels"][key] = value
+                elif key in tool_vars:
+                    result["tools"][key] = value
+
+            return _ok(result)
+
+        return self._safe_call(_do)
+
     def load_config(self) -> dict:
         """讀取 gui-settings.json 已儲存的設定。
 
@@ -252,17 +317,22 @@ class Bridge:
         return self._safe_call(_do)
 
     def save_keys(self, keys: dict) -> dict:
-        """儲存 API 金鑰至系統 keyring（分類式）。
+        """儲存 API 金鑰至目標機器的 .env (ADR-005)。
 
         Args:
-            keys: {providers: {key: val}, channels: {key: val}, tools: {key: val}}
+            keys: {providers: {ENV_VAR: val}, channels: {ENV_VAR: val}, tools: {ENV_VAR: val}}
         """
         def _do() -> dict:
             flat: dict[str, str] = {}
             for category in ("providers", "channels", "tools"):
-                flat.update(keys.get(category, {}))
-            count = self._config_manager.set_secrets_batch(flat)
-            return _ok({"saved_count": count})
+                for k, v in keys.get(category, {}).items():
+                    if v:
+                        flat[k] = v
+            settings = self._config_manager.read_gui_settings()
+            config_dir = settings.get("config_dir", "~/.openclaw")
+            env_path = f"{config_dir}/.env"
+            self._config_manager.write_env(env_path, flat)
+            return _ok({"saved_count": len(flat)})
 
         return self._safe_call(_do)
 
