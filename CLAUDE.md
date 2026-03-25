@@ -6,8 +6,8 @@
 > **目標**：圖形化介面取代命令列腳本，單一可執行檔部署，降低使用門檻
 > **架構**：PyWebView Bridge 模式 + Tailwind CSS 前端 + 原生 Python 操作邏輯
 > **模式**：人類駕駛，AI 協助
-> **工具**：PyWebView, PyInstaller, Tailwind CSS, keyring, uv
-> **ADR**：ADR-003 廢棄 Shell 腳本，所有操作邏輯以原生 Python 實作; ADR-004 SSH 遠端管理 Transport Layer
+> **工具**：PyWebView, PyInstaller, Tailwind CSS, uv
+> **ADR**：ADR-003 廢棄 Shell 腳本，所有操作邏輯以原生 Python 實作; ADR-004 SSH 遠端管理 Transport Layer; ADR-005 廢棄 keyring，統一 .env 金鑰儲存
 
 ---
 
@@ -91,7 +91,7 @@
 
 ### 絕對禁止
 
-- **安全**：禁止明文儲存金鑰與敏感設定值（必須使用 `keyring` 或系統安全儲存）。
+- **安全**：API 金鑰統一儲存於目標機器 `.env`，寫入後設定檔案權限 `600`（僅 owner 可讀寫）(ADR-005)。
 - **注入**：禁止未經轉義的使用者輸入直接拼接至 subprocess 指令（防止命令注入）。使用 `list` 形式呼叫 subprocess，禁止 `shell=True`。
 - **阻塞**：禁止同步阻塞 UI 執行緒（所有耗時操作須為非同步）。
 - **網路**：禁止 Bridge API 暴露至外部網路（僅限 loopback 通訊）。
@@ -172,7 +172,7 @@ openclaw/                            # 專案根目錄
 1. **PyWebView 入口 (main.py)**: 建立桌面視窗，載入前端 UI，註冊 Bridge API。
 2. **Bridge API (bridge.py)**: 接收前端請求，轉發至對應的後端模組，回傳結構化結果 (JSON)。
 3. **Process Manager (process_manager.py)**: 非同步執行外部程式（docker, systemctl），僅用於無法用 Python 直接完成的操作。
-4. **Config Manager (config_manager.py)**: 金鑰與設定值的讀寫，整合 `keyring` 安全儲存。
+4. **Config Manager (config_manager.py)**: GUI 設定值 (`gui-settings.json`)、`.env` 環境變數與 API 金鑰的讀寫 (ADR-005)。
 5. **Platform Utils (platform_utils.py)**: 偵測 OS 與環境類型 (Docker/Native)。
 6. **Env Checker (env_checker.py)**: 以 `shutil.which()` 偵測軟體、`subprocess.run()` 取版本號，回傳結構化結果。
 7. **Initializer (initializer.py)**: 目錄建立 (`pathlib`)、config JSON 產生、`docker compose up`。
@@ -192,7 +192,7 @@ openclaw/                            # 專案根目錄
 | :--- | :--- | :--- | :--- |
 | 環境檢查 | `env_checker.py` | `shutil.which()` + `subprocess.run()` 取版本 | 狀態卡片列表 |
 | 初始化 | `initializer.py` | `pathlib` + `json` + `subprocess`(docker) | 步驟精靈 (wizard) |
-| API 金鑰設定 | `config_manager.py` | `keyring` + `json` | 表單輸入 |
+| API 金鑰設定 | `config_manager.py` | `.env` 讀寫 (ADR-005) | 表單輸入 |
 | 服務啟停 | `service_controller.py` | `subprocess`(docker compose/systemctl) | 開關按鈕 + 狀態指示 |
 | 技能部署 | `skill_manager.py` | `pathlib` + `shutil` + YAML/MD 解析 | 勾選清單 + 進度 |
 | 外掛安裝 | `plugin_manager.py` | `pathlib` + `shutil` | 勾選清單 + 進度 |
@@ -209,7 +209,7 @@ openclaw/                            # 專案根目錄
 | **後端語言**     | Python 3                    | 原生跨平台操作邏輯、非同步 I/O               |
 | **套件管理**     | uv                          | Python 版本管理 + 虛擬環境 + 依賴鎖定 (All-in-one) |
 | **打包工具**     | PyInstaller                 | 編譯為獨立執行檔，零依賴部署                 |
-| **金鑰儲存**     | keyring                     | 跨平台安全儲存 (DPAPI / libsecret)          |
+| **金鑰儲存**     | `.env` + 檔案權限 (`600`)   | 統一儲存於目標機器 `.env`，與 Docker/systemd 注入一致 (ADR-005) |
 | **SSH 連線**     | paramiko                    | 純 Python SSH2 實作，用於 RemoteExecutor (ADR-004) |
 | **容器管理**     | Docker Compose              | Docker 環境下的服務編排                      |
 
@@ -234,7 +234,7 @@ openclaw/                            # 專案根目錄
 
 ## 安全規範
 
-1. **金鑰儲存**：透過 `keyring` 套件存取系統安全儲存（Windows: DPAPI/Credential Manager; Linux: libsecret/keyring），禁止明文。
+1. **金鑰儲存**：API 金鑰統一儲存於目標機器的 `{config_dir}/.env`，寫入後設定檔案權限 `600`（僅 owner 可讀寫）。每台伺服器各有獨立的 `.env` (ADR-005)。
 2. **命令注入防護**：subprocess 使用 `list` 形式傳遞引數，禁止 `shell=True`，禁止字串拼接指令。
 3. **網路隔離**：PyWebView Bridge API 僅限本機 loopback，不暴露至外部。
 4. **優雅關閉**：應用程式關閉前檢查執行中的子程序，確認後 graceful shutdown。

@@ -391,7 +391,7 @@ await window.pywebview.api.connect_remote({
 
 2. **Model Providers 區塊** (SectionPanel)
    - Icon: `cpu` (紅), 標題: "Model Providers"
-   - 描述: "Select providers and enter API keys — stored securely via system keyring"
+   - 描述: "Select providers and enter API keys — stored in .env with restricted permissions"
    - **供應商勾選清單**（水平 Flexbox, 可多選，勾選後展開對應金鑰欄位）:
      - OpenAI (`OPENAI_API_KEY`, placeholder: `sk-...`)
      - Anthropic (`ANTHROPIC_API_KEY`, placeholder: `sk-ant-...`)
@@ -424,7 +424,7 @@ await window.pywebview.api.connect_remote({
      - Deepgram (`DEEPGRAM_API_KEY`)
 
 5. **Security Note** — 底部安全提示
-   - `shield-check` icon (紅) + 文字: "All keys are encrypted and stored securely using your operating system's credential manager (DPAPI / libsecret). Keys are never written to plain text files."
+   - `shield-check` icon (紅) + 文字: "All keys are stored in .env with restricted file permissions (owner-only access). Each server maintains its own independent .env configuration." (ADR-005)
 
 6. **Action Bar** — 底部固定，上方 `1px` 分隔線
    - 左側: "Back" Button/Secondary (帶 `arrow-left` icon)
@@ -445,19 +445,25 @@ const providers = await window.pywebview.api.get_available_providers();
 const channels = await window.pywebview.api.get_available_channels();
 // 回傳: [{name: "line", fields: [{key: "line_channel_access_token", label: "Channel Access Token"}, {key: "line_channel_secret", label: "Channel Secret"}], icon: "L", icon_color: "#06C755"}, ...]
 
-// 儲存金鑰（分類式，透過 keyring 安全儲存）
+// 載入目標機器 .env 中的既有金鑰（首次進入 Step 2 時呼叫）(ADR-005)
+const envKeys = await window.pywebview.api.load_env_keys();
+// 回傳: {providers: {OPENAI_API_KEY: "sk-..."}, channels: {LINE_CHANNEL_ACCESS_TOKEN: "..."}, tools: {BRAVE_API_KEY: "..."}}
+// 本機模式：讀取本機 {config_dir}/.env
+// SSH 模式：透過 RemoteExecutor 讀取遠端 .env
+
+// 儲存金鑰（寫入目標機器的 .env 檔案）(ADR-005)
 await window.pywebview.api.save_keys({
   providers: {
-    openai_api_key: "sk-...",
-    anthropic_api_key: "sk-ant-..."
+    OPENAI_API_KEY: "sk-...",
+    ANTHROPIC_API_KEY: "sk-ant-..."
   },
   channels: {
-    line_channel_access_token: "...",
-    line_channel_secret: "...",
-    discord_bot_token: "..."
+    LINE_CHANNEL_ACCESS_TOKEN: "...",
+    LINE_CHANNEL_SECRET: "...",
+    DISCORD_BOT_TOKEN: "..."
   },
   tools: {
-    brave_api_key: "..."
+    BRAVE_API_KEY: "..."
   }
 });
 ```
@@ -469,7 +475,8 @@ await window.pywebview.api.save_keys({
 - [ ] Channel 區塊根據金鑰填寫狀態自動顯示 "Configured" / "Not Configured" badge
 - [ ] Tools 區塊預設收合，點擊標題展開
 - [ ] 點擊 "Back" 回到 Step 1（保留已填資料）
-- [ ] 點擊 "Next" 儲存金鑰至 keyring 後進入 Step 3
+- [ ] 進入 Step 2 時呼叫 `load_env_keys()` 載入既有金鑰並自動勾選對應項目
+- [ ] 點擊 "Next" 儲存金鑰至目標機器 `.env` 後進入 Step 3
 
 ---
 
