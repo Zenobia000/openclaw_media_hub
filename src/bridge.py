@@ -257,6 +257,28 @@ class Bridge:
 
         return self._safe_call(_do)
 
+    # ── 檔案選擇 API ────────────────────────────────────
+
+    def browse_file(
+        self,
+        title: str = "Select File",
+        file_types: list[str] | None = None,
+    ) -> dict:
+        """開啟原生檔案選擇對話框。
+
+        Args:
+            title: 對話框標題
+            file_types: 檔案類型過濾（如 ["Key Files (*.pem;*.key;*)", "All Files (*.*)"]）
+        """
+        if not self._window:
+            return _err(ErrorType.INTERNAL, "Window not initialized")
+        ft = tuple(file_types) if file_types else ("All Files (*.*)",)
+        result = self._window.create_file_dialog(
+            webview.OPEN_DIALOG, allow_multiple=False, file_types=ft
+        )
+        path = result[0] if result else None
+        return _ok({"path": path})
+
     # ── SSH 連線管理 API (3.3.4, ADR-004) ────────────────
 
     def _on_ssh_state_change(self, state: ConnectionState) -> None:

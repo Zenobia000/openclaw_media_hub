@@ -17,6 +17,13 @@ const pageHooks = {};
 /** Current deployment mode (set after detect_platform) */
 let currentMode = null;
 
+/** Configuration wizard — Step 1 local state */
+let configStep = 1;
+let selectedMode = null;
+let sshTestPassed = false;
+let sshTestResult = null;
+let sshAuthMethod = "key"; // "key" | "password"
+
 /* ============================================================
  * 2. SPA Router
  * ============================================================ */
@@ -622,6 +629,440 @@ registerPage("environment", {
       `);
     }
   },
+});
+
+/* ============================================================
+ * 5.2 Configuration Step 1 — Lifecycle & Components (WBS 3.6 + 3.16.3)
+ * ============================================================ */
+
+/* ---------- 5.2.1 Mode Definitions ---------- */
+
+const DEPLOY_MODES = [
+  { id: "docker-windows", icon: "monitor",  iconColor: "text-accent-primary",  borderColor: "#ff5c5c", name: "Docker Windows",      description: "Run OpenClaw in Docker on Windows" },
+  { id: "docker-linux",   icon: "terminal", iconColor: "text-accent-secondary", borderColor: "#14b8a6", name: "Docker Linux / WSL2",  description: "Run OpenClaw in Docker on Linux or WSL2" },
+  { id: "native-linux",   icon: "server",   iconColor: "text-text-muted",       borderColor: "#838387", name: "Native Linux (systemd)", description: "Install directly on Linux with systemd" },
+  { id: "remote-ssh",     icon: "cloud",    iconColor: "text-[#8b5cf6]",        borderColor: "#8b5cf6", name: "Remote Server (SSH)",  description: "Connect to a remote server via SSH" },
+];
+
+/* ---------- 5.2.2 Render: Radio Card ---------- */
+
+/**
+ * Render a deployment mode radio card.
+ * @param {Object} mode - Mode definition from DEPLOY_MODES
+ * @param {boolean} selected - Whether this card is currently selected
+ * @returns {string} HTML
+ */
+function renderRadioCard(mode, selected) {
+  const borderStyle = selected
+    ? `border-color: ${mode.borderColor}; border-width: 2px; padding: 15px;`
+    : "";
+  const selectedCls = selected ? "radio-card-selected" : "";
+  const indicator = selected
+    ? `<div class="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style="background: ${mode.borderColor};">
+        <i data-lucide="check" class="w-3 h-3 text-white"></i>
+      </div>`
+    : `<div class="w-5 h-5 rounded-full border-2 border-border-default flex-shrink-0"></div>`;
+
+  return `<div class="radio-card ${selectedCls}" style="${borderStyle}" data-mode="${mode.id}" onclick="selectDeploymentMode('${mode.id}')">
+    ${indicator}
+    <div class="w-8 h-8 rounded-sm bg-bg-input flex items-center justify-center flex-shrink-0">
+      <i data-lucide="${mode.icon}" class="w-4 h-4 ${mode.iconColor}"></i>
+    </div>
+    <div class="flex-1 min-w-0">
+      <div class="text-sm font-semibold">${escapeHtml(mode.name)}</div>
+      <div class="text-xs text-text-muted mt-0.5">${escapeHtml(mode.description)}</div>
+    </div>
+  </div>`;
+}
+
+/* ---------- 5.2.3 Render: Deployment Mode Section ---------- */
+
+function renderDeploymentModeSection() {
+  const cards = DEPLOY_MODES.map(m => renderRadioCard(m, m.id === selectedMode)).join("");
+  return renderSectionPanel({
+    icon: "monitor",
+    iconColor: "text-accent-primary",
+    title: "Deployment Mode",
+    children: `<div class="grid grid-cols-2 gap-3">${cards}</div>`,
+  });
+}
+
+/* ---------- 5.2.4 Render: SSH Connection Section ---------- */
+
+function renderSSHSection() {
+  const keyRowHidden = sshAuthMethod === "password" ? "hidden" : "";
+  const pwdRowHidden = sshAuthMethod === "key" ? "hidden" : "";
+  const toggleText = sshAuthMethod === "key" ? "Use password instead" : "Use SSH key instead";
+
+  const formGrid = `
+    <div class="grid grid-cols-2 gap-4">
+      ${renderInput({ id: "input-ssh-host", label: "Host", icon: "globe", placeholder: "192.168.1.100", required: true })}
+      ${renderInput({ id: "input-ssh-port", label: "Port", placeholder: "22", type: "number", value: "22" })}
+      ${renderInput({ id: "input-ssh-username", label: "Username", icon: "user", placeholder: "ubuntu", required: true })}
+      <div id="ssh-key-row" class="${keyRowHidden}">
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-medium text-text-secondary">SSH Key File</label>
+          <div class="flex gap-2">
+            <input id="input-ssh-key-file" type="text" placeholder="~/.ssh/id_rsa" readonly
+              class="flex-1 bg-bg-input border border-border-default focus-within:border-accent-primary rounded-sm text-sm text-text-primary placeholder:text-text-muted pl-3 pr-3 py-2.5 outline-none transition-colors" />
+            ${renderButton({ variant: "secondary", icon: "folder-open", label: "Browse", size: "sm", onclick: "browseSSHKey()" })}
+          </div>
+        </div>
+      </div>
+      <div id="ssh-password-row" class="${pwdRowHidden}">
+        ${renderInput({ id: "input-ssh-password", label: "Password", type: "password", placeholder: "Enter password" })}
+      </div>
+    </div>
+    <div class="mt-3 flex items-center justify-between">
+      <button type="button" id="btn-toggle-ssh-auth" class="text-xs text-text-muted hover:text-text-secondary cursor-pointer bg-transparent border-0 p-0 underline" onclick="toggleSSHAuthMethod()">
+        ${toggleText}
+      </button>
+    </div>
+    <div class="mt-4 flex items-center gap-3">
+      ${renderButton({ variant: "secondary", icon: "wifi", label: "Test Connection", id: "btn-test-ssh", onclick: "testSSHConnection()" })}
+      <span id="ssh-test-badge"></span>
+    </div>`;
+
+  return `<div id="ssh-section">${renderSectionPanel({
+    icon: "terminal",
+    iconColor: "text-[#8b5cf6]",
+    title: "SSH Connection",
+    description: "Connect to your remote server via SSH",
+    children: formGrid,
+  })}</div>`;
+}
+
+/* ---------- 5.2.5 Render: Gateway & Directory Section ---------- */
+
+function renderGatewaySection() {
+  const mainGrid = `
+    <div class="grid grid-cols-2 gap-4">
+      ${renderInput({ id: "input-config-dir", label: "Config Directory", icon: "folder", placeholder: "~/.openclaw" })}
+      ${renderInput({ id: "input-workspace-dir", label: "Workspace Directory", icon: "folder", placeholder: "~/.openclaw/workspace" })}
+      ${renderInput({ id: "input-gateway-bind", label: "Gateway Bind Host", placeholder: "lan" })}
+      ${renderInput({ id: "input-gateway-mode", label: "Gateway Mode", placeholder: "local" })}
+      ${renderInput({ id: "input-gateway-port", label: "Gateway Port", type: "number", placeholder: "18789" })}
+      ${renderInput({ id: "input-bridge-port", label: "Bridge Port", type: "number", placeholder: "18790" })}
+    </div>`;
+
+  const advancedContent = `
+    <div id="advanced-settings" class="collapsible-content mt-4">
+      <div class="grid grid-cols-2 gap-4">
+        ${renderInput({ id: "input-timezone", label: "Timezone", placeholder: "Asia/Taipei" })}
+        ${renderInput({ id: "input-docker-image", label: "Docker Image", placeholder: "openclaw:local" })}
+      </div>
+      <div class="flex items-center gap-2 mt-4">
+        <input type="checkbox" id="toggle-sandbox" class="checkbox-custom" checked />
+        <label for="toggle-sandbox" class="text-sm text-text-secondary cursor-pointer">Enable Sandbox</label>
+      </div>
+    </div>`;
+
+  const advancedToggle = `
+    <button type="button" class="flex items-center gap-1.5 mt-4 text-xs text-text-muted hover:text-text-secondary cursor-pointer bg-transparent border-0 p-0" onclick="toggleAdvancedSettings()">
+      <i data-lucide="chevron-right" class="w-3.5 h-3.5 collapsible-chevron" id="advanced-chevron"></i>
+      <span>Advanced Settings</span>
+    </button>`;
+
+  return renderSectionPanel({
+    icon: "globe",
+    iconColor: "text-accent-secondary",
+    title: "Gateway & Directory",
+    children: mainGrid + advancedToggle + advancedContent,
+  });
+}
+
+/* ---------- 5.2.6 Render: Action Bar ---------- */
+
+function renderConfigActionBar() {
+  const nextDisabled = selectedMode === "remote-ssh" && !sshTestPassed;
+  const html = `<div class="flex items-center justify-end gap-3">
+    <span class="text-sm text-text-muted font-medium">Step ${configStep} of 3</span>
+    ${renderButton({ variant: "primary", icon: "arrow-right", label: "Next", id: "btn-next-step", disabled: nextDisabled, onclick: "configNextStep()" })}
+  </div>`;
+  renderInto("config-action-bar", html);
+}
+
+/* ---------- 5.2.7 Render: Step 1 Composition ---------- */
+
+function renderConfigStep1() {
+  const stepIndicator = renderStepIndicator({
+    steps: ["Environment", "API Keys", "Initialize"],
+    currentStep: configStep,
+    completedSteps: [],
+  });
+
+  const sshSection = selectedMode === "remote-ssh" ? renderSSHSection() : `<div id="ssh-section" class="hidden"></div>`;
+
+  const html = [
+    stepIndicator,
+    renderDeploymentModeSection(),
+    sshSection,
+    renderGatewaySection(),
+  ].join("");
+
+  renderInto("config-content", html);
+  renderConfigActionBar();
+}
+
+/* ---------- 5.2.8 Event Handlers ---------- */
+
+/**
+ * Handle deployment mode radio card selection.
+ * Uses DOM-only updates to preserve form values.
+ */
+function selectDeploymentMode(mode) {
+  if (mode === selectedMode) return;
+  selectedMode = mode;
+  sshTestPassed = false;
+  sshTestResult = null;
+
+  // Persist mode (fire-and-forget)
+  window.pywebview.api.save_config({ deployment_mode: mode }).catch(() => {});
+
+  // Update sidebar
+  updateSidebarMode(mode);
+
+  // Update radio card visuals
+  document.querySelectorAll(".radio-card").forEach((card) => {
+    const cardMode = card.dataset.mode;
+    const def = DEPLOY_MODES.find((m) => m.id === cardMode);
+    if (!def) return;
+
+    const isSelected = cardMode === mode;
+    card.classList.toggle("radio-card-selected", isSelected);
+    card.style.borderColor = isSelected ? def.borderColor : "";
+    card.style.borderWidth = isSelected ? "2px" : "";
+    card.style.padding = isSelected ? "15px" : "";
+
+    // Update indicator
+    const indicator = card.children[0];
+    if (isSelected) {
+      indicator.className = "w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0";
+      indicator.style.background = def.borderColor;
+      indicator.innerHTML = `<i data-lucide="check" class="w-3 h-3 text-white"></i>`;
+    } else {
+      indicator.className = "w-5 h-5 rounded-full border-2 border-border-default flex-shrink-0";
+      indicator.style.background = "";
+      indicator.innerHTML = "";
+    }
+  });
+  lucide.createIcons({ nameAttr: "data-lucide" });
+
+  // Toggle SSH section
+  let sshEl = document.getElementById("ssh-section");
+  if (sshEl) {
+    if (mode === "remote-ssh") {
+      if (!sshEl.innerHTML.trim()) {
+        // Replace empty placeholder with full SSH section
+        sshEl.outerHTML = renderSSHSection();
+        lucide.createIcons({ nameAttr: "data-lucide" });
+      } else {
+        sshEl.classList.remove("hidden");
+      }
+    } else {
+      sshEl.classList.add("hidden");
+    }
+  }
+
+  // Update action bar
+  renderConfigActionBar();
+}
+
+/**
+ * Open native file picker for SSH key.
+ */
+async function browseSSHKey() {
+  try {
+    const result = await window.pywebview.api.browse_file(
+      "Select SSH Key",
+      ["Key Files (*.pem;*.key;*)", "All Files (*.*)"]
+    );
+    if (result?.success && result.data?.path) {
+      const input = document.getElementById("input-ssh-key-file");
+      if (input) input.value = result.data.path;
+    }
+  } catch {
+    // Dialog cancelled or error — no action needed
+  }
+}
+
+/**
+ * Toggle between SSH key and password authentication.
+ */
+function toggleSSHAuthMethod() {
+  sshAuthMethod = sshAuthMethod === "key" ? "password" : "key";
+  const keyRow = document.getElementById("ssh-key-row");
+  const pwdRow = document.getElementById("ssh-password-row");
+  if (keyRow) keyRow.classList.toggle("hidden", sshAuthMethod === "password");
+  if (pwdRow) pwdRow.classList.toggle("hidden", sshAuthMethod === "key");
+
+  // Update toggle link text
+  const toggleBtn = document.getElementById("btn-toggle-ssh-auth");
+  if (toggleBtn) {
+    toggleBtn.textContent = sshAuthMethod === "key" ? "Use password instead" : "Use SSH key instead";
+  }
+}
+
+/**
+ * Toggle advanced settings collapsible.
+ */
+function toggleAdvancedSettings() {
+  const content = document.getElementById("advanced-settings");
+  const chevron = document.getElementById("advanced-chevron");
+  if (content) content.classList.toggle("expanded");
+  if (chevron) chevron.classList.toggle("rotated");
+}
+
+/**
+ * Test SSH connection — calls Bridge API and updates inline badge.
+ */
+async function testSSHConnection() {
+  const host = document.getElementById("input-ssh-host")?.value?.trim();
+  const port = parseInt(document.getElementById("input-ssh-port")?.value, 10) || 22;
+  const username = document.getElementById("input-ssh-username")?.value?.trim();
+
+  // Validate required fields
+  if (!host || !username) {
+    const badge = document.getElementById("ssh-test-badge");
+    if (badge) badge.innerHTML = renderStatusBadge({ status: "error", text: "Host and Username are required" });
+    lucide.createIcons({ nameAttr: "data-lucide" });
+    return;
+  }
+
+  // Build params based on auth method
+  const params = { host, port, username };
+  if (sshAuthMethod === "key") {
+    const keyFile = document.getElementById("input-ssh-key-file")?.value?.trim();
+    if (keyFile) params.key_path = keyFile;
+  } else {
+    const password = document.getElementById("input-ssh-password")?.value;
+    if (password) params.password = password;
+  }
+
+  // Show connecting badge
+  const badge = document.getElementById("ssh-test-badge");
+  if (badge) {
+    badge.innerHTML = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#14b8a618] text-accent-secondary text-xs font-medium">
+      <i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i>
+      Connecting...
+    </span>`;
+    lucide.createIcons({ nameAttr: "data-lucide" });
+  }
+
+  // Disable test button during request
+  const btn = document.getElementById("btn-test-ssh");
+  if (btn) { btn.disabled = true; btn.classList.add("opacity-50", "pointer-events-none"); }
+
+  try {
+    const result = await window.pywebview.api.test_connection(params);
+    if (result?.success) {
+      const info = result.data?.server_info || {};
+      const infoText = `Connected — ${info.os || "?"}, ${info.cpu_cores || "?"} cores, ${info.memory_gb || "?"}GB`;
+      sshTestPassed = true;
+      sshTestResult = info;
+      if (badge) badge.innerHTML = renderStatusBadge({ status: "success", text: infoText });
+    } else {
+      sshTestPassed = false;
+      sshTestResult = null;
+      const errMsg = result?.error?.message || "Connection failed";
+      if (badge) badge.innerHTML = renderStatusBadge({ status: "error", text: errMsg });
+    }
+  } catch (err) {
+    sshTestPassed = false;
+    sshTestResult = null;
+    if (badge) badge.innerHTML = renderStatusBadge({ status: "error", text: String(err) });
+  } finally {
+    if (btn) { btn.disabled = false; btn.classList.remove("opacity-50", "pointer-events-none"); }
+    lucide.createIcons({ nameAttr: "data-lucide" });
+    renderConfigActionBar();
+  }
+}
+
+/**
+ * Handle Next button — validate, persist, navigate to Step 2.
+ */
+async function configNextStep() {
+  // Validate SSH mode requirements
+  if (selectedMode === "remote-ssh") {
+    if (!sshTestPassed) return;
+
+    const host = document.getElementById("input-ssh-host")?.value?.trim();
+    const port = parseInt(document.getElementById("input-ssh-port")?.value, 10) || 22;
+    const username = document.getElementById("input-ssh-username")?.value?.trim();
+    const params = { host, port, username };
+
+    if (sshAuthMethod === "key") {
+      const keyFile = document.getElementById("input-ssh-key-file")?.value?.trim();
+      if (keyFile) params.key_path = keyFile;
+    } else {
+      const password = document.getElementById("input-ssh-password")?.value;
+      if (password) params.password = password;
+    }
+
+    // Establish persistent connection
+    try {
+      updateConnectionStatus("connecting");
+      const connResult = await window.pywebview.api.connect_remote(params);
+      if (!connResult?.success) {
+        const badge = document.getElementById("ssh-test-badge");
+        if (badge) badge.innerHTML = renderStatusBadge({ status: "error", text: connResult?.error?.message || "Connection failed" });
+        lucide.createIcons({ nameAttr: "data-lucide" });
+        updateConnectionStatus("error");
+        return;
+      }
+    } catch (err) {
+      updateConnectionStatus("error");
+      return;
+    }
+  }
+
+  // Collect gateway/directory config
+  const config = { deployment_mode: selectedMode };
+  const fieldMap = {
+    "input-config-dir": "config_dir",
+    "input-workspace-dir": "workspace_dir",
+    "input-gateway-bind": "gateway_bind",
+    "input-gateway-mode": "gateway_mode",
+    "input-gateway-port": "gateway_port",
+    "input-bridge-port": "bridge_port",
+    "input-timezone": "timezone",
+    "input-docker-image": "docker_image",
+  };
+  for (const [inputId, key] of Object.entries(fieldMap)) {
+    const val = document.getElementById(inputId)?.value?.trim();
+    if (val) config[key] = val;
+  }
+  config.sandbox = document.getElementById("toggle-sandbox")?.checked ?? true;
+
+  // Persist config
+  try {
+    await window.pywebview.api.save_config(config);
+  } catch {
+    // Config save failed — continue anyway, not critical
+  }
+
+  // Navigate to Step 2 (placeholder — WBS 3.7 will implement Step 2 page)
+  configStep = 2;
+  // TODO: renderConfigStep2() — to be implemented in WBS 3.7
+}
+
+/* ---------- 5.2.9 Page Lifecycle Registration ---------- */
+
+registerPage("configuration", {
+  onEnter: async () => {
+    // Load persisted settings
+    try {
+      const platform = await window.pywebview.api.detect_platform();
+      selectedMode = platform?.data?.current_mode || platform?.data?.suggested_mode || "docker-windows";
+    } catch {
+      selectedMode = "docker-windows";
+    }
+    sshTestPassed = false;
+    sshTestResult = null;
+    configStep = 1;
+    renderConfigStep1();
+  },
+  onLeave: () => { /* no-op */ },
 });
 
 /* ============================================================

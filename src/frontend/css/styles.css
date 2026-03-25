@@ -181,3 +181,50 @@ body {
   color: #f4f4f5;
   border-bottom-color: #14b8a6;
 }
+
+/* ============================================================
+ * Radio Card — Deployment mode selection cards
+ * ============================================================ */
+
+.radio-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #1e2028; /* border-default */
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 150ms ease, background-color 150ms ease;
+  user-select: none;
+}
+
+.radio-card:hover {
+  background-color: #1e2028; /* bg-input */
+}
+
+.radio-card-selected {
+  border-width: 2px;
+  padding: 15px; /* compensate for 2px border */
+}
+
+/* ============================================================
+ * Collapsible — Expandable content sections
+ * ============================================================ */
+
+.collapsible-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 250ms ease;
+}
+
+.collapsible-content.expanded {
+  max-height: 500px;
+}
+
+.collapsible-chevron {
+  transition: transform 200ms ease;
+}
+
+.collapsible-chevron.rotated {
+  transform: rotate(90deg);
+}
