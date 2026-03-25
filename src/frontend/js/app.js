@@ -547,6 +547,23 @@ function renderProgressItem({ name, description, status, icon }) {
  * 5. Utility Functions
  * ============================================================ */
 
+/** Write text to clipboard with fallback for non-secure contexts (PyWebView). */
+async function clipboardWrite(text) {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+  } catch { /* secure context required — fall through */ }
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.cssText = "position:fixed;opacity:0;left:-9999px";
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand("copy");
+  document.body.removeChild(ta);
+}
+
 /** Escape HTML entities */
 function escapeHtml(str) {
   if (str == null) return "";
@@ -1884,6 +1901,7 @@ const INIT_STEPS_NATIVE = [
 
 let initializationRunning = false;
 let initGatewayToken = null;
+let initTokenRevealed = false;
 
 /* ---------- 5.4.2 Render: Progress Panel ---------- */
 
@@ -1920,9 +1938,10 @@ function renderDashboardInfoPanel() {
           <div class="flex flex-col gap-1.5">
             <label class="text-xs font-medium text-text-secondary">Access Token</label>
             <div class="flex gap-2">
-              <input id="input-dash-token" type="password" value="" readonly placeholder="Generated after init"
-                class="flex-1 bg-bg-input border border-border-default rounded-sm text-sm text-text-primary placeholder:text-text-muted pl-3 pr-3 py-2.5 outline-none" />
-              ${renderButton({ variant: "secondary", icon: "copy", label: "Copy", size: "sm", onclick: "copyGatewayToken()" })}
+              <input id="input-dash-token" type="text" value="" readonly placeholder="Generated after init"
+                class="flex-1 bg-bg-input border border-border-default rounded-sm text-sm text-text-primary placeholder:text-text-muted pl-3 pr-3 py-2.5 outline-none font-mono" />
+              ${renderButton({ variant: "secondary", icon: "eye", size: "sm", id: "btn-init-token-eye", onclick: "toggleInitToken()" })}
+              ${renderButton({ variant: "secondary", icon: "copy", label: "Copy", size: "sm", onclick: "copyInitToken()" })}
             </div>
           </div>
         </div>
@@ -2044,8 +2063,9 @@ async function startInitialization() {
 
       // Populate token if available
       initGatewayToken = result.data?.gateway_token || "";
+      initTokenRevealed = false;
       const tokenInput = document.getElementById("input-dash-token");
-      if (tokenInput && initGatewayToken) tokenInput.value = "\u2022".repeat(16);
+      if (tokenInput && initGatewayToken) tokenInput.value = "\u2022".repeat(initGatewayToken.length);
 
       renderConfigStep3ActionBar();
     } else {
@@ -2068,20 +2088,27 @@ async function startInitialization() {
 
 /* ---------- 5.4.8 Dashboard Info Helpers ---------- */
 
-async function copyGatewayToken() {
+function toggleInitToken() {
   if (!initGatewayToken) return;
-  try {
-    await navigator.clipboard.writeText(initGatewayToken);
-    // Brief visual feedback
-    const btn = document.querySelector("[onclick='copyGatewayToken()']");
-    if (btn) {
-      const original = btn.innerHTML;
-      btn.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i><span>Copied</span>`;
-      lucide.createIcons({ nameAttr: "data-lucide" });
-      setTimeout(() => { btn.innerHTML = original; lucide.createIcons({ nameAttr: "data-lucide" }); }, 1500);
-    }
-  } catch {
-    // Clipboard API not available
+  initTokenRevealed = !initTokenRevealed;
+  const input = document.getElementById("input-dash-token");
+  if (input) input.value = initTokenRevealed ? initGatewayToken : "\u2022".repeat(initGatewayToken.length);
+  const btn = document.getElementById("btn-init-token-eye");
+  if (btn) {
+    const icon = btn.querySelector("i");
+    if (icon) { icon.setAttribute("data-lucide", initTokenRevealed ? "eye-off" : "eye"); lucide.createIcons({ nameAttr: "data-lucide" }); }
+  }
+}
+
+async function copyInitToken() {
+  if (!initGatewayToken) return;
+  await clipboardWrite(initGatewayToken);
+  const btn = document.querySelector("[onclick='copyInitToken()']");
+  if (btn) {
+    const original = btn.innerHTML;
+    btn.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i><span>Copied</span>`;
+    lucide.createIcons({ nameAttr: "data-lucide" });
+    setTimeout(() => { btn.innerHTML = original; lucide.createIcons({ nameAttr: "data-lucide" }); }, 1500);
   }
 }
 
@@ -2571,9 +2598,16 @@ function toggleGatewayToken() {
   }
 }
 
-function copyGatewayToken() {
+async function copyGatewayToken() {
   if (!gatewayInfo?.gateway_token) return;
-  navigator.clipboard.writeText(gatewayInfo.gateway_token).catch(() => {});
+  await clipboardWrite(gatewayInfo.gateway_token);
+  const btn = document.querySelector("[onclick='copyGatewayToken()']");
+  if (btn) {
+    const original = btn.innerHTML;
+    btn.innerHTML = `<i data-lucide="check" class="w-4 h-4 text-status-success"></i>`;
+    lucide.createIcons({ nameAttr: "data-lucide" });
+    setTimeout(() => { btn.innerHTML = original; lucide.createIcons({ nameAttr: "data-lucide" }); }, 1500);
+  }
 }
 
 function toggleAllowAllOrigins(checked) {
