@@ -957,6 +957,69 @@ class Bridge:
 
         return self._safe_call(_do)
 
+    # ── Plugin API (WBS 3.11) ────────────────────────────────
+
+    def _build_plugin_manager(self):
+        """建構 PluginManager（根據當前 executor 模式）。"""
+        from src.plugin_manager import PluginManager
+
+        settings = self._config_manager.read_gui_settings()
+        config_dir = settings.get("config_dir", "~/.openclaw")
+        is_remote = self._remote_executor is not None
+
+        return PluginManager(
+            self._executor,
+            extensions_dir="./openclaw/extensions",
+            config_dir=config_dir,
+            local_executor=self._local_executor if is_remote else None,
+            on_progress=self._notify_plugin_progress,
+        )
+
+    def list_plugins(self) -> dict:
+        """列出所有可用外掛（含安裝狀態）。
+
+        Returns:
+            [{id, description, category, installed, channel_label, channel_blurb}]
+        """
+        def _do() -> dict:
+            mgr = self._build_plugin_manager()
+            plugins = self._run_async(mgr.list_plugins())
+            return _ok(plugins)
+
+        return self._safe_call(_do)
+
+    def install_plugins(self, ids: list) -> dict:
+        """安裝指定外掛（修改目標端 openclaw.json）。
+
+        Args:
+            ids: 外掛 ID 清單
+
+        Returns:
+            {installed: [str], failed: [{id, error}]}
+        """
+        def _do() -> dict:
+            mgr = self._build_plugin_manager()
+            result = self._run_async(mgr.install_plugins(ids))
+            return _ok(result)
+
+        return self._safe_call(_do)
+
+    def uninstall_plugins(self, ids: list) -> dict:
+        """移除指定外掛（從目標端 openclaw.json 移除）。
+
+        Args:
+            ids: 外掛 ID 清單
+
+        Returns:
+            {uninstalled: [str], failed: [{id, error}]}
+        """
+        def _do() -> dict:
+            mgr = self._build_plugin_manager()
+            result = self._run_async(mgr.uninstall_plugins(ids))
+            return _ok(result)
+
+        return self._safe_call(_do)
+
 
 def _js_escape(s: str) -> str:
     """轉義字串以安全嵌入 JavaScript 單引號字串。"""

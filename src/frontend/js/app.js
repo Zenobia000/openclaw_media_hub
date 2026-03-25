@@ -3087,6 +3087,412 @@ registerPage("deploy-skills", {
 });
 
 /* ============================================================
+ * 5.4 Install Plugins Page (WBS 3.11, US-006)
+ * ============================================================ */
+
+/** @type {Array<{id:string, description:string, category:string, installed:boolean, channel_label:string|null, channel_blurb:string|null}>} */
+let pluginsData = [];
+/** @type {Set<string>} Currently selected plugin IDs */
+let pluginsSelected = new Set();
+/** @type {"providers"|"channels"|"tools"|"infrastructure"} Active tab */
+let pluginsTab = "providers";
+/** Whether install/uninstall is in progress */
+let pluginsInstalling = false;
+/** @type {Object<string, {status:string, message:string}>} Progress state per plugin */
+let pluginsProgressMap = {};
+/** Whether page has been rendered at least once */
+let pluginsRendered = false;
+
+/** Category display labels and brand colors */
+const PLUGIN_CATEGORIES = [
+  { key: "providers", label: "Providers", color: "#8B5CF6" },
+  { key: "channels", label: "Channels", color: "#3B82F6" },
+  { key: "tools", label: "Tools", color: "#F59E0B" },
+  { key: "infrastructure", label: "Infrastructure", color: "#10B981" },
+];
+const PLUGIN_COLORS = Object.fromEntries(PLUGIN_CATEGORIES.map((c) => [c.key, c.color]));
+
+/**
+ * Global callback for install/uninstall progress updates from Bridge.
+ */
+window.updatePluginProgress = function (id, status, message) {
+  pluginsProgressMap[id] = { status, message };
+  renderPluginsProgressOverlay();
+};
+
+/* ---------- Render: Main Page ---------- */
+
+function renderPluginsPage() {
+  const plugins = pluginsData;
+  const installedCount = plugins.filter((p) => p.installed).length;
+
+  // Header badge
+  renderInto(
+    "install-plugins-badge",
+    installedCount > 0
+      ? renderStatusBadge({ status: "success", text: `${installedCount} installed` })
+      : renderStatusBadge({ status: "info", text: "0 installed" })
+  );
+
+  // Summary banner
+  const bannerHtml = installedCount > 0
+    ? `<div class="flex items-start gap-3 p-4 rounded-md border" style="background:#4CAF5015;border-color:#4CAF5040">
+        <i data-lucide="check-circle" class="w-5 h-5 text-status-success flex-shrink-0 mt-0.5"></i>
+        <div>
+          <div class="text-sm font-semibold text-status-success">${installedCount} of ${plugins.length} plugins installed</div>
+          <div class="text-xs text-text-secondary mt-0.5">Select plugins below to install or uninstall</div>
+        </div>
+      </div>`
+    : `<div class="flex items-start gap-3 p-4 rounded-md border" style="background:#3b82f610;border-color:#3b82f630">
+        <i data-lucide="info" class="w-5 h-5 text-status-info flex-shrink-0 mt-0.5"></i>
+        <div>
+          <div class="text-sm font-semibold text-status-info">No plugins installed yet</div>
+          <div class="text-xs text-text-secondary mt-0.5">Select plugins below and click Install to get started</div>
+        </div>
+      </div>`;
+
+  // Plugins checklist
+  const checklistHtml = renderSectionPanel({
+    icon: "puzzle",
+    iconColor: "text-accent-secondary",
+    title: "Available Plugins",
+    description: "Extensions from openclaw/extensions/ — install by modifying openclaw.json plugins config",
+    id: "plugins-checklist-panel",
+    children: renderPluginsTabs() + renderPluginsList(),
+  });
+
+  renderInto("install-plugins-content", bannerHtml + checklistHtml);
+  renderPluginsActionBar();
+}
+
+/* ---------- Render: Tabs ---------- */
+
+function renderPluginsTabs() {
+  const tabCls = (active) =>
+    active
+      ? "px-4 py-2 text-sm font-semibold text-accent-secondary border-b-2 border-accent-secondary cursor-pointer"
+      : "px-4 py-2 text-sm font-medium text-text-muted hover:text-text-primary cursor-pointer";
+
+  const tabs = PLUGIN_CATEGORIES.map((cat) => {
+    const count = pluginsData.filter((p) => p.category === cat.key).length;
+    return `<div class="${tabCls(pluginsTab === cat.key)}" onclick="switchPluginsTab('${cat.key}')">${cat.label} (${count})</div>`;
+  }).join("");
+
+  return `<div class="flex border-b border-border-default mb-3">${tabs}</div>`;
+}
+
+/* ---------- Render: Plugin List ---------- */
+
+function renderPluginsList() {
+  const filtered = pluginsData.filter((p) => p.category === pluginsTab);
+
+  if (filtered.length === 0) {
+    return `<div class="py-8 text-center text-sm text-text-muted">No plugins found in this category.</div>`;
+  }
+
+  // Select All
+  const allIds = filtered.map((p) => p.id);
+  const allSelected = allIds.length > 0 && allIds.every((id) => pluginsSelected.has(id));
+  const selectAllChecked = allSelected ? "checked" : "";
+
+  const selectAllHtml = `<div class="flex items-center gap-3 px-4 py-2.5 border-b border-border-default">
+    <input type="checkbox" ${selectAllChecked}
+      class="w-4 h-4 rounded accent-accent-primary cursor-pointer"
+      onchange="toggleAllPlugins()" id="plugins-select-all" />
+    <label for="plugins-select-all" class="text-sm font-medium text-text-secondary cursor-pointer select-none">Select All</label>
+  </div>`;
+
+  const rowsHtml = filtered.map((p) => renderPluginRow(p)).join("");
+
+  return selectAllHtml + `<div class="max-h-[420px] overflow-y-auto">${rowsHtml}</div>`;
+}
+
+/* ---------- Render: Single Plugin Row ---------- */
+
+function renderPluginRow(plugin) {
+  const checked = pluginsSelected.has(plugin.id) ? "checked" : "";
+  const badge = plugin.installed
+    ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-xs font-medium bg-[#4CAF5015] text-status-success border border-[#4CAF5040]">Installed</span>`
+    : `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-xs font-medium bg-bg-input text-text-muted border border-border-default">Available</span>`;
+
+  // Plugin icon: brand-color circle with first letter
+  const color = PLUGIN_COLORS[plugin.category] || "#6B7280";
+  const letter = plugin.id.charAt(0).toUpperCase();
+  const circleIcon = `<div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold text-white" style="background:${color}">${letter}</div>`;
+
+  // Description: prefer channel_blurb for channels, else description
+  const rawDesc = (plugin.category === "channels" && plugin.channel_blurb) ? plugin.channel_blurb : plugin.description;
+  const desc = rawDesc && rawDesc.length > 80 ? rawDesc.slice(0, 80) + "..." : (rawDesc || "");
+
+  // Display name: prefer channel_label for channels
+  const displayName = (plugin.category === "channels" && plugin.channel_label) ? plugin.channel_label : plugin.id;
+
+  return `<div class="flex items-center gap-3 px-4 py-3.5 border-b border-border-default last:border-b-0 hover:bg-bg-input transition-colors cursor-pointer"
+    onclick="togglePlugin('${escapeAttr(plugin.id)}')">
+    <input type="checkbox" ${checked}
+      class="w-4 h-4 rounded accent-accent-primary cursor-pointer flex-shrink-0"
+      onclick="event.stopPropagation(); togglePlugin('${escapeAttr(plugin.id)}')" />
+    ${circleIcon}
+    <div class="flex-1 min-w-0">
+      <div class="text-sm font-semibold text-text-primary">${escapeHtml(displayName)}</div>
+      <div class="text-xs text-text-secondary mt-0.5 truncate">${escapeHtml(desc)}</div>
+    </div>
+    ${badge}
+  </div>`;
+}
+
+/* ---------- Render: Action Bar ---------- */
+
+function renderPluginsActionBar() {
+  const bar = document.getElementById("install-plugins-action-bar");
+  if (!bar) return;
+
+  const selectedCount = pluginsSelected.size;
+  const hasUninstalledSelected = pluginsData.some((p) => pluginsSelected.has(p.id) && !p.installed);
+  const hasInstalledSelected = pluginsData.some((p) => pluginsSelected.has(p.id) && p.installed);
+
+  if (selectedCount === 0 && !pluginsInstalling) {
+    bar.classList.add("hidden");
+    return;
+  }
+
+  bar.classList.remove("hidden");
+
+  bar.innerHTML = `<div class="flex items-center justify-between">
+    <span class="text-sm text-text-secondary">${selectedCount} plugin${selectedCount !== 1 ? "s" : ""} selected</span>
+    <div class="flex items-center gap-3">
+      ${renderButton({
+        variant: "danger",
+        icon: "trash-2",
+        label: "Uninstall Selected",
+        disabled: !hasInstalledSelected || pluginsInstalling,
+        onclick: "handleUninstallPlugins()",
+        size: "sm",
+      })}
+      ${renderButton({
+        variant: "primary",
+        icon: "download",
+        label: "Install Selected",
+        disabled: !hasUninstalledSelected || pluginsInstalling,
+        onclick: "handleInstallPlugins()",
+        size: "sm",
+      })}
+    </div>
+  </div>`;
+
+  lucide.createIcons({ nameAttr: "data-lucide" });
+}
+
+/* ---------- Render: Progress Overlay ---------- */
+
+function renderPluginsProgressOverlay() {
+  const panel = document.getElementById("plugins-checklist-panel");
+  if (!panel) return;
+
+  const childrenContainer = panel.querySelector(":scope > div:last-child");
+  if (!childrenContainer) return;
+
+  const ids = Object.keys(pluginsProgressMap);
+  const allDone = ids.length > 0 && ids.every((id) => {
+    const s = pluginsProgressMap[id].status;
+    return s === "done" || s === "failed";
+  });
+
+  let itemsHtml = ids.map((id) => {
+    const p = pluginsProgressMap[id];
+    const plugin = pluginsData.find((pl) => pl.id === id);
+    return renderProgressItem({
+      name: plugin ? (plugin.channel_label || plugin.id) : id,
+      description: p.message,
+      status: p.status,
+      icon: plugin ? plugin.id.charAt(0).toUpperCase() : "?",
+    });
+  }).join("");
+
+  if (allDone) {
+    itemsHtml += `<div class="mt-4 flex justify-end">
+      ${renderButton({ variant: "secondary", icon: "refresh-cw", label: "Done", onclick: "reloadPluginsPage()" })}
+    </div>`;
+  }
+
+  childrenContainer.innerHTML = itemsHtml;
+  lucide.createIcons({ nameAttr: "data-lucide" });
+}
+
+/* ---------- Event Handlers ---------- */
+
+function togglePlugin(id) {
+  if (pluginsInstalling) return;
+  if (pluginsSelected.has(id)) {
+    pluginsSelected.delete(id);
+  } else {
+    pluginsSelected.add(id);
+  }
+  const panel = document.getElementById("plugins-checklist-panel");
+  if (panel) {
+    const childrenContainer = panel.querySelector(":scope > div:last-child");
+    if (childrenContainer) {
+      childrenContainer.innerHTML = renderPluginsTabs() + renderPluginsList();
+      lucide.createIcons({ nameAttr: "data-lucide" });
+    }
+  }
+  renderPluginsActionBar();
+}
+
+function toggleAllPlugins() {
+  if (pluginsInstalling) return;
+  const filtered = pluginsData.filter((p) => p.category === pluginsTab);
+  const allIds = filtered.map((p) => p.id);
+  const allSelected = allIds.every((id) => pluginsSelected.has(id));
+
+  if (allSelected) {
+    allIds.forEach((id) => pluginsSelected.delete(id));
+  } else {
+    allIds.forEach((id) => pluginsSelected.add(id));
+  }
+
+  const panel = document.getElementById("plugins-checklist-panel");
+  if (panel) {
+    const childrenContainer = panel.querySelector(":scope > div:last-child");
+    if (childrenContainer) {
+      childrenContainer.innerHTML = renderPluginsTabs() + renderPluginsList();
+      lucide.createIcons({ nameAttr: "data-lucide" });
+    }
+  }
+  renderPluginsActionBar();
+}
+
+function switchPluginsTab(tab) {
+  pluginsTab = tab;
+  const panel = document.getElementById("plugins-checklist-panel");
+  if (panel) {
+    const childrenContainer = panel.querySelector(":scope > div:last-child");
+    if (childrenContainer) {
+      childrenContainer.innerHTML = renderPluginsTabs() + renderPluginsList();
+      lucide.createIcons({ nameAttr: "data-lucide" });
+    }
+  }
+}
+
+async function handleInstallPlugins() {
+  const toInstall = pluginsData
+    .filter((p) => pluginsSelected.has(p.id) && !p.installed)
+    .map((p) => p.id);
+
+  if (toInstall.length === 0) return;
+
+  pluginsInstalling = true;
+  pluginsProgressMap = {};
+  toInstall.forEach((id) => { pluginsProgressMap[id] = { status: "pending", message: "Waiting..." }; });
+  renderPluginsProgressOverlay();
+  renderPluginsActionBar();
+
+  try {
+    await window.pywebview.api.install_plugins(toInstall);
+  } catch (err) {
+    // Progress overlay already shows per-plugin status from callbacks
+  }
+
+  pluginsInstalling = false;
+  renderPluginsActionBar();
+}
+
+async function handleUninstallPlugins() {
+  const toUninstall = pluginsData
+    .filter((p) => pluginsSelected.has(p.id) && p.installed)
+    .map((p) => p.id);
+
+  if (toUninstall.length === 0) return;
+
+  if (!confirm(`Uninstall ${toUninstall.length} plugin(s)? This will remove them from openclaw.json.`)) return;
+
+  pluginsInstalling = true;
+  pluginsProgressMap = {};
+  toUninstall.forEach((id) => { pluginsProgressMap[id] = { status: "pending", message: "Waiting..." }; });
+  renderPluginsProgressOverlay();
+  renderPluginsActionBar();
+
+  try {
+    await window.pywebview.api.uninstall_plugins(toUninstall);
+  } catch (err) {
+    // Progress overlay already shows per-plugin status from callbacks
+  }
+
+  pluginsInstalling = false;
+  renderPluginsActionBar();
+}
+
+async function reloadPluginsPage() {
+  pluginsProgressMap = {};
+  pluginsInstalling = false;
+  try {
+    const result = await window.pywebview.api.list_plugins();
+    if (result?.success && result.data) {
+      pluginsData = result.data;
+      pluginsSelected = new Set(pluginsData.filter((p) => p.installed).map((p) => p.id));
+    }
+  } catch {
+    // Keep existing data
+  }
+  renderPluginsPage();
+}
+
+/* ---------- Page Lifecycle ---------- */
+
+registerPage("install-plugins", {
+  onEnter: async () => {
+    if (pluginsRendered && !pluginsInstalling) {
+      await reloadPluginsPage();
+      return;
+    }
+
+    if (!pluginsRendered) {
+      renderInto("install-plugins-content",
+        `<div class="flex items-center justify-center py-16">
+          <i data-lucide="loader" class="w-5 h-5 text-text-muted animate-spin"></i>
+          <span class="text-sm text-text-muted ml-2">Loading plugins...</span>
+        </div>`
+      );
+    }
+
+    try {
+      const result = await window.pywebview.api.list_plugins();
+      if (result?.success && result.data) {
+        pluginsData = result.data;
+        pluginsSelected = new Set(pluginsData.filter((p) => p.installed).map((p) => p.id));
+
+        // Default tab: first non-empty category
+        const defaultTab = PLUGIN_CATEGORIES
+          .map((c) => c.key)
+          .find((cat) => pluginsData.some((p) => p.category === cat)) || "providers";
+        pluginsTab = defaultTab;
+
+        renderPluginsPage();
+        pluginsRendered = true;
+      } else {
+        renderInto("install-plugins-content",
+          `<div class="text-center py-16">
+            <p class="text-sm text-status-error">Failed to load plugins</p>
+            <p class="text-xs text-text-muted mt-1">${escapeHtml(result?.error?.message || "Unknown error")}</p>
+            <div class="mt-4">${renderButton({ variant: "secondary", icon: "refresh-cw", label: "Retry", onclick: "reloadPluginsPage()" })}</div>
+          </div>`
+        );
+      }
+    } catch (err) {
+      renderInto("install-plugins-content",
+        `<div class="text-center py-16">
+          <p class="text-sm text-status-error">Failed to load plugins</p>
+          <div class="mt-4">${renderButton({ variant: "secondary", icon: "refresh-cw", label: "Retry", onclick: "reloadPluginsPage()" })}</div>
+        </div>`
+      );
+    }
+  },
+  onLeave: () => {
+    pluginsInstalling = false;
+  },
+});
+
+/* ============================================================
  * 6. Bridge Integration & App Bootstrap
  * ============================================================ */
 
