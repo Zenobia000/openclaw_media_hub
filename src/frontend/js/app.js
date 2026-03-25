@@ -2252,6 +2252,7 @@ let gatewayOrigins = [];
 let gatewayAllowAll = false;
 let gatewayDevices = { pending: [], paired: [] };
 let gatewayDeviceNotes = {};
+let gatewayInfo = null;
 let gatewayLoading = false;
 
 /**
@@ -2262,10 +2263,11 @@ async function loadGatewayData() {
   renderGatewayPage();
 
   try {
-    const [originsResp, devicesResp, notesResp] = await Promise.all([
+    const [originsResp, devicesResp, notesResp, infoResp] = await Promise.all([
       window.pywebview.api.get_allowed_origins(),
       window.pywebview.api.list_devices(),
       window.pywebview.api.get_device_notes(),
+      window.pywebview.api.get_gateway_info(),
     ]);
 
     if (originsResp?.success) {
@@ -2280,6 +2282,9 @@ async function loadGatewayData() {
     }
     if (notesResp?.success) {
       gatewayDeviceNotes = notesResp.data.notes || {};
+    }
+    if (infoResp?.success) {
+      gatewayInfo = infoResp.data;
     }
   } catch {
     // Will render with defaults
@@ -2303,15 +2308,96 @@ function renderGatewayPage() {
     return;
   }
 
+  const pairingSection = renderGatewayPairingInfoSection();
   const originSection = renderOriginControlSection();
   const deviceSection = renderDeviceManagementSection();
 
   renderInto("gateway-content", `
+    ${pairingSection}
     <div class="flex gap-6">
       <div class="flex-1 min-w-0">${originSection}</div>
       <div class="flex-1 min-w-0">${deviceSection}</div>
     </div>
   `);
+}
+
+/**
+ * Render Gateway Pairing Info section — URL, auth mode, credential status.
+ */
+function renderGatewayPairingInfoSection() {
+  if (!gatewayInfo) {
+    return renderSectionPanel({
+      icon: "link",
+      iconColor: "text-accent-secondary",
+      title: "Connection Info",
+      description: "Gateway connection details could not be loaded",
+      children: '<p class="text-xs text-text-muted">Unable to read gateway configuration.</p>',
+      id: "gateway-info-panel",
+    });
+  }
+
+  const info = gatewayInfo;
+  const tlsBadge = info.tls
+    ? renderStatusBadge({ status: "success", text: "TLS Enabled" })
+    : renderStatusBadge({ status: "warning", text: "No TLS" });
+  const authBadge = info.has_credential
+    ? renderStatusBadge({ status: "success", text: info.auth_label })
+    : renderStatusBadge({ status: "error", text: "No Credential" });
+
+  // Gateway Token row — masked by default with reveal/copy
+  const token = info.gateway_token || "";
+  const maskedToken = token ? token.slice(0, 8) + "\u2026" : "Not configured";
+  const tokenRow = `
+    <div class="flex flex-col gap-1">
+      <span class="text-xs font-medium text-text-muted">Gateway Token</span>
+      <div class="flex items-center gap-2">
+        <code id="gateway-token-display" class="flex-1 text-sm font-mono bg-bg-input border border-border-default rounded-sm px-3 py-2 select-all break-all ${token ? "" : "text-text-muted"}">${escapeHtml(maskedToken)}</code>
+        ${token ? `
+          <button class="p-2 bg-bg-card border border-border-default rounded-sm hover:bg-bg-input transition-colors cursor-pointer" onclick="toggleGatewayToken()" title="Show / Hide">
+            <i id="gateway-token-eye" data-lucide="eye" class="w-4 h-4 text-text-muted"></i>
+          </button>
+          <button class="p-2 bg-bg-card border border-border-default rounded-sm hover:bg-bg-input transition-colors cursor-pointer" onclick="copyGatewayToken()" title="Copy">
+            <i data-lucide="copy" class="w-4 h-4 text-text-muted"></i>
+          </button>
+        ` : ""}
+      </div>
+    </div>`;
+
+  const infoRows = `
+    <div class="grid grid-cols-2 gap-4">
+      <div class="flex flex-col gap-1">
+        <span class="text-xs font-medium text-text-muted">Gateway URL</span>
+        <code class="text-sm font-mono bg-bg-input border border-border-default rounded-sm px-3 py-2 select-all break-all">${escapeHtml(info.url)}</code>
+      </div>
+      <div class="flex flex-col gap-1">
+        <span class="text-xs font-medium text-text-muted">Bind Mode</span>
+        <code class="text-sm font-mono bg-bg-input border border-border-default rounded-sm px-3 py-2">${escapeHtml(info.bind)}</code>
+      </div>
+      <div class="flex flex-col gap-1">
+        <span class="text-xs font-medium text-text-muted">Port</span>
+        <code class="text-sm font-mono bg-bg-input border border-border-default rounded-sm px-3 py-2">${escapeHtml(String(info.port))}</code>
+      </div>
+      <div class="flex flex-col gap-1">
+        <span class="text-xs font-medium text-text-muted">Security</span>
+        <div class="flex items-center gap-2 h-[38px]">${tlsBadge} ${authBadge}</div>
+      </div>
+      ${tokenRow}
+    </div>
+    <div class="mt-3 p-3 bg-bg-input border border-border-default rounded-sm">
+      <div class="flex items-start gap-2">
+        <i data-lucide="info" class="w-4 h-4 text-status-info flex-shrink-0 mt-0.5"></i>
+        <p class="text-xs text-text-secondary">Devices connect to this Gateway URL using the token above. Share the URL and token with device users to initiate pairing. Pending requests will appear in Device Management below.</p>
+      </div>
+    </div>`;
+
+  return renderSectionPanel({
+    icon: "link",
+    iconColor: "text-accent-secondary",
+    title: "Connection Info",
+    description: "Gateway endpoint and authentication for device pairing",
+    children: infoRows,
+    id: "gateway-info-panel",
+  });
 }
 
 /**
@@ -2465,6 +2551,30 @@ function renderPairedDeviceRow(device) {
 }
 
 /* ---------- Gateway Interaction Functions ---------- */
+
+/** Whether the gateway token is currently revealed */
+let gatewayTokenRevealed = false;
+
+function toggleGatewayToken() {
+  if (!gatewayInfo?.gateway_token) return;
+  gatewayTokenRevealed = !gatewayTokenRevealed;
+  const el = document.getElementById("gateway-token-display");
+  const eyeEl = document.getElementById("gateway-token-eye");
+  if (el) {
+    el.textContent = gatewayTokenRevealed
+      ? gatewayInfo.gateway_token
+      : gatewayInfo.gateway_token.slice(0, 8) + "\u2026";
+  }
+  if (eyeEl) {
+    eyeEl.setAttribute("data-lucide", gatewayTokenRevealed ? "eye-off" : "eye");
+    lucide.createIcons({ nameAttr: "data-lucide" });
+  }
+}
+
+function copyGatewayToken() {
+  if (!gatewayInfo?.gateway_token) return;
+  navigator.clipboard.writeText(gatewayInfo.gateway_token).catch(() => {});
+}
 
 function toggleAllowAllOrigins(checked) {
   gatewayAllowAll = checked;

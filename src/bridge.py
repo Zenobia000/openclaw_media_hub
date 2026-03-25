@@ -451,6 +451,88 @@ class Bridge:
 
     # ── Gateway 控制 API (ADR-006) ────────────────────────
 
+    _DEFAULT_GATEWAY_PORT = 18789
+
+    def get_gateway_info(self) -> dict:
+        """讀取 Gateway 連線資訊（URL + Auth + Token）。
+
+        從 openclaw.json gateway section + .env 讀取：
+        - port, bind, tls → 推導 URL
+        - auth mode
+        - OPENCLAW_GATEWAY_TOKEN（從 .env 讀取）
+
+        Returns:
+            {url, port, bind, tls, auth_mode, auth_label, has_credential,
+             gateway_token}
+        """
+        def _do() -> dict:
+            settings = self._config_manager.read_gui_settings()
+            config_dir = settings.get("config_dir", "~/.openclaw")
+            gateway = self._config_manager.read_openclaw_config(config_dir, "gateway")
+
+            port = gateway.get("port", self._DEFAULT_GATEWAY_PORT)
+            bind_mode = gateway.get("bind", "loopback")
+            tls_enabled = gateway.get("tls", {}).get("enabled", False)
+            scheme = "wss" if tls_enabled else "ws"
+
+            # Resolve host from bind mode
+            host_map = {
+                "loopback": "127.0.0.1",
+                "auto": "127.0.0.1",
+                "lan": "0.0.0.0",
+                "tailnet": "100.x.x.x",
+            }
+            if bind_mode == "custom":
+                host = gateway.get("customBindHost", "0.0.0.0")
+            else:
+                host = host_map.get(bind_mode, "127.0.0.1")
+
+            url = f"{scheme}://{host}:{port}"
+
+            # Auth info from config
+            auth = gateway.get("auth", {})
+            auth_mode = auth.get("mode", "token")
+            has_credential = False
+            auth_label = auth_mode
+
+            if auth_mode == "token":
+                has_credential = bool(auth.get("token"))
+                auth_label = "Token"
+            elif auth_mode == "password":
+                has_credential = bool(auth.get("password"))
+                auth_label = "Password"
+            elif auth_mode == "none":
+                has_credential = True
+                auth_label = "None (open)"
+            elif auth_mode == "trusted-proxy":
+                has_credential = True
+                auth_label = "Trusted Proxy"
+
+            # Read OPENCLAW_GATEWAY_TOKEN from .env
+            gateway_token = None
+            try:
+                env_path = f"{config_dir}/.env"
+                env_data = self._config_manager.read_env(env_path)
+                gateway_token = env_data.get("OPENCLAW_GATEWAY_TOKEN") or None
+            except Exception:
+                pass
+
+            if gateway_token:
+                has_credential = True
+
+            return _ok({
+                "url": url,
+                "port": port,
+                "bind": bind_mode,
+                "tls": tls_enabled,
+                "auth_mode": auth_mode,
+                "auth_label": auth_label,
+                "has_credential": has_credential,
+                "gateway_token": gateway_token,
+            })
+
+        return self._safe_call(_do)
+
     def list_devices(self) -> dict:
         """列出所有裝置（pending + paired）。
 
