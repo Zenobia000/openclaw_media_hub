@@ -20,9 +20,8 @@ KEYRING_SERVICE = "openclaw-gui"
 def _default_app_data_dir() -> Path:
     """取得 GUI 設定目錄的預設路徑。"""
     if platform.system() == "Windows":
-        base = Path(os.environ.get("APPDATA", Path.home()))
-    else:
-        base = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
+        return Path.home() / ".openclaw-gui"
+    base = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
     return base / "openclaw-gui"
 
 

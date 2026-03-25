@@ -199,11 +199,15 @@ class Initializer:
         return _step_result(True, f"Docker image ready ({params.docker_image})")
 
     async def _step_fix_permissions(self, params: InitParams) -> dict:
-        """Step 7 (Docker only): 修正資料目錄權限。"""
+        """Step 7 (Docker only): 修正資料目錄權限。
+
+        使用 openclaw-gateway service 而非 openclaw-cli，因為 cli 的
+        network_mode: service:openclaw-gateway 要求 gateway 容器必須存在。
+        """
         result = await self._executor.run_command(
             [
-                "docker", "compose", "run", "--rm",
-                "openclaw-cli", "chown", "-R", "1000:1000", "/home/node/.openclaw",
+                "docker", "compose", "run", "--rm", "--no-deps",
+                "openclaw-gateway", "chown", "-R", "1000:1000", "/home/node/.openclaw",
             ],
             timeout=60,
         )
@@ -214,11 +218,16 @@ class Initializer:
         return _step_result(True, "Directory permissions fixed")
 
     async def _step_onboarding_docker(self, params: InitParams) -> dict:
-        """Step 8 (Docker): 執行 Onboarding。"""
+        """Step 8 (Docker): 執行 Onboarding。
+
+        使用 openclaw-gateway service 而非 openclaw-cli，因為 cli 的
+        network_mode: service:openclaw-gateway 要求 gateway 容器必須存在。
+        Onboarding 不需要網路，直接在 gateway image 上跑即可。
+        """
         result = await self._executor.run_command(
             [
-                "docker", "compose", "run", "--rm",
-                "openclaw-cli", "openclaw", "onboard",
+                "docker", "compose", "run", "--rm", "--no-deps",
+                "openclaw-gateway", "openclaw", "onboard",
                 "--mode", "local", "--no-install-daemon",
             ],
             timeout=120,

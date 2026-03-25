@@ -18,8 +18,8 @@ services:
       - PLAYWRIGHT_BROWSERS_PATH=${PLAYWRIGHT_BROWSERS_PATH:-}
 
     volumes:
-      - ${OPENCLAW_CONFIG_DIR:-./.openclaw}:/home/node/.openclaw
-      - ${OPENCLAW_WORKSPACE_DIR:-./.openclaw/workspace}:/home/node/.openclaw/workspace
+      - ${OPENCLAW_CONFIG_DIR:-${USERPROFILE}/.openclaw}:/home/node/.openclaw
+      - ${OPENCLAW_WORKSPACE_DIR:-${USERPROFILE}/.openclaw/workspace}:/home/node/.openclaw/workspace
 
     command: ["openclaw", "gateway"]
 
@@ -51,8 +51,8 @@ services:
       - OPENCLAW_GATEWAY_BIND=${OPENCLAW_GATEWAY_BIND:-lan}
 
     volumes:
-      - ${OPENCLAW_CONFIG_DIR:-./.openclaw}:/home/node/.openclaw
-      - ${OPENCLAW_WORKSPACE_DIR:-./.openclaw/workspace}:/home/node/.openclaw/workspace
+      - ${OPENCLAW_CONFIG_DIR:-${USERPROFILE}/.openclaw}:/home/node/.openclaw
+      - ${OPENCLAW_WORKSPACE_DIR:-${USERPROFILE}/.openclaw/workspace}:/home/node/.openclaw/workspace
 
     # 安全強化：降低 CLI 容器的權限
     cap_drop:

@@ -17,6 +17,11 @@ from src.executor import CommandResult
 class LocalExecutor:
     """本機 Executor 實作 — subprocess + pathlib + shutil。"""
 
+    @staticmethod
+    def _resolve(path: str) -> Path:
+        """展開 ~ 並正規化路徑。"""
+        return Path(path).expanduser()
+
     async def run_command(
         self,
         args: list[str],
@@ -79,26 +84,26 @@ class LocalExecutor:
         )
 
     async def read_file(self, path: str) -> bytes:
-        return await asyncio.to_thread(Path(path).read_bytes)
+        return await asyncio.to_thread(self._resolve(path).read_bytes)
 
     async def write_file(self, path: str, data: bytes) -> None:
-        await asyncio.to_thread(Path(path).write_bytes, data)
+        await asyncio.to_thread(self._resolve(path).write_bytes, data)
 
     async def mkdir(self, path: str, *, parents: bool = True) -> None:
-        await asyncio.to_thread(Path(path).mkdir, parents=parents, exist_ok=True)
+        await asyncio.to_thread(self._resolve(path).mkdir, parents=parents, exist_ok=True)
 
     async def copy_tree(self, src: str, dst: str) -> None:
-        await asyncio.to_thread(shutil.copytree, src, dst, dirs_exist_ok=True)
+        await asyncio.to_thread(shutil.copytree, self._resolve(src), self._resolve(dst), dirs_exist_ok=True)
 
     async def remove_tree(self, path: str) -> None:
-        await asyncio.to_thread(shutil.rmtree, path)
+        await asyncio.to_thread(shutil.rmtree, self._resolve(path))
 
     async def file_exists(self, path: str) -> bool:
-        return await asyncio.to_thread(Path(path).exists)
+        return await asyncio.to_thread(self._resolve(path).exists)
 
     async def list_dir(self, path: str) -> list[str]:
         def _list() -> list[str]:
-            return sorted(item.name for item in Path(path).iterdir())
+            return sorted(item.name for item in self._resolve(path).iterdir())
 
         return await asyncio.to_thread(_list)
 

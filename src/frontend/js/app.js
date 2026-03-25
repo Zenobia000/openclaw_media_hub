@@ -660,8 +660,8 @@ const DEPLOY_MODES = [
 /** Default field values per deployment mode */
 const MODE_DEFAULTS = {
   "docker-windows": {
-    config_dir: "C:\\Users\\%USERNAME%\\.openclaw",
-    workspace_dir: "C:\\Users\\%USERNAME%\\.openclaw\\workspace",
+    config_dir: "~/.openclaw",
+    workspace_dir: "~/.openclaw/workspace",
     gateway_bind: "lan",
     gateway_mode: "local",
     gateway_port: "18789",
@@ -854,24 +854,27 @@ function renderSSHSection() {
 
 function renderGatewaySection() {
   const d = MODE_DEFAULTS[selectedMode] || MODE_DEFAULTS["docker-windows"];
+  // Prefer user-saved values (configFormValues) over mode defaults
+  const v = (key) => configFormValues[key] !== undefined ? configFormValues[key] : d[key];
   const mainGrid = `
     <div class="grid grid-cols-2 gap-4">
-      ${renderInput({ id: "input-config-dir", label: "Config Directory", icon: "folder", placeholder: "~/.openclaw", value: d.config_dir })}
-      ${renderInput({ id: "input-workspace-dir", label: "Workspace Directory", icon: "folder", placeholder: "~/.openclaw/workspace", value: d.workspace_dir })}
-      ${renderInput({ id: "input-gateway-bind", label: "Gateway Bind Host", placeholder: "lan", value: d.gateway_bind })}
-      ${renderInput({ id: "input-gateway-mode", label: "Gateway Mode", placeholder: "local", value: d.gateway_mode })}
-      ${renderInput({ id: "input-gateway-port", label: "Gateway Port", type: "number", placeholder: "18789", value: d.gateway_port })}
-      ${renderInput({ id: "input-bridge-port", label: "Bridge Port", type: "number", placeholder: "18790", value: d.bridge_port })}
+      ${renderInput({ id: "input-config-dir", label: "Config Directory", icon: "folder", placeholder: "~/.openclaw", value: v("config_dir") })}
+      ${renderInput({ id: "input-workspace-dir", label: "Workspace Directory", icon: "folder", placeholder: "~/.openclaw/workspace", value: v("workspace_dir") })}
+      ${renderInput({ id: "input-gateway-bind", label: "Gateway Bind Host", placeholder: "lan", value: v("gateway_bind") })}
+      ${renderInput({ id: "input-gateway-mode", label: "Gateway Mode", placeholder: "local", value: v("gateway_mode") })}
+      ${renderInput({ id: "input-gateway-port", label: "Gateway Port", type: "number", placeholder: "18789", value: v("gateway_port") })}
+      ${renderInput({ id: "input-bridge-port", label: "Bridge Port", type: "number", placeholder: "18790", value: v("bridge_port") })}
     </div>`;
 
+  const sandboxChecked = configFormValues.sandbox !== undefined ? configFormValues.sandbox : true;
   const advancedContent = `
     <div id="advanced-settings" class="collapsible-content mt-4">
       <div class="grid grid-cols-2 gap-4">
-        ${renderInput({ id: "input-timezone", label: "Timezone", placeholder: "Asia/Taipei", value: d.timezone })}
-        ${renderInput({ id: "input-docker-image", label: "Docker Image", placeholder: "openclaw:local", value: d.docker_image })}
+        ${renderInput({ id: "input-timezone", label: "Timezone", placeholder: "Asia/Taipei", value: v("timezone") })}
+        ${renderInput({ id: "input-docker-image", label: "Docker Image", placeholder: "openclaw:local", value: v("docker_image") })}
       </div>
       <div class="flex items-center gap-2 mt-4">
-        <input type="checkbox" id="toggle-sandbox" class="checkbox-custom" checked />
+        <input type="checkbox" id="toggle-sandbox" class="checkbox-custom" ${sandboxChecked ? "checked" : ""} />
         <label for="toggle-sandbox" class="text-sm text-text-secondary cursor-pointer">Enable Sandbox</label>
       </div>
     </div>`;
@@ -1104,6 +1107,9 @@ async function testSSHConnection() {
  * Handle Next button — validate, persist, navigate to Step 2.
  */
 async function configNextStep() {
+  // Snapshot form before leaving Step 1
+  saveConfigFormState();
+
   // Validate SSH mode requirements
   if (selectedMode === "remote-ssh") {
     if (!sshTestPassed) return;
@@ -1870,6 +1876,26 @@ registerPage("configuration", {
       selectedMode = platform?.data?.current_mode || platform?.data?.suggested_mode || "docker-windows";
     } catch {
       selectedMode = "docker-windows";
+    }
+    // Load saved config from gui-settings.json into configFormValues
+    try {
+      const saved = await window.pywebview.api.load_config();
+      if (saved?.success && saved.data) {
+        const s = saved.data;
+        // Map gui-settings keys to configFormValues keys
+        for (const key of ["config_dir", "workspace_dir", "gateway_bind", "gateway_mode",
+                           "gateway_port", "bridge_port", "timezone", "docker_image"]) {
+          if (s[key] !== undefined) configFormValues[key] = String(s[key]);
+        }
+        if (s.sandbox !== undefined) configFormValues.sandbox = s.sandbox;
+        // SSH fields
+        if (s.ssh_host) configFormValues["input-ssh-host"] = s.ssh_host;
+        if (s.ssh_port) configFormValues["input-ssh-port"] = String(s.ssh_port);
+        if (s.ssh_username) configFormValues["input-ssh-username"] = s.ssh_username;
+        if (s.ssh_key_path) configFormValues["input-ssh-key-file"] = s.ssh_key_path;
+      }
+    } catch {
+      // Load failed — use defaults
     }
     sshTestPassed = false;
     sshTestResult = null;

@@ -226,6 +226,19 @@ class Bridge:
 
     # ── 設定管理 API (3.5, US-002) ────────────────────────
 
+    def load_config(self) -> dict:
+        """讀取 gui-settings.json 已儲存的設定。
+
+        Returns:
+            {config_dir?, workspace_dir?, gateway_bind?, gateway_mode?,
+             gateway_port?, bridge_port?, timezone?, docker_image?,
+             deployment_mode?, sandbox?, ssh_host?, ssh_port?, ...}
+        """
+        def _do() -> dict:
+            return _ok(self._config_manager.read_gui_settings())
+
+        return self._safe_call(_do)
+
     def save_config(self, config: dict) -> dict:
         """持久化 GUI 設定至 gui-settings.json。
 
