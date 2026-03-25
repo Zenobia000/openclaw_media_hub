@@ -153,7 +153,7 @@ Root (SPA - Single Page Application)
 
 ```
 ┌─────────────────────────┐
-│ [OC] OpenClaw           │  ← Logo（紅底白字 OC + 品牌名）
+│ [🐟] OpenClaw           │  ← Logo（圖片檔 logo.png + 品牌名）
 ├─────────────────────────┤
 │ MAIN                    │  ← Section Label (10px, #838387, letter-spacing)
 │  📊 Dashboard           │

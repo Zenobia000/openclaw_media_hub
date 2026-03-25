@@ -167,7 +167,7 @@
 | 2.0 方案設計與架構 | 24h      | 2026-03-22 | 2026-03-28 | 🔄 進行中 | |
 | 3.15 Transport Layer | 17h    | 2026-03-25 | 2026-03-25 | ✅ 完成   | ★ 基礎層，提前完成 |
 | 3.1 專案環境初始化 | 8h       | 2026-03-23 | 2026-03-25 | ✅ 完成   | 3.1.2~3.1.4 於 03/25 補齊 |
-| 3.2 前端 UI 元件   | 11h      | 2026-03-29 | 2026-04-01 | ⬜ 未開始 | +1h (合併 3.16.2) |
+| 3.2 前端 UI 元件   | 11h      | 2026-03-25 | 2026-03-25 | ✅ 完成   | 提前完成，含 3.16.2 合併 |
 | 3.3 後端基礎模組   | 7h       | 2026-03-30 | 2026-04-12 | ⬜ 未開始 | 3.3.4 在 3.15.4 之後 |
 | 3.4 環境檢查       | 8h       | 2026-04-02 | 2026-04-07 | ⬜ 未開始 | |
 | 3.5 設定管理模組   | 9h       | 2026-04-05 | 2026-04-08 | ⬜ 未開始 | |
@@ -224,12 +224,12 @@
 
 | ID    | 任務                                                                                          | 負責人 | 工時 | 狀態      | 開始日 | 完成日 | 備註                              |
 | :---- | :-------------------------------------------------------------------------------------------- | :----- | :--- | :-------- | :----- | :----- | :-------------------------------- |
-| 3.2.1 | Tailwind Design Tokens 設定（色彩 12 tokens、圓角 2 tokens、字型 10 種用途）                  | DEV    | 2h   | ⬜ 未開始 | 03/29  | 03/29  | 208 §3.2，tailwind.config 擴展   |
-| 3.2.2 | 整體佈局框架：Sidebar (260px 固定) + Main Content (flex:1, padding 32px) + 捲動策略            | DEV    | 2h   | ⬜ 未開始 | 03/29  | 03/30  | 視窗 1280×800，不支援 RWD        |
-| 3.2.3 | Sidebar 元件：Logo + NavItem/Active/Hover 狀態 + Section Labels (MAIN/OPERATIONS) + 版本資訊 + 環境模式動態文字 + **連線狀態指示燈**（綠點 Connected / 紅點 Disconnected / 橙點 Connecting，預設顯示本機模式）| DEV | 3h | ⬜ 未開始 | 03/30 | 03/31 | 208 §3.4 + **合併原 3.16.2** |
-| 3.2.4 | SPA 路由機制：6 個 View ID 切換 (dashboard/configuration/environment/deploy-skills/install-plugins/fix-plugins) + NavItem 導航綁定 | DEV | 1h | ⬜ 未開始 | 03/31 | 03/31 | 無 URL hash，JS View 切換 |
-| 3.2.5 | 共用元件：Button (Primary/Secondary/Danger + icon + disabled + loading)、Input (label + icon + placeholder + password toggle)、StatusBadge (4 狀態)、StatCard | DEV | 2h | ⬜ 未開始 | 03/31 | 04/01 | 208 §3.3 |
-| 3.2.6 | 共用元件：SectionPanel (icon + 標題 + 描述 + children)、StepIndicator (3 步驟)、ProgressItem (done/running/pending/failed)、CheckCard | DEV | 1h | ⬜ 未開始 | 04/01 | 04/01 | 208 §3.3 |
+| 3.2.1 | Tailwind Design Tokens 設定（色彩 14 tokens、圓角 2 tokens、字型 10 種用途）                  | DEV    | 2h   | ✅ 完成 | 03/25  | 03/25  | 14 色 tokens（+bg-active, border-active） |
+| 3.2.2 | 整體佈局框架：Sidebar (260px 固定) + Main Content (flex:1, padding 32px) + 捲動策略            | DEV    | 2h   | ✅ 完成 | 03/25  | 03/25  | 6 View 容器 + Action Bar 固定佈局 |
+| 3.2.3 | Sidebar 元件：Logo + NavItem/Active/Hover 狀態 + Section Labels (MAIN/OPERATIONS) + 版本資訊 + 環境模式動態文字 + **連線狀態指示燈**（綠點 Connected / 紅點 Disconnected / 橙點 Connecting，預設顯示本機模式）| DEV | 3h | ✅ 完成 | 03/25 | 03/25 | 208 §3.4 + **合併原 3.16.2** |
+| 3.2.4 | SPA 路由機制：6 個 View ID 切換 (dashboard/configuration/environment/deploy-skills/install-plugins/fix-plugins) + NavItem 導航綁定 | DEV | 1h | ✅ 完成 | 03/25 | 03/25 | navigateTo() + onEnter/onLeave hooks |
+| 3.2.5 | 共用元件：Button (Primary/Secondary/Danger + icon + disabled + loading)、Input (label + icon + placeholder + password toggle)、StatusBadge (4 狀態)、StatCard | DEV | 2h | ✅ 完成 | 03/25 | 03/25 | 4 個 render 函式 + togglePassword |
+| 3.2.6 | 共用元件：SectionPanel (icon + 標題 + 描述 + children)、StepIndicator (3 步驟)、ProgressItem (done/running/pending/failed)、CheckCard | DEV | 1h | ✅ 完成 | 03/25 | 03/25 | 4 個 render 函式 + tab/checkbox CSS |
 
 #### 3.3 後端基礎模組 (7h)
 
