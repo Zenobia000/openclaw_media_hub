@@ -1617,12 +1617,12 @@ function attachChannelBadgeListeners() {
 
 const INIT_STEPS_DOCKER = [
   { id: 1,  label: "Validate environment",       desc: "Checking Docker and Docker Compose availability" },
-  { id: 2,  label: "Create directory structure",  desc: "~/.openclaw/identity/, agents/main/agent/, sessions/" },
-  { id: 3,  label: "Generate gateway token",      desc: "Reading from config or generating new token" },
-  { id: 4,  label: "Write environment file",      desc: ".env with 16 variables (ports, paths, token, timezone)" },
-  { id: 5,  label: "Build/Pull Docker image",     desc: "Building openclaw:local or pulling image" },
-  { id: 6,  label: "Fix directory permissions",    desc: "Setting ownership for container user" },
-  { id: 7,  label: "Run onboarding",              desc: "openclaw onboard --mode local" },
+  { id: 2,  label: "Validate parameters",         desc: "Checking required configuration values" },
+  { id: 3,  label: "Create directory structure",  desc: "~/.openclaw/identity/, agents/main/agent/, sessions/" },
+  { id: 4,  label: "Generate gateway token",      desc: "Reading from config or generating new token" },
+  { id: 5,  label: "Write environment file",      desc: ".env with 16 variables (ports, paths, token, timezone)" },
+  { id: 6,  label: "Build/Pull Docker image",     desc: "Building openclaw:local or pulling image" },
+  { id: 7,  label: "Fix directory permissions",    desc: "Setting ownership for container user" },
   { id: 8,  label: "Configure gateway",           desc: "Set mode=local, bind, controlUi.allowedOrigins" },
   { id: 9,  label: "Start gateway",               desc: "docker compose up -d openclaw-gateway" },
   { id: 10, label: "Verify health",               desc: "Health check on http://127.0.0.1:{port}/healthz" },
@@ -1630,23 +1630,14 @@ const INIT_STEPS_DOCKER = [
 
 const INIT_STEPS_NATIVE = [
   { id: 1,  label: "Validate environment",       desc: "Checking Node.js, OpenClaw CLI, systemd availability" },
-  { id: 2,  label: "Create directory structure",  desc: "~/.openclaw/identity/, agents/main/agent/, sessions/" },
-  { id: 3,  label: "Generate gateway token",      desc: "Reading from config or generating new token" },
-  { id: 4,  label: "Write environment file",      desc: ".env with environment variables" },
-  { id: 5,  label: "Run onboarding",              desc: "openclaw onboard --mode local" },
+  { id: 2,  label: "Validate parameters",         desc: "Checking required configuration values" },
+  { id: 3,  label: "Create directory structure",  desc: "~/.openclaw/identity/, agents/main/agent/, sessions/" },
+  { id: 4,  label: "Generate gateway token",      desc: "Reading from config or generating new token" },
+  { id: 5,  label: "Write environment file",      desc: ".env with environment variables" },
   { id: 6,  label: "Configure gateway",           desc: "Set mode=local, bind, controlUi.allowedOrigins" },
   { id: 7,  label: "Start gateway",               desc: "systemctl start openclaw-gateway" },
   { id: 8,  label: "Verify health",               desc: "Health check on http://127.0.0.1:{port}/healthz" },
 ];
-
-/** Map backend step numbers to frontend step numbers */
-function mapBackendToFrontendStep(backendStep, mode) {
-  if (mode === "native-linux") return parseInt(backendStep, 10);
-  // Docker mode: backend 1+2 → frontend 1, backend N (N≥3) → frontend N-1
-  const n = parseInt(backendStep, 10);
-  if (n <= 2) return 1;
-  return n - 1;
-}
 
 let initializationRunning = false;
 let initGatewayToken = null;
@@ -1750,14 +1741,14 @@ function renderConfigStep3() {
  * Updates the corresponding ProgressItem in the DOM.
  */
 window.updateInitProgress = function (step, status, message) {
-  const frontendStep = mapBackendToFrontendStep(step, selectedMode);
-  const container = document.querySelector(`[data-init-step="${frontendStep}"]`);
+  const stepId = parseInt(step, 10);
+  const container = document.querySelector(`[data-init-step="${stepId}"]`);
   if (!container) return;
 
   // Determine the step label from the metadata
   const isNative = selectedMode === "native-linux";
   const steps = isNative ? INIT_STEPS_NATIVE : INIT_STEPS_DOCKER;
-  const meta = steps.find((s) => s.id === frontendStep);
+  const meta = steps.find((s) => s.id === stepId);
 
   container.innerHTML = renderProgressItem({
     name: meta?.label || `Step ${frontendStep}`,

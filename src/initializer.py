@@ -1,7 +1,8 @@
 """Initializer — 初始化邏輯 (目錄建立、config 產生、docker compose)。
 
-依序執行 11 步初始化流程：驗證環境、建立目錄結構、產生設定檔、
-Build/Pull Docker Image、執行 Onboarding、啟動 Gateway、Health Check。
+依序執行初始化流程（Docker 10 步 / Native 8 步）：
+驗證環境、建立目錄結構、產生設定檔、Build/Pull Docker Image、
+啟動 Gateway、Health Check。
 
 所有操作透過 Executor 介面，自然支援本機 / SSH 遠端模式 (ADR-004)。
 """
@@ -252,21 +253,28 @@ class Initializer:
         return _step_result(True, "Gateway started (systemctl)")
 
     async def _step_health_check(self, params: InitParams) -> dict:
-        """Step 11: Health Check — GET /healthz。"""
+        """Health Check — GET /healthz（含冷啟動等待）。"""
         url = f"http://127.0.0.1:{params.gateway_port}/healthz"
+        max_retries = 6
         last_error = ""
-        for attempt in range(3):
+
+        # 冷啟動：Gateway 容器剛 up -d，等待 process bind port
+        await asyncio.sleep(3)
+
+        for attempt in range(max_retries):
             try:
                 resp = await asyncio.to_thread(
-                    urllib.request.urlopen, url, timeout=15
+                    urllib.request.urlopen, url, timeout=10
                 )
                 if resp.status == 200:
                     return _step_result(True, "Gateway is healthy")
             except Exception as exc:
                 last_error = str(exc)
-                if attempt < 2:
+                if attempt < max_retries - 1:
                     await asyncio.sleep(5)
-        return _step_result(False, f"Health check failed after 3 attempts: {last_error}")
+        return _step_result(
+            False, f"Health check failed after {max_retries} attempts: {last_error}"
+        )
 
     # ── Step Registration ────────────────────────────────
 
