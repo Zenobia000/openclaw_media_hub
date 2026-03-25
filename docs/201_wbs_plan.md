@@ -171,10 +171,10 @@
 | 3.3 後端基礎模組   | 7h       | 2026-03-25 | 2026-03-25 | ✅ 完成   | 提前完成，含 SSH API |
 | 3.4 環境檢查       | 8h       | 2026-03-25 | 2026-03-25 | ✅ 完成   | 後端+前端+16 項測試 |
 | 3.5 設定管理模組   | 9h       | 2026-04-05 | 2026-03-25 | ✅ 完成   | 提前完成，25 項測試 |
-| 3.6 Config Step 1  | 9.5h     | 2026-04-12 | 2026-04-15 | ⬜ 未開始 | +1.5h (合併 3.16.1) |
-| 3.16.3 SSH Bridge  | 1.5h     | 2026-04-15 | 2026-04-16 | ⬜ 未開始 | 隨 3.6 整合 |
-| 3.7 Config Step 2  | 10h      | 2026-04-16 | 2026-04-18 | ⬜ 未開始 | |
-| 3.8 Initializer    | 16h      | 2026-04-19 | 2026-04-24 | ⬜ 未開始 | 延後至 3.5 完成後 |
+| 3.6 Config Step 1  | 9.5h     | 2026-04-12 | 2026-03-25 | ✅ 完成   | 提前完成，含 SSH 表單 + 3.16.1 |
+| 3.16.3 SSH Bridge  | 1.5h     | 2026-04-15 | 2026-03-25 | ✅ 完成   | 隨 3.6 整合 |
+| 3.7 Config Step 2  | 10h      | 2026-04-16 | 2026-03-25 | ✅ 完成   | registries.py + 前端 + 19 項測試 |
+| 3.8 Initializer    | 16h      | 2026-04-19 | 2026-03-25 | ✅ 完成   | 11 步 + Bridge + 前端 + 30 項測試 |
 | 3.9 Dashboard      | 12h      | 2026-04-23 | 2026-04-28 | ⬜ 未開始 | |
 | 3.10 技能部署      | 10h      | 2026-04-24 | 2026-04-27 | ⬜ 未開始 | |
 | 3.11 外掛安裝      | 10h      | 2026-04-28 | 2026-04-30 | ⬜ 未開始 | |
@@ -287,13 +287,13 @@
 
 | ID    | 任務                                                                                                          | 負責人 | 工時  | 狀態      | 開始日 | 完成日 | 備註                                          |
 | :---- | :------------------------------------------------------------------------------------------------------------ | :----- | :---- | :-------- | :----- | :----- | :-------------------------------------------- |
-| 3.7.1 | Bridge API `get_available_providers()`：掃描 openclaw/extensions/ 取得供應商列表 `[{name, env_var, placeholder}]` | DEV | 1.5h | ⬜ 未開始 | 04/16 | 04/16 | 讀取 openclaw.plugin.json |
-| 3.7.2 | Bridge API `get_available_channels()`：掃描 openclaw/extensions/ 取得管道列表 `[{name, fields, icon, icon_color}]` | DEV | 1.5h | ⬜ 未開始 | 04/16 | 04/17 | 欄位定義含 key + label |
-| 3.7.3 | 前端 Model Providers 區塊：供應商勾選清單 (OpenAI/Anthropic/Gemini/OpenRouter/Ollama + 更多收合區) + 勾選後動態展開金鑰輸入框 (password mode + 顯示/隱藏切換) | DEV | 2h | ⬜ 未開始 | 04/17 | 04/17 | 208 §4.3 |
-| 3.7.4 | 前端 Channels 區塊：管道勾選清單 (LINE/Discord/Telegram/Slack/WhatsApp + 更多收合區) + 品牌色 icon + 動態展開多欄位 + Configured/Not Configured badge | DEV | 2h | ⬜ 未開始 | 04/17 | 04/18 | 208 §4.3 |
-| 3.7.5 | 前端 Tools 區塊（預設收合）：Brave/Perplexity/Firecrawl/ElevenLabs/Deepgram 金鑰輸入                         | DEV    | 1h    | ⬜ 未開始 | 04/18  | 04/18  |                                               |
-| 3.7.6 | 前端 Security Note (shield-check icon + 加密說明) + Action Bar (Back/Next) + `save_keys()` 至 keyring 流程   | DEV    | 1h    | ⬜ 未開始 | 04/18  | 04/18  |                                               |
-| 3.7.7 | 步驟間資料保留：Step 1↔2↔3 切換時保留已填資料（前端記憶體快取機制）                                           | DEV    | 1h    | ⬜ 未開始 | 04/18  | 04/18  |                                               |
+| 3.7.1 | Bridge API `get_available_providers()`：registries.py hardcode 供應商列表 `[{name, env_var, placeholder}]` | DEV | 1.5h | ✅ 完成 | 03/25 | 03/25 | Plugin JSON 缺 display metadata，改 hardcode |
+| 3.7.2 | Bridge API `get_available_channels()`：registries.py hardcode 管道列表 `[{name, fields, icon, icon_color}]` | DEV | 1.5h | ✅ 完成 | 03/25 | 03/25 | 含 get_available_tools() |
+| 3.7.3 | 前端 Model Providers 區塊：供應商勾選清單 (OpenAI/Anthropic/Gemini/OpenRouter/Ollama + 更多收合區) + 勾選後動態展開金鑰輸入框 (password mode + 顯示/隱藏切換) | DEV | 2h | ✅ 完成 | 03/25 | 03/25 | 208 §4.3 |
+| 3.7.4 | 前端 Channels 區塊：管道勾選清單 (LINE/Discord/Telegram/Slack/WhatsApp + 更多收合區) + 品牌色 icon + 動態展開多欄位 + Configured/Not Configured badge | DEV | 2h | ✅ 完成 | 03/25 | 03/25 | 208 §4.3 |
+| 3.7.5 | 前端 Tools 區塊（預設收合）：Brave/Perplexity/Firecrawl/ElevenLabs/Deepgram 金鑰輸入                         | DEV    | 1h    | ✅ 完成 | 03/25  | 03/25  |                                               |
+| 3.7.6 | 前端 Security Note (shield-check icon + 加密說明) + Action Bar (Back/Next) + `save_keys()` 至 keyring 流程   | DEV    | 1h    | ✅ 完成 | 03/25  | 03/25  |                                               |
+| 3.7.7 | 步驟間資料保留：Step 1↔2↔3 切換時保留已填資料（前端記憶體快取機制）                                           | DEV    | 1h    | ✅ 完成 | 03/25  | 03/25  | saveStep2FormState/restoreStep2FormState       |
 
 #### 3.8 Configuration Step 3 — 初始化執行與結果 (16h)
 
@@ -301,21 +301,21 @@
 
 | ID     | 任務                                                                                                       | 負責人 | 工時  | 狀態      | 開始日 | 完成日 | 備註                              |
 | :----- | :--------------------------------------------------------------------------------------------------------- | :----- | :---- | :-------- | :----- | :----- | :-------------------------------- |
-| 3.8.1  | initializer.py Step 1：驗證 Docker + Docker Compose 可用性                                                 | DEV    | 1h    | ⬜ 未開始 | 04/19  | 04/19  | 透過 Executor.run_command()       |
-| 3.8.2  | initializer.py Step 2：驗證/設定環境變數（OPENCLAW_CONFIG_DIR 等）                                          | DEV    | 1h    | ⬜ 未開始 | 04/19  | 04/19  |                                   |
-| 3.8.3  | initializer.py Step 3：建立目錄結構（identity/, agents/main/agent/, agents/main/sessions/, workspace/）     | DEV    | 1h    | ⬜ 未開始 | 04/19  | 04/20  | 透過 Executor.mkdir()             |
-| 3.8.4  | initializer.py Step 4：Gateway Token 解析/產生（讀 openclaw.json → 讀 .env → `secrets.token_hex(32)` 產生） | DEV | 1h | ⬜ 未開始 | 04/20 | 04/20 | 依賴 3.5.3 |
-| 3.8.5  | initializer.py Step 5：寫入 .env（16+ 環境變數 upsert，含 ports, paths, token, timezone）                   | DEV    | 1h    | ⬜ 未開始 | 04/20  | 04/20  | 依賴 3.5.4                        |
-| 3.8.6  | initializer.py Step 6：Build/Pull Docker Image（最耗時步驟，需進度提示）                                    | DEV    | 1.5h  | ⬜ 未開始 | 04/20  | 04/21  | ⚠️ 效能關注點                      |
-| 3.8.7  | initializer.py Step 7：修正資料目錄權限（chown container user）                                             | DEV    | 0.5h  | ⬜ 未開始 | 04/21  | 04/21  |                                   |
-| 3.8.8  | initializer.py Step 8：Onboarding（`docker compose run --rm openclaw-cli onboard --mode local --no-install-daemon`） | DEV | 1h | ⬜ 未開始 | 04/21 | 04/21 | |
-| 3.8.9  | initializer.py Step 9：同步 Gateway 設定（gateway.mode=local, bind, controlUi.allowedOrigins）              | DEV    | 1h    | ⬜ 未開始 | 04/21  | 04/22  | 寫入 openclaw.json                |
-| 3.8.10 | initializer.py Step 10+11：啟動 Gateway（`docker compose up -d openclaw-gateway`）+ Health Check（`/healthz`） | DEV | 1h | ⬜ 未開始 | 04/22 | 04/22 | |
-| 3.8.11 | initializer.py：Native Linux 模式分支（Step 1 驗證 Node.js/CLI/systemd、略過 Step 5/6/7、Step 9 用 systemctl） | DEV | 1h | ⬜ 未開始 | 04/22 | 04/22 | |
-| 3.8.12 | Bridge API `initialize()` + 非同步進度回呼 (`window.updateInitProgress(step, status, message)`) + 單元測試  | DEV    | 2h    | ⬜ 未開始 | 04/22  | 04/23  | 208 §5.2                          |
-| 3.8.13 | 前端 Step 3：Initialization Progress 面板（Docker 10 個 / Native 8 個 ProgressItem + Done/Running/Pending 狀態切換） | DEV | 1.5h | ⬜ 未開始 | 04/23 | 04/23 | 208 §4.4 |
-| 3.8.14 | 前端 Step 3：Dashboard Info 面板（Dashboard URL 唯讀 + Access Token 遮罩/複製 + Device Pairing 區塊）— Gateway ready 前 disabled | DEV | 1h | ⬜ 未開始 | 04/23 | 04/24 | 固定寬度 340px |
-| 3.8.15 | 前端 Step 3：Action Bar (Back + Initialize) + Initialize 按鈕 loading 狀態 + 失敗 Retry                     | DEV    | 0.5h  | ⬜ 未開始 | 04/24  | 04/24  |                                   |
+| 3.8.1  | initializer.py Step 1：驗證 Docker + Docker Compose 可用性                                                 | DEV    | 1h    | ✅ 完成 | 03/25  | 03/25  | 透過 Executor.run_command()       |
+| 3.8.2  | initializer.py Step 2：驗證/設定環境變數（OPENCLAW_CONFIG_DIR 等）                                          | DEV    | 1h    | ✅ 完成 | 03/25  | 03/25  |                                   |
+| 3.8.3  | initializer.py Step 3：建立目錄結構（identity/, agents/main/agent/, agents/main/sessions/, workspace/）     | DEV    | 1h    | ✅ 完成 | 03/25  | 03/25  | 透過 Executor.mkdir()             |
+| 3.8.4  | initializer.py Step 4：Gateway Token 解析/產生（讀 openclaw.json → 讀 .env → `secrets.token_hex(32)` 產生） | DEV | 1h | ✅ 完成 | 03/25 | 03/25 | 三層 fallback |
+| 3.8.5  | initializer.py Step 5：寫入 .env（16+ 環境變數 upsert，含 ports, paths, token, timezone）                   | DEV    | 1h    | ✅ 完成 | 03/25  | 03/25  | config_manager.write_env()        |
+| 3.8.6  | initializer.py Step 6：Build/Pull Docker Image（最耗時步驟，需進度提示）                                    | DEV    | 1.5h  | ✅ 完成 | 03/25  | 03/25  | :local → build, 其他 → pull       |
+| 3.8.7  | initializer.py Step 7：修正資料目錄權限（chown container user）                                             | DEV    | 0.5h  | ✅ 完成 | 03/25  | 03/25  | best-effort，不 fail              |
+| 3.8.8  | initializer.py Step 8：Onboarding（`docker compose run --rm openclaw-cli onboard --mode local --no-install-daemon`） | DEV | 1h | ✅ 完成 | 03/25 | 03/25 | Docker + Native 分支 |
+| 3.8.9  | initializer.py Step 9：同步 Gateway 設定（gateway.mode=local, bind, controlUi.allowedOrigins）              | DEV    | 1h    | ✅ 完成 | 03/25  | 03/25  | 寫入 openclaw.json                |
+| 3.8.10 | initializer.py Step 10+11：啟動 Gateway（`docker compose up -d openclaw-gateway`）+ Health Check（`/healthz`） | DEV | 1h | ✅ 完成 | 03/25 | 03/25 | retry ×3, 5s 間隔 |
+| 3.8.11 | initializer.py：Native Linux 模式分支（Step 1 驗證 Node.js/CLI/systemd、略過 Step 6/7、Step 10 用 systemctl） | DEV | 1h | ✅ 完成 | 03/25 | 03/25 | 9 步 vs Docker 11 步 |
+| 3.8.12 | Bridge API `initialize()` + 非同步進度回呼 (`window.updateInitProgress(step, status, message)`) + 單元測試  | DEV    | 2h    | ✅ 完成 | 03/25  | 03/25  | 30 項測試                          |
+| 3.8.13 | 前端 Step 3：Initialization Progress 面板（Docker 10 個 / Native 8 個 ProgressItem + Done/Running/Pending 狀態切換） | DEV | 1.5h | ✅ 完成 | 03/25 | 03/25 | 後端→前端 step 映射 |
+| 3.8.14 | 前端 Step 3：Dashboard Info 面板（Dashboard URL 唯讀 + Access Token 遮罩/複製 + Device Pairing 區塊）— Gateway ready 前 disabled | DEV | 1h | ✅ 完成 | 03/25 | 03/25 | 固定寬度 340px |
+| 3.8.15 | 前端 Step 3：Action Bar (Back + Initialize) + Initialize 按鈕 loading 狀態 + 失敗 Retry                     | DEV    | 0.5h  | ✅ 完成 | 03/25  | 03/25  |                                   |
 
 #### 3.9 Dashboard 與服務控制 — US-003 (12h)
 

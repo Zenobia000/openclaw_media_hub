@@ -201,6 +201,26 @@ class Bridge:
 
         return self._safe_call(_do)
 
+    # ── Registry API (3.7, Config Step 2) ─────────────────
+
+    def get_available_providers(self) -> dict:
+        """回傳可選的 Model Provider 清單（含 env_var / placeholder）。"""
+        from src.registries import PROVIDER_REGISTRY
+
+        return _ok(PROVIDER_REGISTRY)
+
+    def get_available_channels(self) -> dict:
+        """回傳可選的 Channel 清單（含 fields / icon / icon_color）。"""
+        from src.registries import CHANNEL_REGISTRY
+
+        return _ok(CHANNEL_REGISTRY)
+
+    def get_available_tools(self) -> dict:
+        """回傳可選的 Tool API Key 清單。"""
+        from src.registries import TOOL_REGISTRY
+
+        return _ok(TOOL_REGISTRY)
+
     # ── 設定管理 API (3.5, US-002) ────────────────────────
 
     def save_config(self, config: dict) -> dict:
@@ -254,6 +274,30 @@ class Bridge:
         def _do() -> dict:
             self._config_manager.write_openclaw_config(config_dir, data, section)
             return _ok({"message": f"Section '{section}' updated"})
+
+        return self._safe_call(_do)
+
+    # ── 初始化 API (3.8, US-003) ──────────────────────────
+
+    def initialize(self, params: dict) -> dict:
+        """啟動初始化流程（非同步，透過回呼更新進度）。
+
+        Args:
+            params: {mode, config_dir, workspace_dir, gateway_bind,
+                     gateway_mode, gateway_port, bridge_port, timezone, docker_image}
+
+        Returns:
+            {success, steps, error, gateway_token}
+        """
+        def _do() -> dict:
+            from src.initializer import InitParams, Initializer
+
+            init_params = InitParams(**params)
+            initializer = Initializer(self._executor, self._config_manager)
+            result = self._run_async(
+                initializer.run_all(init_params, on_step=self._notify_init_progress)
+            )
+            return _ok(result)
 
         return self._safe_call(_do)
 

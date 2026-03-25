@@ -228,3 +228,25 @@ body {
 .collapsible-chevron.rotated {
   transform: rotate(90deg);
 }
+
+/* ============================================================
+ * Brand Icon — Colored letter badges for channels
+ * ============================================================ */
+
+.brand-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+ * Key Input — Password input with show/hide toggle
+ * ============================================================ */
+
+.key-input {
+  /* Applied via Tailwind + renderInput(), marker class for form state collection */
+}

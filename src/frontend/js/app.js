@@ -28,6 +28,15 @@ let configRendered = false;
 /** Cached form values for Config Step 1 (survives page navigation) */
 let configFormValues = {};
 
+/** Configuration wizard — Step 2 local state */
+let cachedProviders = null;
+let cachedChannels = null;
+let cachedTools = null;
+let step2CheckedProviders = new Set();
+let step2CheckedChannels = new Set();
+let step2KeyValues = {};
+let step2ToolsExpanded = false;
+
 /* ============================================================
  * 2. SPA Router
  * ============================================================ */
@@ -1144,9 +1153,699 @@ async function configNextStep() {
     // Config save failed — continue anyway, not critical
   }
 
-  // Navigate to Step 2 (placeholder — WBS 3.7 will implement Step 2 page)
+  // Navigate to Step 2
   configStep = 2;
-  // TODO: renderConfigStep2() — to be implemented in WBS 3.7
+  renderConfigStep2();
+}
+
+/* ============================================================
+ * 5.3 Configuration Step 2 — API Keys & Service Settings (WBS 3.7)
+ * ============================================================ */
+
+/* ---------- 5.3.1 Step 2 Form State Management ---------- */
+
+/**
+ * Save Step 2 form state (checkboxes + key inputs) into module-level variables.
+ */
+function saveStep2FormState() {
+  step2KeyValues = {};
+  document.querySelectorAll("input[id^='key-']").forEach((input) => {
+    step2KeyValues[input.id] = input.value;
+  });
+}
+
+/**
+ * Restore Step 2 form state after re-render.
+ */
+function restoreStep2FormState() {
+  // Restore key input values
+  for (const [id, val] of Object.entries(step2KeyValues)) {
+    const el = document.getElementById(id);
+    if (el) el.value = val;
+  }
+  // Re-expand checked providers
+  for (const name of step2CheckedProviders) {
+    const fields = document.getElementById(`provider-fields-${name}`);
+    if (fields) fields.classList.add("expanded");
+    const chk = document.getElementById(`provider-chk-${name}`);
+    if (chk) chk.checked = true;
+  }
+  // Re-expand checked channels
+  for (const name of step2CheckedChannels) {
+    const fields = document.getElementById(`channel-fields-${name}`);
+    if (fields) fields.classList.add("expanded");
+    const chk = document.getElementById(`channel-chk-${name}`);
+    if (chk) chk.checked = true;
+    updateChannelBadge(name);
+  }
+  // Restore tools expanded state
+  if (step2ToolsExpanded) {
+    const content = document.getElementById("tools-collapsible");
+    const chevron = document.getElementById("tools-chevron");
+    if (content) content.classList.add("expanded");
+    if (chevron) chevron.classList.add("rotated");
+  }
+}
+
+/* ---------- 5.3.2 Render: Provider Card ---------- */
+
+/**
+ * Render a provider checkbox card.
+ */
+function renderProviderCard(provider, checked) {
+  const checkedAttr = checked ? "checked" : "";
+  const keyFields = provider.env_var
+    ? `<div id="provider-fields-${provider.name}" class="collapsible-content ${checked ? "expanded" : ""}">
+        <div class="mt-3">
+          ${renderInput({ id: `key-${provider.env_var}`, label: provider.label + " API Key", icon: "lock", type: "password", placeholder: provider.placeholder || "", value: step2KeyValues[`key-${provider.env_var}`] || "" })}
+        </div>
+      </div>`
+    : `<div class="mt-2 text-xs text-text-muted">No API key required — configure URL in settings</div>`;
+
+  return `<div class="provider-card-wrap">
+    <label class="flex items-center gap-3 cursor-pointer select-none py-2">
+      <input type="checkbox" id="provider-chk-${provider.name}" class="checkbox-custom provider-checkbox" data-provider="${provider.name}" ${checkedAttr}
+        onchange="toggleProviderCheck('${provider.name}')" />
+      <span class="text-sm font-medium text-text-primary">${escapeHtml(provider.label)}</span>
+    </label>
+    ${keyFields}
+  </div>`;
+}
+
+/* ---------- 5.3.3 Render: Channel Card ---------- */
+
+/**
+ * Render a channel checkbox card with brand-colored icon.
+ */
+function renderChannelCard(channel, checked) {
+  const checkedAttr = checked ? "checked" : "";
+
+  let fieldsHtml = "";
+  if (channel.fields && channel.fields.length > 0) {
+    const inputs = channel.fields.map((f) =>
+      renderInput({ id: `key-${f.key}`, label: f.label, icon: "lock", type: "password", placeholder: "", value: step2KeyValues[`key-${f.key}`] || "" })
+    ).join("");
+    fieldsHtml = `<div id="channel-fields-${channel.name}" class="collapsible-content ${checked ? "expanded" : ""}">
+      <div class="mt-3 grid gap-3">${inputs}</div>
+    </div>`;
+  } else if (channel.info_note) {
+    fieldsHtml = `<div id="channel-fields-${channel.name}" class="collapsible-content ${checked ? "expanded" : ""}">
+      <div class="mt-2 flex items-center gap-2 text-xs text-text-muted">
+        <i data-lucide="info" class="w-3.5 h-3.5 flex-shrink-0"></i>
+        <span>${escapeHtml(channel.info_note)}</span>
+      </div>
+    </div>`;
+  }
+
+  const badgeId = `channel-badge-${channel.name}`;
+
+  return `<div class="channel-card-wrap">
+    <div class="flex items-center gap-3">
+      <div class="brand-icon flex-shrink-0" style="background: ${channel.icon_color};">
+        <span class="text-xs font-bold text-white">${escapeHtml(channel.icon)}</span>
+      </div>
+      <label class="flex items-center gap-3 cursor-pointer select-none flex-1">
+        <input type="checkbox" id="channel-chk-${channel.name}" class="checkbox-custom channel-checkbox" data-channel="${channel.name}" ${checkedAttr}
+          onchange="toggleChannelCheck('${channel.name}')" />
+        <span class="text-sm font-medium text-text-primary">${escapeHtml(channel.label)}</span>
+      </label>
+      <span id="${badgeId}"></span>
+    </div>
+    ${fieldsHtml}
+  </div>`;
+}
+
+/* ---------- 5.3.4 Render: Step 2 Sections ---------- */
+
+function renderProvidersSection(providers) {
+  const primary = providers.filter((p) => p.primary);
+  const secondary = providers.filter((p) => !p.primary);
+
+  const primaryCards = primary.map((p) => renderProviderCard(p, step2CheckedProviders.has(p.name))).join("");
+  const secondaryCards = secondary.map((p) => renderProviderCard(p, step2CheckedProviders.has(p.name))).join("");
+
+  const moreSection = secondary.length > 0
+    ? `<button type="button" class="flex items-center gap-1.5 mt-3 text-xs text-text-muted hover:text-text-secondary cursor-pointer bg-transparent border-0 p-0" onclick="toggleStep2More('providers')">
+        <i data-lucide="chevron-right" class="w-3.5 h-3.5 collapsible-chevron" id="providers-more-chevron"></i>
+        <span>More providers...</span>
+      </button>
+      <div id="providers-more" class="collapsible-content">
+        <div class="mt-2 grid gap-1">${secondaryCards}</div>
+      </div>`
+    : "";
+
+  return renderSectionPanel({
+    icon: "cpu",
+    iconColor: "text-accent-primary",
+    title: "Model Providers",
+    description: "Select providers and enter API keys \u2014 stored securely via system keyring",
+    children: `<div class="grid gap-1">${primaryCards}</div>${moreSection}`,
+  });
+}
+
+function renderChannelsSection(channels) {
+  const primary = channels.filter((c) => c.primary);
+  const secondary = channels.filter((c) => !c.primary);
+
+  const primaryCards = primary.map((c) => renderChannelCard(c, step2CheckedChannels.has(c.name))).join("");
+  const secondaryCards = secondary.map((c) => renderChannelCard(c, step2CheckedChannels.has(c.name))).join("");
+
+  const moreSection = secondary.length > 0
+    ? `<button type="button" class="flex items-center gap-1.5 mt-3 text-xs text-text-muted hover:text-text-secondary cursor-pointer bg-transparent border-0 p-0" onclick="toggleStep2More('channels')">
+        <i data-lucide="chevron-right" class="w-3.5 h-3.5 collapsible-chevron" id="channels-more-chevron"></i>
+        <span>More channels...</span>
+      </button>
+      <div id="channels-more" class="collapsible-content">
+        <div class="mt-2 grid gap-1">${secondaryCards}</div>
+      </div>`
+    : "";
+
+  return renderSectionPanel({
+    icon: "message-circle",
+    iconColor: "text-status-info",
+    title: "Channel Credentials",
+    description: "Select messaging channels and enter credentials",
+    children: `<div class="grid gap-1">${primaryCards}</div>${moreSection}`,
+  });
+}
+
+function renderToolsSection(tools) {
+  const toolInputs = tools.map((t) =>
+    renderInput({ id: `key-${t.env_var}`, label: t.label, icon: "lock", type: "password", placeholder: t.placeholder || "", value: step2KeyValues[`key-${t.env_var}`] || "" })
+  ).join("");
+
+  const expandedCls = step2ToolsExpanded ? "expanded" : "";
+  const chevronCls = step2ToolsExpanded ? "rotated" : "";
+
+  return renderSectionPanel({
+    icon: "wrench",
+    iconColor: "text-accent-secondary",
+    title: "Tool API Keys",
+    description: "Optional \u2014 enable search, speech, and web scraping tools",
+    children: `
+      <button type="button" class="flex items-center gap-1.5 text-xs text-text-muted hover:text-text-secondary cursor-pointer bg-transparent border-0 p-0" onclick="toggleStep2Tools()">
+        <i data-lucide="chevron-right" class="w-3.5 h-3.5 collapsible-chevron ${chevronCls}" id="tools-chevron"></i>
+        <span>Show tool keys</span>
+      </button>
+      <div id="tools-collapsible" class="collapsible-content ${expandedCls}">
+        <div class="mt-3 grid gap-3">${toolInputs}</div>
+      </div>`,
+  });
+}
+
+function renderSecurityNote() {
+  return `<div class="flex items-start gap-3 px-2 py-3">
+    <i data-lucide="shield-check" class="w-5 h-5 text-accent-primary flex-shrink-0 mt-0.5"></i>
+    <p class="text-xs text-text-secondary leading-relaxed">
+      All keys are encrypted and stored securely using your operating system's credential manager (DPAPI / libsecret). Keys are never written to plain text files.
+    </p>
+  </div>`;
+}
+
+/* ---------- 5.3.5 Render: Step 2 Action Bar ---------- */
+
+function renderConfigStep2ActionBar() {
+  const html = `<div class="flex items-center justify-between">
+    <div>
+      ${renderButton({ variant: "secondary", icon: "arrow-left", label: "Back", onclick: "configPrevStep()" })}
+    </div>
+    <div class="flex items-center gap-3">
+      <span class="text-sm text-text-muted font-medium">Step ${configStep} of 3</span>
+      ${renderButton({ variant: "primary", icon: "arrow-right", label: "Next", id: "btn-next-step2", onclick: "configNextStep2()" })}
+    </div>
+  </div>`;
+  renderInto("config-action-bar", html);
+}
+
+/* ---------- 5.3.6 Render: Step 2 Composition ---------- */
+
+async function renderConfigStep2() {
+  // Fetch registries from Bridge (cache for subsequent renders)
+  if (!cachedProviders) {
+    try {
+      const [pRes, cRes, tRes] = await Promise.all([
+        window.pywebview.api.get_available_providers(),
+        window.pywebview.api.get_available_channels(),
+        window.pywebview.api.get_available_tools(),
+      ]);
+      cachedProviders = pRes?.data || [];
+      cachedChannels = cRes?.data || [];
+      cachedTools = tRes?.data || [];
+    } catch {
+      cachedProviders = [];
+      cachedChannels = [];
+      cachedTools = [];
+    }
+  }
+
+  const completedSteps = [1];
+  const stepIndicator = renderStepIndicator({
+    steps: ["Environment", "API Keys", "Initialize"],
+    currentStep: 2,
+    completedSteps,
+  });
+
+  const html = [
+    stepIndicator,
+    renderProvidersSection(cachedProviders),
+    renderChannelsSection(cachedChannels),
+    renderToolsSection(cachedTools),
+    renderSecurityNote(),
+  ].join("");
+
+  renderInto("config-content", html);
+  renderConfigStep2ActionBar();
+
+  // Restore previously filled values
+  restoreStep2FormState();
+
+  // Initialize channel badges
+  for (const name of step2CheckedChannels) {
+    updateChannelBadge(name);
+  }
+}
+
+/* ---------- 5.3.7 Event Handlers ---------- */
+
+/**
+ * Toggle provider checkbox — expand/collapse key input area.
+ */
+function toggleProviderCheck(name) {
+  const chk = document.getElementById(`provider-chk-${name}`);
+  if (!chk) return;
+  if (chk.checked) {
+    step2CheckedProviders.add(name);
+  } else {
+    step2CheckedProviders.delete(name);
+  }
+  const fields = document.getElementById(`provider-fields-${name}`);
+  if (fields) fields.classList.toggle("expanded", chk.checked);
+}
+
+/**
+ * Toggle channel checkbox — expand/collapse credential fields + update badge.
+ */
+function toggleChannelCheck(name) {
+  const chk = document.getElementById(`channel-chk-${name}`);
+  if (!chk) return;
+  if (chk.checked) {
+    step2CheckedChannels.add(name);
+  } else {
+    step2CheckedChannels.delete(name);
+  }
+  const fields = document.getElementById(`channel-fields-${name}`);
+  if (fields) fields.classList.toggle("expanded", chk.checked);
+  updateChannelBadge(name);
+}
+
+/**
+ * Update Configured/Not Configured badge for a channel.
+ */
+function updateChannelBadge(name) {
+  const badgeEl = document.getElementById(`channel-badge-${name}`);
+  if (!badgeEl) return;
+  if (!step2CheckedChannels.has(name)) {
+    badgeEl.innerHTML = "";
+    return;
+  }
+  // Find channel definition
+  const channel = cachedChannels?.find((c) => c.name === name);
+  if (!channel || channel.fields.length === 0) {
+    badgeEl.innerHTML = "";
+    return;
+  }
+  // Check if all fields have values
+  const allFilled = channel.fields.every((f) => {
+    const input = document.getElementById(`key-${f.key}`);
+    return input && input.value.trim().length > 0;
+  });
+  badgeEl.innerHTML = allFilled
+    ? renderStatusBadge({ status: "success", text: "Configured" })
+    : renderStatusBadge({ status: "warning", text: "Not Configured" });
+  lucide.createIcons({ nameAttr: "data-lucide" });
+}
+
+/**
+ * Toggle "More..." collapsible for providers or channels.
+ */
+function toggleStep2More(section) {
+  const content = document.getElementById(`${section}-more`);
+  const chevron = document.getElementById(`${section}-more-chevron`);
+  if (content) content.classList.toggle("expanded");
+  if (chevron) chevron.classList.toggle("rotated");
+}
+
+/**
+ * Toggle tools section collapsible.
+ */
+function toggleStep2Tools() {
+  const content = document.getElementById("tools-collapsible");
+  const chevron = document.getElementById("tools-chevron");
+  if (content) content.classList.toggle("expanded");
+  if (chevron) chevron.classList.toggle("rotated");
+  step2ToolsExpanded = content?.classList.contains("expanded") || false;
+}
+
+/**
+ * Collect all Step 2 key values into categorized format for save_keys().
+ */
+function collectStep2Keys() {
+  const keys = { providers: {}, channels: {}, tools: {} };
+
+  // Providers
+  for (const name of step2CheckedProviders) {
+    const provider = cachedProviders?.find((p) => p.name === name);
+    if (!provider?.env_var) continue;
+    const input = document.getElementById(`key-${provider.env_var}`);
+    const val = input?.value?.trim();
+    if (val) keys.providers[provider.env_var.toLowerCase()] = val;
+  }
+
+  // Channels
+  for (const name of step2CheckedChannels) {
+    const channel = cachedChannels?.find((c) => c.name === name);
+    if (!channel) continue;
+    for (const f of channel.fields) {
+      const input = document.getElementById(`key-${f.key}`);
+      const val = input?.value?.trim();
+      if (val) keys.channels[f.key.toLowerCase()] = val;
+    }
+  }
+
+  // Tools
+  for (const tool of cachedTools || []) {
+    const input = document.getElementById(`key-${tool.env_var}`);
+    const val = input?.value?.trim();
+    if (val) keys.tools[tool.env_var.toLowerCase()] = val;
+  }
+
+  return keys;
+}
+
+/**
+ * Navigate back from current step.
+ */
+function configPrevStep() {
+  if (configStep === 2) {
+    saveStep2FormState();
+    configStep = 1;
+    renderConfigStep1();
+    renderConfigActionBar();
+    restoreConfigFormState();
+    return;
+  }
+  if (configStep === 3) {
+    configStep = 2;
+    renderConfigStep2();
+    return;
+  }
+}
+
+/**
+ * Handle Next from Step 2 — save keys, navigate to Step 3.
+ */
+async function configNextStep2() {
+  const btn = document.getElementById("btn-next-step2");
+  if (btn) { btn.disabled = true; btn.classList.add("opacity-50", "pointer-events-none"); }
+
+  try {
+    saveStep2FormState();
+    const keys = collectStep2Keys();
+    // Only call save_keys if there are actual keys to save
+    const hasKeys = Object.values(keys).some((cat) => Object.keys(cat).length > 0);
+    if (hasKeys) {
+      await window.pywebview.api.save_keys(keys);
+    }
+  } catch {
+    // Key save failed — continue anyway, user can retry later
+  } finally {
+    if (btn) { btn.disabled = false; btn.classList.remove("opacity-50", "pointer-events-none"); }
+  }
+
+  configStep = 3;
+  renderConfigStep3();
+}
+
+/**
+ * Attach input listeners for channel badge auto-update.
+ * Called after DOM render with a short delay for DOM readiness.
+ */
+function attachChannelBadgeListeners() {
+  for (const name of step2CheckedChannels) {
+    const channel = cachedChannels?.find((c) => c.name === name);
+    if (!channel) continue;
+    for (const f of channel.fields) {
+      const input = document.getElementById(`key-${f.key}`);
+      if (input) {
+        input.addEventListener("input", () => updateChannelBadge(name));
+      }
+    }
+  }
+}
+
+/* ============================================================
+ * 5.4 Configuration Step 3 — Initialization (WBS 3.8)
+ * ============================================================ */
+
+/* ---------- 5.4.1 Init Steps Metadata ---------- */
+
+const INIT_STEPS_DOCKER = [
+  { id: 1,  label: "Validate environment",       desc: "Checking Docker and Docker Compose availability" },
+  { id: 2,  label: "Create directory structure",  desc: "~/.openclaw/identity/, agents/main/agent/, sessions/" },
+  { id: 3,  label: "Generate gateway token",      desc: "Reading from config or generating new token" },
+  { id: 4,  label: "Write environment file",      desc: ".env with 16 variables (ports, paths, token, timezone)" },
+  { id: 5,  label: "Build/Pull Docker image",     desc: "Building openclaw:local or pulling image" },
+  { id: 6,  label: "Fix directory permissions",    desc: "Setting ownership for container user" },
+  { id: 7,  label: "Run onboarding",              desc: "openclaw onboard --mode local" },
+  { id: 8,  label: "Configure gateway",           desc: "Set mode=local, bind, controlUi.allowedOrigins" },
+  { id: 9,  label: "Start gateway",               desc: "docker compose up -d openclaw-gateway" },
+  { id: 10, label: "Verify health",               desc: "Health check on http://127.0.0.1:{port}/healthz" },
+];
+
+const INIT_STEPS_NATIVE = [
+  { id: 1,  label: "Validate environment",       desc: "Checking Node.js, OpenClaw CLI, systemd availability" },
+  { id: 2,  label: "Create directory structure",  desc: "~/.openclaw/identity/, agents/main/agent/, sessions/" },
+  { id: 3,  label: "Generate gateway token",      desc: "Reading from config or generating new token" },
+  { id: 4,  label: "Write environment file",      desc: ".env with environment variables" },
+  { id: 5,  label: "Run onboarding",              desc: "openclaw onboard --mode local" },
+  { id: 6,  label: "Configure gateway",           desc: "Set mode=local, bind, controlUi.allowedOrigins" },
+  { id: 7,  label: "Start gateway",               desc: "systemctl start openclaw-gateway" },
+  { id: 8,  label: "Verify health",               desc: "Health check on http://127.0.0.1:{port}/healthz" },
+];
+
+/** Map backend step numbers to frontend step numbers */
+function mapBackendToFrontendStep(backendStep, mode) {
+  if (mode === "native-linux") return parseInt(backendStep, 10);
+  // Docker mode: backend 1+2 → frontend 1, backend N (N≥3) → frontend N-1
+  const n = parseInt(backendStep, 10);
+  if (n <= 2) return 1;
+  return n - 1;
+}
+
+let initializationRunning = false;
+let initGatewayToken = null;
+
+/* ---------- 5.4.2 Render: Progress Panel ---------- */
+
+function renderProgressPanel(steps) {
+  const items = steps.map((s) =>
+    `<div data-init-step="${s.id}">${renderProgressItem({ name: s.label, description: s.desc, status: "pending" })}</div>`
+  ).join("");
+
+  return renderSectionPanel({
+    icon: "loader",
+    iconColor: "text-accent-primary",
+    title: "Initialization Progress",
+    description: `Running ${steps.length} steps to set up your environment`,
+    children: items,
+    id: "init-progress-panel",
+  });
+}
+
+/* ---------- 5.4.3 Render: Dashboard Info Panel ---------- */
+
+function renderDashboardInfoPanel() {
+  const port = configFormValues.gateway_port || "18789";
+  const dashUrl = `http://127.0.0.1:${port}/`;
+
+  return renderSectionPanel({
+    icon: "layout-dashboard",
+    iconColor: "text-accent-secondary",
+    title: "Dashboard Info",
+    description: "Available after Gateway is ready",
+    children: `
+      <div id="dashboard-info-fields" class="opacity-50 pointer-events-none">
+        <div class="grid gap-3">
+          ${renderInput({ id: "input-dash-url", label: "Dashboard URL", icon: "globe", value: dashUrl, type: "text" })}
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium text-text-secondary">Access Token</label>
+            <div class="flex gap-2">
+              <input id="input-dash-token" type="password" value="" readonly placeholder="Generated after init"
+                class="flex-1 bg-bg-input border border-border-default rounded-sm text-sm text-text-primary placeholder:text-text-muted pl-3 pr-3 py-2.5 outline-none" />
+              ${renderButton({ variant: "secondary", icon: "copy", label: "Copy", size: "sm", onclick: "copyGatewayToken()" })}
+            </div>
+          </div>
+        </div>
+        <div class="mt-4 pt-4 border-t border-border-default">
+          <p class="text-xs text-text-secondary mb-3">Open the Dashboard URL in your browser, then approve the pending device request.</p>
+          ${renderButton({ variant: "secondary", icon: "smartphone", label: "Approve Pending Device", onclick: "approvePendingDevice()" })}
+        </div>
+      </div>`,
+    id: "dashboard-info-panel",
+  });
+}
+
+/* ---------- 5.4.4 Render: Step 3 Action Bar ---------- */
+
+function renderConfigStep3ActionBar() {
+  const disabled = initializationRunning;
+  const label = initializationRunning ? "Initializing..." : "Initialize";
+  const icon = initializationRunning ? "loader" : "play";
+  const html = `<div class="flex items-center justify-between">
+    <div>
+      ${renderButton({ variant: "secondary", icon: "arrow-left", label: "Back", disabled: initializationRunning, onclick: "configPrevStep()" })}
+    </div>
+    <div class="flex items-center gap-3">
+      <span class="text-sm text-text-muted font-medium">Step 3 of 3</span>
+      ${renderButton({ variant: "primary", icon, label, id: "btn-initialize", disabled, loading: initializationRunning, onclick: "startInitialization()" })}
+    </div>
+  </div>`;
+  renderInto("config-action-bar", html);
+}
+
+/* ---------- 5.4.5 Render: Step 3 Composition ---------- */
+
+function renderConfigStep3() {
+  const isNative = selectedMode === "native-linux";
+  const steps = isNative ? INIT_STEPS_NATIVE : INIT_STEPS_DOCKER;
+
+  const stepIndicator = renderStepIndicator({
+    steps: ["Environment", "API Keys", "Initialize"],
+    currentStep: 3,
+    completedSteps: [1, 2],
+  });
+
+  const html = `
+    ${stepIndicator}
+    <div class="flex gap-5 flex-1 min-h-0">
+      <div class="flex-1 min-w-0 overflow-y-auto">${renderProgressPanel(steps)}</div>
+      <div class="w-[340px] flex-shrink-0">${renderDashboardInfoPanel()}</div>
+    </div>`;
+
+  renderInto("config-content", html);
+  renderConfigStep3ActionBar();
+  initializationRunning = false;
+}
+
+/* ---------- 5.4.6 Progress Callback ---------- */
+
+/**
+ * Global callback — invoked by Python Bridge via evaluate_js.
+ * Updates the corresponding ProgressItem in the DOM.
+ */
+window.updateInitProgress = function (step, status, message) {
+  const frontendStep = mapBackendToFrontendStep(step, selectedMode);
+  const container = document.querySelector(`[data-init-step="${frontendStep}"]`);
+  if (!container) return;
+
+  // Determine the step label from the metadata
+  const isNative = selectedMode === "native-linux";
+  const steps = isNative ? INIT_STEPS_NATIVE : INIT_STEPS_DOCKER;
+  const meta = steps.find((s) => s.id === frontendStep);
+
+  container.innerHTML = renderProgressItem({
+    name: meta?.label || `Step ${frontendStep}`,
+    description: message || meta?.desc || "",
+    status: status === "done" ? "done" : status === "failed" ? "failed" : status === "running" ? "running" : "pending",
+  });
+  lucide.createIcons({ nameAttr: "data-lucide" });
+};
+
+/* ---------- 5.4.7 Start Initialization ---------- */
+
+async function startInitialization() {
+  if (initializationRunning) return;
+  initializationRunning = true;
+  renderConfigStep3ActionBar();
+
+  // Reset all steps to pending
+  const isNative = selectedMode === "native-linux";
+  const steps = isNative ? INIT_STEPS_NATIVE : INIT_STEPS_DOCKER;
+  for (const s of steps) {
+    const container = document.querySelector(`[data-init-step="${s.id}"]`);
+    if (container) {
+      container.innerHTML = renderProgressItem({ name: s.label, description: s.desc, status: "pending" });
+    }
+  }
+  lucide.createIcons({ nameAttr: "data-lucide" });
+
+  // Build params from Step 1 cached config
+  const params = {
+    mode: selectedMode,
+    config_dir: configFormValues.config_dir || "~/.openclaw",
+    workspace_dir: configFormValues.workspace_dir || "~/.openclaw/workspace",
+    gateway_bind: configFormValues.gateway_bind || "lan",
+    gateway_mode: configFormValues.gateway_mode || "local",
+    gateway_port: parseInt(configFormValues.gateway_port, 10) || 18789,
+    bridge_port: parseInt(configFormValues.bridge_port, 10) || 18790,
+    timezone: configFormValues.timezone || "Asia/Taipei",
+    docker_image: configFormValues.docker_image || "openclaw:local",
+  };
+
+  try {
+    const result = await window.pywebview.api.initialize(params);
+    initializationRunning = false;
+
+    if (result?.success && result.data?.success) {
+      // Enable Dashboard Info panel
+      const fields = document.getElementById("dashboard-info-fields");
+      if (fields) { fields.classList.remove("opacity-50", "pointer-events-none"); }
+
+      // Populate token if available
+      initGatewayToken = result.data?.gateway_token || "";
+      const tokenInput = document.getElementById("input-dash-token");
+      if (tokenInput && initGatewayToken) tokenInput.value = "\u2022".repeat(16);
+
+      renderConfigStep3ActionBar();
+    } else {
+      // Failure — show retry
+      initializationRunning = false;
+      const btn = document.getElementById("btn-initialize");
+      if (btn) {
+        btn.innerHTML = `<i data-lucide="refresh-cw" class="w-4 h-4"></i><span>Retry</span>`;
+        btn.disabled = false;
+        btn.classList.remove("opacity-50", "pointer-events-none");
+        lucide.createIcons({ nameAttr: "data-lucide" });
+      }
+      renderConfigStep3ActionBar();
+    }
+  } catch (err) {
+    initializationRunning = false;
+    renderConfigStep3ActionBar();
+  }
+}
+
+/* ---------- 5.4.8 Dashboard Info Helpers ---------- */
+
+async function copyGatewayToken() {
+  if (!initGatewayToken) return;
+  try {
+    await navigator.clipboard.writeText(initGatewayToken);
+    // Brief visual feedback
+    const btn = document.querySelector("[onclick='copyGatewayToken()']");
+    if (btn) {
+      const original = btn.innerHTML;
+      btn.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i><span>Copied</span>`;
+      lucide.createIcons({ nameAttr: "data-lucide" });
+      setTimeout(() => { btn.innerHTML = original; lucide.createIcons({ nameAttr: "data-lucide" }); }, 1500);
+    }
+  } catch {
+    // Clipboard API not available
+  }
+}
+
+function approvePendingDevice() {
+  // Placeholder — will be implemented with device pairing Bridge API
 }
 
 /* ---------- 5.2.9 Page Lifecycle Registration ---------- */
@@ -1154,8 +1853,15 @@ async function configNextStep() {
 registerPage("configuration", {
   onEnter: async () => {
     if (configRendered) {
-      // Page revisited — restore cached form values without re-rendering
-      restoreConfigFormState();
+      // Page revisited — re-render the current step
+      if (configStep === 1) {
+        renderConfigStep1();
+        restoreConfigFormState();
+      } else if (configStep === 2) {
+        renderConfigStep2();
+      } else if (configStep === 3) {
+        renderConfigStep3();
+      }
       return;
     }
     // First visit — load persisted settings and render
@@ -1172,7 +1878,8 @@ registerPage("configuration", {
     configRendered = true;
   },
   onLeave: () => {
-    saveConfigFormState();
+    if (configStep === 1) saveConfigFormState();
+    else if (configStep === 2) saveStep2FormState();
   },
 });
 
