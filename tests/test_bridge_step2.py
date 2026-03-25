@@ -40,6 +40,14 @@ class TestProviderRegistry:
         ollama = next(p for p in PROVIDER_REGISTRY if p["name"] == "ollama")
         assert ollama["env_var"] is None
 
+    def test_huggingface_env_var(self):
+        hf = next(p for p in PROVIDER_REGISTRY if p["name"] == "huggingface")
+        assert hf["env_var"] == "HF_TOKEN"
+
+    def test_amazon_bedrock_no_key(self):
+        bedrock = next(p for p in PROVIDER_REGISTRY if p["name"] == "amazon-bedrock")
+        assert bedrock["env_var"] is None
+
 
 class TestChannelRegistry:
     def test_required_fields(self):
@@ -88,7 +96,19 @@ class TestToolRegistry:
         assert len(env_vars) == len(set(env_vars))
 
     def test_count(self):
-        assert len(TOOL_REGISTRY) == 5
+        assert len(TOOL_REGISTRY) == 4
+
+    def test_tavily_present(self):
+        names = [t["name"] for t in TOOL_REGISTRY]
+        assert "tavily" in names
+
+    def test_no_deepgram(self):
+        names = [t["name"] for t in TOOL_REGISTRY]
+        assert "deepgram" not in names
+
+    def test_no_elevenlabs(self):
+        names = [t["name"] for t in TOOL_REGISTRY]
+        assert "elevenlabs" not in names
 
 
 # ── Bridge API 回傳格式 ─────────────────────────────────
@@ -128,7 +148,7 @@ class TestBridgeRegistryAPIs:
         assert result["success"] is True
         data = result["data"]
         assert isinstance(data, list)
-        assert len(data) == 5
+        assert len(data) == 4
 
 
 # ── save_keys 整合 ───────────────────────────────────────
