@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import enum
 import logging
+import socket
 from collections.abc import Callable
 from typing import Any
 
@@ -61,7 +62,9 @@ def _map_exception(exc: Exception) -> dict:
         return _err(ErrorType.PERMISSION, str(exc) or "Permission denied")
     if isinstance(exc, FileNotFoundError):
         return _err(ErrorType.NOT_FOUND, str(exc) or "File or resource not found")
-    if isinstance(exc, ConnectionError):
+    if isinstance(exc, socket.gaierror):
+        return _err(ErrorType.CONNECTION_LOST, f"DNS resolution failed — check hostname: {exc}")
+    if isinstance(exc, (ConnectionError, OSError)) and not isinstance(exc, (PermissionError, FileNotFoundError)):
         return _err(ErrorType.CONNECTION_LOST, str(exc) or "Connection lost")
     if isinstance(exc, paramiko.AuthenticationException):
         return _err(ErrorType.AUTH_FAILED, str(exc) or "Authentication failed")
