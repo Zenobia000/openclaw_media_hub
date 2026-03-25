@@ -165,7 +165,7 @@
 | :----------------- | :------- | :--------- | :--------- | :-------- | :--- |
 | 1.0 啟動與規劃     | 8h       | 2026-03-22 | 2026-03-23 | ✅ 完成   | |
 | 2.0 方案設計與架構 | 24h      | 2026-03-22 | 2026-03-28 | 🔄 進行中 | |
-| 3.15 Transport Layer | 17h    | 2026-03-29 | 2026-04-12 | ⬜ 未開始 | ★ 基礎層，最先開發 |
+| 3.15 Transport Layer | 17h    | 2026-03-25 | 2026-03-25 | ✅ 完成   | ★ 基礎層，提前完成 |
 | 3.1 專案環境初始化 | 8h       | 2026-03-23 | 2026-03-23 | ✅ 完成   | |
 | 3.2 前端 UI 元件   | 11h      | 2026-03-29 | 2026-04-01 | ⬜ 未開始 | +1h (合併 3.16.2) |
 | 3.3 後端基礎模組   | 7h       | 2026-03-30 | 2026-04-12 | ⬜ 未開始 | 3.3.4 在 3.15.4 之後 |
@@ -395,11 +395,11 @@
 
 | ID     | 任務                                                                                                          | 負責人 | 工時  | 狀態      | 開始日 | 完成日 | 備註                                   |
 | :----- | :------------------------------------------------------------------------------------------------------------ | :----- | :---- | :-------- | :----- | :----- | :------------------------------------- |
-| 3.15.1 | executor.py：`Executor` Protocol 定義（9 個抽象方法：run_command, read_file, write_file, mkdir, copy_tree, remove_tree, file_exists, list_dir, which）+ `CommandResult` dataclass (exit_code, stdout, stderr) | DEV | 2h | ⬜ 未開始 | 03/29 | 03/29 | ★ Week 2 第一天，ADR-004 核心介面 |
-| 3.15.2 | local_executor.py：`LocalExecutor` 實作 — 封裝 `subprocess.run()` (list 形式), `pathlib`, `shutil.which()`, `shutil.copytree/rmtree` | DEV | 3h | ⬜ 未開始 | 03/29 | 03/30 | ★ Week 2，所有後端模組透過此操作 |
-| 3.15.3 | remote_executor.py：`RemoteExecutor` 實作 — 封裝 `paramiko.SSHClient.exec_command()` + `SFTPClient` (read/write/mkdir/remove) + SFTP 遞迴 copy_tree/remove_tree 手動實作 + `which` 透過 `command -v` | DEV | 6h | ⬜ 未開始 | 04/05 | 04/09 | Week 3 Track B，與 3.5 平行 |
-| 3.15.4 | ssh_connection.py：SSH 連線管理 — 連線建立（key/password auth）、斷線、自動重連（失敗重試 3 次）、心跳（30 秒 keepalive）、連線狀態列舉 (connected/disconnected/connecting/error) | DEV | 4h | ⬜ 未開始 | 04/09 | 04/11 | Week 3 Track B，連線狀態推播至前端 |
-| 3.15.5 | transfer_service.py：跨本機/遠端檔案傳輸服務 — `upload_tree(local_src, remote_dst)` 用於技能部署（本機 module_pack/ → 遠端 skills/）、進度回呼支援 | DEV | 2h | ⬜ 未開始 | 04/12 | 04/12 | Week 4，在 3.10 技能部署之前 |
+| 3.15.1 | executor.py：`Executor` Protocol 定義（9 個抽象方法：run_command, read_file, write_file, mkdir, copy_tree, remove_tree, file_exists, list_dir, which）+ `CommandResult` dataclass (exit_code, stdout, stderr) | DEV | 2h | ✅ 完成 | 03/25 | 03/25 | ★ ADR-004 核心介面，提前完成 |
+| 3.15.2 | local_executor.py：`LocalExecutor` 實作 — 封裝 `asyncio.create_subprocess_exec()` (list 形式), `pathlib`, `shutil.which()`, `shutil.copytree/rmtree` | DEV | 3h | ✅ 完成 | 03/25 | 03/25 | ★ 17 項單元測試全數通過 |
+| 3.15.3 | remote_executor.py：`RemoteExecutor` 實作 — 封裝 `paramiko.SSHClient.exec_command()` + `SFTPClient` (read/write/mkdir/remove) + SFTP 遞迴 copy_tree/remove_tree 手動實作 + `which` 透過 `command -v` | DEV | 6h | ✅ 完成 | 03/25 | 03/25 | Protocol 合規性測試通過 |
+| 3.15.4 | ssh_connection.py：SSH 連線管理 — 連線建立（key/password auth）、斷線、自動重連（失敗重試 3 次，指數退避 2/4/8s）、心跳（30 秒 keepalive）、連線狀態列舉 (connected/disconnected/connecting/error) | DEV | 4h | ✅ 完成 | 03/25 | 03/25 | on_state_change callback 支援 |
+| 3.15.5 | transfer_service.py：跨本機/遠端檔案傳輸服務 — `upload_tree(local_src, remote_dst)` + `download_tree` 用於技能部署（本機 module_pack/ → 遠端 skills/）、進度回呼支援 | DEV | 2h | ✅ 完成 | 03/25 | 03/25 | 雙向傳輸 + ProgressCallback |
 
 #### 3.16 SSH 前端整合 — 已拆散合併
 
@@ -437,7 +437,7 @@
 
 ### 整體進度
 
-階段 1 (Inception & Planning) 已完成。階段 2 (Design & Architecture) 進行中，架構設計與 ADR 已完成（含 ADR-003 廢棄 Shell 腳本、ADR-004 SSH 遠端管理 Transport Layer），前端規格書已完成，正進行 UI Mockup 設計。階段 3 (Construction) 的 3.1 專案環境初始化已完成。
+階段 1 (Inception & Planning) 已完成。階段 2 (Design & Architecture) 進行中，架構設計與 ADR 已完成（含 ADR-003 廢棄 Shell 腳本、ADR-004 SSH 遠端管理 Transport Layer），前端規格書已完成，正進行 UI Mockup 設計。階段 3 (Construction) 的 3.1 專案環境初始化已完成，**3.15 Transport Layer 已於 2026-03-25 提前完成**（executor.py, local_executor.py, remote_executor.py, ssh_connection.py, transfer_service.py，含 17 項單元測試全數通過）。
 
 **v3.0 排程重構重點**：修正依賴倒置問題 — Executor Protocol (3.15.1) + LocalExecutor (3.15.2) 提前至 Week 2 第一天作為所有後端模組的基礎；3.16 SSH 前端整合拆散合併至對應功能模組；所有後端模組從第一天就透過 Executor 介面開發，避免後期重構。
 
@@ -459,6 +459,14 @@
   - `201_wbs_plan.md` v3.0 排程重構：修正依賴倒置（Executor Protocol 提前至 Week 2）、3.16 合併拆散、任務優先級重排。
 - **進行中**:
   - UI Mockup 設計 (`pencil-new.pen`)。
+- **已完成 (03/25 — 3.15 Transport Layer 提前實作)**:
+  - `3.15.1` executor.py：Executor Protocol（9 個 async 方法）+ CommandResult dataclass。
+  - `3.15.2` local_executor.py：LocalExecutor 實作（asyncio.create_subprocess_exec, pathlib, shutil）。
+  - `3.15.3` remote_executor.py：RemoteExecutor 實作（paramiko SSH exec + SFTP 遞迴操作）。
+  - `3.15.4` ssh_connection.py：SSH 連線管理（key/password auth, 重連 3 次指數退避, keepalive 30s）。
+  - `3.15.5` transfer_service.py：跨機器檔案傳輸（upload_tree/download_tree + ProgressCallback）。
+  - `pyproject.toml` PEP 621 專案設定 + paramiko 依賴。
+  - 17 項單元測試全數通過（Protocol 合規性 + LocalExecutor 功能測試）。
 - **計劃中**:
   - Bridge API Spec 設計 (2.4)。
   - QA 測試案例撰寫 (2.5)。
