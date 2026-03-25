@@ -170,7 +170,7 @@
 | 3.2 前端 UI 元件   | 11h      | 2026-03-25 | 2026-03-25 | ✅ 完成   | 提前完成，含 3.16.2 合併 |
 | 3.3 後端基礎模組   | 7h       | 2026-03-25 | 2026-03-25 | ✅ 完成   | 提前完成，含 SSH API |
 | 3.4 環境檢查       | 8h       | 2026-03-25 | 2026-03-25 | ✅ 完成   | 後端+前端+16 項測試 |
-| 3.5 設定管理模組   | 9h       | 2026-04-05 | 2026-04-08 | ⬜ 未開始 | |
+| 3.5 設定管理模組   | 9h       | 2026-04-05 | 2026-03-25 | ✅ 完成   | 提前完成，25 項測試 |
 | 3.6 Config Step 1  | 9.5h     | 2026-04-12 | 2026-04-15 | ⬜ 未開始 | +1.5h (合併 3.16.1) |
 | 3.16.3 SSH Bridge  | 1.5h     | 2026-04-15 | 2026-04-16 | ⬜ 未開始 | 隨 3.6 整合 |
 | 3.7 Config Step 2  | 10h      | 2026-04-16 | 2026-04-18 | ⬜ 未開始 | |
@@ -261,13 +261,13 @@
 
 | ID    | 任務                                                                                                        | 負責人 | 工時 | 狀態      | 開始日 | 完成日 | 備註                                       |
 | :---- | :---------------------------------------------------------------------------------------------------------- | :----- | :--- | :-------- | :----- | :----- | :----------------------------------------- |
-| 3.5.1 | config_manager.py：gui-settings.json 讀寫（deployment_mode 持久化，路徑 `{app_data}/openclaw-gui/`，如 `%APPDATA%/openclaw-gui/` 或 `~/.config/openclaw-gui/`） | DEV    | 1h   | ⬜ 未開始 | 04/05  | 04/05  | 與 openclaw.json 分開                      |
-| 3.5.2 | config_manager.py：keyring 整合 — 金鑰安全儲存/讀取/刪除（Windows DPAPI + Linux libsecret）                  | DEV    | 2h   | ⬜ 未開始 | 04/05  | 04/06  | 禁止明文儲存                               |
-| 3.5.3 | config_manager.py：openclaw.json 讀寫 — deep merge 策略、寫入前備份 (.bak)、sections 操作 (meta/agents/channels/gateway/plugins/tools/commands) | DEV | 2h | ⬜ 未開始 | 04/06 | 04/07 | 多層巢狀 JSON，需確保不破壞既有設定 |
-| 3.5.4 | config_manager.py：.env 檔案管理 — 16+ 環境變數 upsert 邏輯（讀取、新增、更新、保留未列變數）               | DEV    | 1h   | ⬜ 未開始 | 04/07  | 04/07  | 202 §8 環境變數清單                        |
-| 3.5.5 | Bridge API：`save_config()`, `save_keys()`, `get_openclaw_config()`, `save_openclaw_config(section, data)`  | DEV    | 1h   | ⬜ 未開始 | 04/07  | 04/08  |                                            |
-| 3.5.6 | config_manager 單元測試（keyring mock、JSON deep merge、.env upsert 邊界情況）                              | DEV    | 1h   | ⬜ 未開始 | 04/08  | 04/08  |                                            |
-| 3.5.7 | config_manager.py：SSH 連線設定管理 — `gui-settings.json` 新增 `ssh_host`, `ssh_port`, `ssh_username`, `ssh_key_path` 欄位讀寫 + SSH 私鑰路徑驗證 | DEV | 1h | ⬜ 未開始 | 04/08 | 04/08 | ADR-004 |
+| 3.5.1 | config_manager.py：gui-settings.json 讀寫（deployment_mode 持久化，路徑 `{app_data}/openclaw-gui/`，如 `%APPDATA%/openclaw-gui/` 或 `~/.config/openclaw-gui/`） | DEV    | 1h   | ✅ 完成 | 04/05  | 03/25  | 與 3.5.7 合併實作                      |
+| 3.5.2 | config_manager.py：keyring 整合 — 金鑰安全儲存/讀取/刪除（Windows DPAPI + Linux libsecret）                  | DEV    | 2h   | ✅ 完成 | 04/05  | 03/25  | 禁止明文儲存                               |
+| 3.5.3 | config_manager.py：openclaw.json 讀寫 — deep merge 策略、寫入前備份 (.bak)、sections 操作 (meta/agents/channels/gateway/plugins/tools/commands) | DEV | 2h | ✅ 完成 | 04/06 | 03/25 | 多層巢狀 JSON，需確保不破壞既有設定 |
+| 3.5.4 | config_manager.py：.env 檔案管理 — 16+ 環境變數 upsert 邏輯（讀取、新增、更新、保留未列變數）               | DEV    | 1h   | ✅ 完成 | 04/07  | 03/25  | 202 §8 環境變數清單                        |
+| 3.5.5 | Bridge API：`save_config()`, `save_keys()`, `get_openclaw_config()`, `save_openclaw_config(section, data)`  | DEV    | 1h   | ✅ 完成 | 04/07  | 03/25  | + detect_platform TODO 修復                |
+| 3.5.6 | config_manager 單元測試（keyring mock、JSON deep merge、.env upsert 邊界情況）                              | DEV    | 1h   | ✅ 完成 | 04/08  | 03/25  | 25 項測試全通過                            |
+| 3.5.7 | config_manager.py：SSH 連線設定管理 — `gui-settings.json` 新增 `ssh_host`, `ssh_port`, `ssh_username`, `ssh_key_path` 欄位讀寫 + SSH 私鑰路徑驗證 | DEV | 1h | ✅ 完成 | 04/08 | 03/25 | 與 3.5.1 合併實作 |
 
 #### 3.6 Configuration Step 1 — 環境與目錄設定 (9.5h, 含合併 3.16.1)
 

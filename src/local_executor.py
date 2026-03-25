@@ -24,11 +24,18 @@ class LocalExecutor:
         timeout: int = 300,
         on_output: Callable[[str], None] | None = None,
     ) -> CommandResult:
-        proc = await asyncio.create_subprocess_exec(
-            *args,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
+        # Windows: create_subprocess_exec 不搜尋 .cmd/.bat，需先解析完整路徑
+        resolved = await asyncio.to_thread(shutil.which, args[0])
+        cmd = [resolved or args[0]] + args[1:]
+
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+        except FileNotFoundError:
+            return CommandResult(exit_code=-1, stdout="", stderr=f"Command not found: {args[0]}")
 
         stdout_lines: list[str] = []
         stderr_lines: list[str] = []

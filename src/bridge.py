@@ -17,6 +17,7 @@ from typing import Any
 import paramiko
 import webview
 
+from src.config_manager import ConfigManager
 from src.executor import Executor
 from src.local_executor import LocalExecutor
 from src.process_manager import ProcessManager
@@ -84,6 +85,7 @@ class Bridge:
         self._local_executor = LocalExecutor()
         self._executor: Executor = self._local_executor
         self._process_manager = ProcessManager(self._executor)
+        self._config_manager = ConfigManager()
         self._window: webview.Window | None = None
         self._ssh_connection: SSHConnection | None = None
         self._remote_executor: RemoteExecutor | None = None
@@ -194,8 +196,64 @@ class Bridge:
                 "os": info.os_name,
                 "env_type": "docker" if info.is_docker else "native",
                 "suggested_mode": info.deployment_mode,
-                "current_mode": None,  # TODO: 3.5 read from config_manager
+                "current_mode": self._config_manager.get_deployment_mode(),
             })
+
+        return self._safe_call(_do)
+
+    # ── 設定管理 API (3.5, US-002) ────────────────────────
+
+    def save_config(self, config: dict) -> dict:
+        """持久化 GUI 設定至 gui-settings.json。
+
+        Args:
+            config: {deployment_mode, ssh_host?, ssh_port?, ssh_username?, ssh_key_path?}
+        """
+        def _do() -> dict:
+            self._config_manager.write_gui_settings(config)
+            return _ok({"message": "Configuration saved"})
+
+        return self._safe_call(_do)
+
+    def save_keys(self, keys: dict) -> dict:
+        """儲存 API 金鑰至系統 keyring（分類式）。
+
+        Args:
+            keys: {providers: {key: val}, channels: {key: val}, tools: {key: val}}
+        """
+        def _do() -> dict:
+            flat: dict[str, str] = {}
+            for category in ("providers", "channels", "tools"):
+                flat.update(keys.get(category, {}))
+            count = self._config_manager.set_secrets_batch(flat)
+            return _ok({"saved_count": count})
+
+        return self._safe_call(_do)
+
+    def get_openclaw_config(self, config_dir: str, section: str | None = None) -> dict:
+        """讀取 openclaw.json 設定檔。
+
+        Args:
+            config_dir: OpenClaw 設定目錄路徑（如 ~/.openclaw）
+            section: 指定 section 名稱，None 回傳全部
+        """
+        def _do() -> dict:
+            data = self._config_manager.read_openclaw_config(config_dir, section)
+            return _ok(data)
+
+        return self._safe_call(_do)
+
+    def save_openclaw_config(self, config_dir: str, section: str, data: dict) -> dict:
+        """更新 openclaw.json 指定 section（deep merge 策略）。
+
+        Args:
+            config_dir: OpenClaw 設定目錄路徑
+            section: section 名稱（meta/agents/channels/gateway/plugins/tools/commands）
+            data: 要合併的資料
+        """
+        def _do() -> dict:
+            self._config_manager.write_openclaw_config(config_dir, data, section)
+            return _ok({"message": f"Section '{section}' updated"})
 
         return self._safe_call(_do)
 
