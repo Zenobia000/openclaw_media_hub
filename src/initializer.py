@@ -217,35 +217,6 @@ class Initializer:
             return _step_result(True, "Permission fix completed (with warnings)")
         return _step_result(True, "Directory permissions fixed")
 
-    async def _step_onboarding_docker(self, params: InitParams) -> dict:
-        """Step 8 (Docker): 執行 Onboarding。
-
-        使用 openclaw-gateway service 而非 openclaw-cli，因為 cli 的
-        network_mode: service:openclaw-gateway 要求 gateway 容器必須存在。
-        Onboarding 不需要網路，直接在 gateway image 上跑即可。
-        """
-        result = await self._executor.run_command(
-            [
-                "docker", "compose", "run", "--rm", "--no-deps",
-                "openclaw-gateway", "openclaw", "onboard",
-                "--mode", "local", "--no-install-daemon",
-            ],
-            timeout=120,
-        )
-        if not result.success:
-            return _step_result(False, f"Onboarding failed: {result.stderr[:200]}")
-        return _step_result(True, "Onboarding completed")
-
-    async def _step_onboarding_native(self, params: InitParams) -> dict:
-        """Step 8 (Native): 執行 Onboarding。"""
-        result = await self._executor.run_command(
-            ["openclaw", "onboard", "--mode", "local", "--no-install-daemon"],
-            timeout=120,
-        )
-        if not result.success:
-            return _step_result(False, f"Onboarding failed: {result.stderr[:200]}")
-        return _step_result(True, "Onboarding completed")
-
     async def _step_sync_gateway(self, params: InitParams) -> dict:
         """Step 9: 同步 Gateway 設定至 openclaw.json。"""
         gateway_data = {
@@ -309,7 +280,6 @@ class Initializer:
                 (self._step_gateway_token, "Generate gateway token"),
                 (self._step_write_env, "Write environment file"),
                 # Steps 6, 7 skipped for native
-                (self._step_onboarding_native, "Run onboarding"),
                 (self._step_sync_gateway, "Configure gateway"),
                 (self._step_start_gateway_native, "Start gateway"),
                 (self._step_health_check, "Verify health"),
@@ -323,7 +293,6 @@ class Initializer:
             (self._step_write_env, "Write environment file"),
             (self._step_docker_image, "Build/Pull Docker image"),
             (self._step_fix_permissions, "Fix directory permissions"),
-            (self._step_onboarding_docker, "Run onboarding"),
             (self._step_sync_gateway, "Configure gateway"),
             (self._step_start_gateway_docker, "Start gateway"),
             (self._step_health_check, "Verify health"),
