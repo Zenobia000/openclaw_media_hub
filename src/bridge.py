@@ -449,6 +449,153 @@ class Bridge:
 
         return self._safe_call(_do)
 
+    # ── Gateway 控制 API (ADR-006) ────────────────────────
+
+    def list_devices(self) -> dict:
+        """列出所有裝置（pending + paired）。
+
+        Returns:
+            {pending: [{requestId, deviceId, displayName, ...}],
+             paired: [{deviceId, displayName, ...}]}
+        """
+        import json as _json
+
+        def _do() -> dict:
+            args = self._build_openclaw_cmd(["devices", "list", "--json"])
+            result = self._run_async(
+                self._executor.run_command(args, timeout=30)
+            )
+            if not result.success:
+                return _err(ErrorType.INTERNAL, f"Failed to list devices: {result.stderr[:200]}")
+
+            try:
+                parsed = _json.loads(result.stdout)
+            except _json.JSONDecodeError:
+                return _err(ErrorType.INTERNAL, "Failed to parse device list output")
+
+            return _ok({
+                "pending": parsed.get("pending", []),
+                "paired": parsed.get("paired", []),
+            })
+
+        return self._safe_call(_do)
+
+    def reject_device(self, params: dict) -> dict:
+        """拒絕 pending 裝置配對請求。
+
+        Args:
+            params: {request_id: str}
+        """
+        def _do() -> dict:
+            request_id = (params.get("request_id") or "").strip()
+            if not request_id:
+                return _err(ErrorType.INTERNAL, "Device request ID is required")
+
+            args = self._build_openclaw_cmd(["devices", "reject", request_id])
+            result = self._run_async(
+                self._executor.run_command(args, timeout=30)
+            )
+            if not result.success:
+                return _err(ErrorType.INTERNAL, f"Failed to reject device: {result.stderr[:200]}")
+
+            return _ok({"message": "Device rejected"})
+
+        return self._safe_call(_do)
+
+    def remove_device(self, params: dict) -> dict:
+        """移除已配對裝置。
+
+        Args:
+            params: {device_id: str}
+        """
+        def _do() -> dict:
+            device_id = (params.get("device_id") or "").strip()
+            if not device_id:
+                return _err(ErrorType.INTERNAL, "Device ID is required")
+
+            args = self._build_openclaw_cmd(["devices", "remove", device_id])
+            result = self._run_async(
+                self._executor.run_command(args, timeout=30)
+            )
+            if not result.success:
+                return _err(ErrorType.INTERNAL, f"Failed to remove device: {result.stderr[:200]}")
+
+            return _ok({"message": "Device removed"})
+
+        return self._safe_call(_do)
+
+    def get_allowed_origins(self) -> dict:
+        """讀取 Gateway controlUi.allowedOrigins。
+
+        Returns:
+            {origins: string[] | null, allow_all: bool}
+        """
+        def _do() -> dict:
+            settings = self._config_manager.read_gui_settings()
+            config_dir = settings.get("config_dir", "~/.openclaw")
+            gateway = self._config_manager.read_openclaw_config(config_dir, "gateway")
+            origins = gateway.get("controlUi", {}).get("allowedOrigins")
+            allow_all = origins is not None and "*" in origins
+            return _ok({"origins": origins, "allow_all": allow_all})
+
+        return self._safe_call(_do)
+
+    def save_allowed_origins(self, params: dict) -> dict:
+        """寫入 Gateway controlUi.allowedOrigins。
+
+        Args:
+            params: {allow_all: bool, origins: string[]}
+        """
+        def _do() -> dict:
+            allow_all = params.get("allow_all", False)
+            origins = ["*"] if allow_all else params.get("origins", [])
+
+            settings = self._config_manager.read_gui_settings()
+            config_dir = settings.get("config_dir", "~/.openclaw")
+            self._config_manager.write_openclaw_config(
+                config_dir,
+                {"controlUi": {"allowedOrigins": origins}},
+                "gateway",
+            )
+            return _ok({"message": "Allowed origins saved"})
+
+        return self._safe_call(_do)
+
+    def save_device_note(self, params: dict) -> dict:
+        """儲存裝置備註至 gui-settings.json。
+
+        Args:
+            params: {device_id: str, note: str}
+        """
+        def _do() -> dict:
+            device_id = (params.get("device_id") or "").strip()
+            note = params.get("note", "").strip()
+            if not device_id:
+                return _err(ErrorType.INTERNAL, "Device ID is required")
+
+            settings = self._config_manager.read_gui_settings()
+            notes = settings.get("device_notes", {})
+            if note:
+                notes[device_id] = note
+            else:
+                notes.pop(device_id, None)
+            self._config_manager.write_gui_settings({"device_notes": notes})
+            return _ok({"message": "Note saved"})
+
+        return self._safe_call(_do)
+
+    def get_device_notes(self) -> dict:
+        """讀取所有裝置備註。
+
+        Returns:
+            {notes: {deviceId: "note"}}
+        """
+        def _do() -> dict:
+            settings = self._config_manager.read_gui_settings()
+            return _ok({"notes": settings.get("device_notes", {})})
+
+        return self._safe_call(_do)
+
     # ── 檔案選擇 API ────────────────────────────────────
 
     def browse_file(
@@ -652,6 +799,78 @@ class Bridge:
         def _do() -> dict:
             ctrl = self._build_service_controller()
             result = self._run_async(ctrl.restart())
+            return _ok(result)
+
+        return self._safe_call(_do)
+
+    # ── 技能部署 API (3.10, US-005) ────────────────────────
+
+    def _build_skill_manager(self):
+        """建構 SkillManager（根據當前 executor 模式）。"""
+        from src.skill_manager import SkillManager
+        from src.transfer_service import TransferService
+
+        settings = self._config_manager.read_gui_settings()
+        config_dir = settings.get("config_dir", "~/.openclaw")
+        is_remote = self._remote_executor is not None
+
+        transfer = (
+            TransferService(self._local_executor, self._executor)
+            if is_remote
+            else None
+        )
+
+        return SkillManager(
+            self._executor,
+            module_pack_dir="./module_pack",
+            community_skills_dir="./openclaw/skills",
+            config_dir=config_dir,
+            local_executor=self._local_executor if is_remote else None,
+            transfer_service=transfer,
+            on_progress=self._notify_deploy_progress,
+        )
+
+    def list_skills(self) -> dict:
+        """列出所有可用技能（含部署狀態）。
+
+        Returns:
+            [{name, emoji, description, installed, source}]
+        """
+        def _do() -> dict:
+            mgr = self._build_skill_manager()
+            skills = self._run_async(mgr.list_skills())
+            return _ok(skills)
+
+        return self._safe_call(_do)
+
+    def deploy_skills(self, names: list) -> dict:
+        """部署指定技能至工作空間。
+
+        Args:
+            names: 技能名稱清單
+
+        Returns:
+            {deployed: [str], failed: [{name, error}]}
+        """
+        def _do() -> dict:
+            mgr = self._build_skill_manager()
+            result = self._run_async(mgr.deploy_skills(names))
+            return _ok(result)
+
+        return self._safe_call(_do)
+
+    def remove_skills(self, names: list) -> dict:
+        """從工作空間移除指定技能。
+
+        Args:
+            names: 技能名稱清單
+
+        Returns:
+            {removed: [str], failed: [{name, error}]}
+        """
+        def _do() -> dict:
+            mgr = self._build_skill_manager()
+            result = self._run_async(mgr.remove_skills(names))
             return _ok(result)
 
         return self._safe_call(_do)

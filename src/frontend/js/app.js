@@ -45,6 +45,7 @@ const VIEW_IDS = [
   "dashboard",
   "configuration",
   "environment",
+  "gateway",
   "deploy-skills",
   "install-plugins",
   "fix-plugins",
@@ -2239,6 +2240,739 @@ registerPage("configuration", {
   onLeave: () => {
     if (configStep === 1) saveConfigFormState();
     else if (configStep === 2) saveStep2FormState();
+  },
+});
+
+/* ============================================================
+ * 5.2b Gateway Page (ADR-006)
+ * ============================================================ */
+
+/** Gateway page state */
+let gatewayOrigins = [];
+let gatewayAllowAll = false;
+let gatewayDevices = { pending: [], paired: [] };
+let gatewayDeviceNotes = {};
+let gatewayLoading = false;
+
+/**
+ * Load all gateway data (origins + devices + notes) and render.
+ */
+async function loadGatewayData() {
+  gatewayLoading = true;
+  renderGatewayPage();
+
+  try {
+    const [originsResp, devicesResp, notesResp] = await Promise.all([
+      window.pywebview.api.get_allowed_origins(),
+      window.pywebview.api.list_devices(),
+      window.pywebview.api.get_device_notes(),
+    ]);
+
+    if (originsResp?.success) {
+      gatewayAllowAll = originsResp.data.allow_all;
+      gatewayOrigins = (originsResp.data.origins || []).filter(o => o !== "*");
+    }
+    if (devicesResp?.success) {
+      gatewayDevices = {
+        pending: devicesResp.data.pending || [],
+        paired: devicesResp.data.paired || [],
+      };
+    }
+    if (notesResp?.success) {
+      gatewayDeviceNotes = notesResp.data.notes || {};
+    }
+  } catch {
+    // Will render with defaults
+  }
+
+  gatewayLoading = false;
+  renderGatewayPage();
+}
+
+/**
+ * Render the full Gateway page.
+ */
+function renderGatewayPage() {
+  if (gatewayLoading) {
+    renderInto("gateway-content", `
+      <div class="flex items-center gap-3 text-text-muted py-8">
+        <i data-lucide="loader" class="w-5 h-5 animate-spin"></i>
+        <span class="text-sm">Loading gateway data...</span>
+      </div>
+    `);
+    return;
+  }
+
+  const originSection = renderOriginControlSection();
+  const deviceSection = renderDeviceManagementSection();
+
+  renderInto("gateway-content", `
+    <div class="flex gap-6">
+      <div class="flex-1 min-w-0">${originSection}</div>
+      <div class="flex-1 min-w-0">${deviceSection}</div>
+    </div>
+  `);
+}
+
+/**
+ * Render Origin Access Control section.
+ */
+function renderOriginControlSection() {
+  const toggleChecked = gatewayAllowAll ? "checked" : "";
+  const toggleRow = `
+    <div class="flex items-center justify-between py-3">
+      <div>
+        <div class="text-sm font-medium">Allow All Origins</div>
+        <div class="text-xs text-text-muted mt-0.5">Set allowedOrigins to ["*"] — allows any origin</div>
+      </div>
+      <label class="relative inline-flex items-center cursor-pointer">
+        <input type="checkbox" class="sr-only peer" ${toggleChecked} onchange="toggleAllowAllOrigins(this.checked)">
+        <div class="w-9 h-5 bg-bg-input border border-border-default rounded-full peer peer-checked:bg-accent-primary peer-checked:border-accent-primary transition-colors after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:after:translate-x-4"></div>
+      </label>
+    </div>`;
+
+  let whitelistHtml = "";
+  if (!gatewayAllowAll) {
+    const originRows = gatewayOrigins.map((origin, i) => `
+      <div class="flex items-center gap-2 py-2 border-b border-border-default last:border-b-0">
+        <i data-lucide="globe" class="w-4 h-4 text-text-muted flex-shrink-0"></i>
+        <span class="text-sm flex-1 min-w-0 truncate">${escapeHtml(origin)}</span>
+        <button class="text-text-muted hover:text-status-error transition-colors cursor-pointer bg-transparent border-0 p-1" onclick="removeOrigin(${i})">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+    `).join("");
+
+    const emptyMsg = gatewayOrigins.length === 0
+      ? '<p class="text-xs text-text-muted py-3">No origins configured. Add one below.</p>'
+      : "";
+
+    whitelistHtml = `
+      <div class="mt-3 border-t border-border-default pt-3">
+        <div class="text-xs font-medium text-text-secondary mb-2">Whitelist</div>
+        ${emptyMsg}
+        ${originRows}
+        <div class="flex gap-2 mt-3">
+          <input id="gateway-new-origin" type="text" placeholder="https://example.com"
+            class="flex-1 bg-bg-input border border-border-default rounded-sm text-sm text-text-primary placeholder:text-text-muted px-3 py-2 outline-none focus:border-accent-primary transition-colors">
+          ${renderButton({ variant: "secondary", icon: "plus", label: "Add", size: "sm", onclick: "addOrigin()" })}
+        </div>
+      </div>`;
+  }
+
+  const saveBtn = `<div class="mt-4">${renderButton({ variant: "primary", icon: "save", label: "Save Origins", onclick: "saveOrigins()" })}</div>`;
+
+  return renderSectionPanel({
+    icon: "globe",
+    iconColor: "text-status-info",
+    title: "Origin Access Control",
+    description: "Manage which origins can access the Gateway Control UI",
+    children: toggleRow + whitelistHtml + saveBtn,
+    id: "gateway-origin-panel",
+  });
+}
+
+/**
+ * Render Device Management section.
+ */
+function renderDeviceManagementSection() {
+  const pending = gatewayDevices.pending || [];
+  const paired = gatewayDevices.paired || [];
+
+  // Pending devices
+  let pendingHtml = "";
+  if (pending.length > 0) {
+    pendingHtml = `
+      <div class="mb-4">
+        <div class="text-xs font-medium text-text-secondary mb-2">Pending Requests (${pending.length})</div>
+        ${pending.map(d => renderPendingDeviceRow(d)).join("")}
+      </div>`;
+  }
+
+  // Paired devices
+  let pairedHtml = "";
+  if (paired.length > 0) {
+    pairedHtml = `
+      <div class="${pending.length > 0 ? "border-t border-border-default pt-4" : ""}">
+        <div class="text-xs font-medium text-text-secondary mb-2">Paired Devices (${paired.length})</div>
+        ${paired.map(d => renderPairedDeviceRow(d)).join("")}
+      </div>`;
+  }
+
+  const emptyMsg = pending.length === 0 && paired.length === 0
+    ? '<p class="text-xs text-text-muted py-3">No devices found.</p>'
+    : "";
+
+  const refreshBtn = `<div class="mt-4">${renderButton({ variant: "secondary", icon: "refresh-cw", label: "Refresh", onclick: "refreshDeviceList()" })}</div>`;
+
+  return renderSectionPanel({
+    icon: "smartphone",
+    iconColor: "text-accent-primary",
+    title: "Device Management",
+    description: "Approve, reject, or remove paired devices",
+    children: pendingHtml + pairedHtml + emptyMsg + refreshBtn,
+    id: "gateway-device-panel",
+  });
+}
+
+/**
+ * Render a pending device row.
+ */
+function renderPendingDeviceRow(device) {
+  const name = device.displayName || device.deviceId || "Unknown";
+  const ip = device.remoteIp || "";
+  const roles = (device.roles || []).join(", ");
+  return `
+    <div class="flex items-center gap-3 py-3 border-b border-border-default last:border-b-0">
+      <div class="w-8 h-8 rounded-full bg-[#eab30818] flex items-center justify-center flex-shrink-0">
+        <i data-lucide="clock" class="w-4 h-4 text-[#eab308]"></i>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="text-sm font-medium truncate">${escapeHtml(name)}</div>
+        <div class="text-xs text-text-muted mt-0.5">${escapeHtml(ip)}${roles ? " &middot; " + escapeHtml(roles) : ""}</div>
+      </div>
+      <div class="flex gap-1.5 flex-shrink-0">
+        ${renderButton({ variant: "primary", icon: "check", label: "Approve", size: "sm", onclick: `approveDeviceFromGateway('${escapeAttr(device.requestId)}')` })}
+        ${renderButton({ variant: "danger", icon: "x", label: "Reject", size: "sm", onclick: `rejectDevice('${escapeAttr(device.requestId)}')` })}
+      </div>
+    </div>`;
+}
+
+/**
+ * Render a paired device row.
+ */
+function renderPairedDeviceRow(device) {
+  const name = device.displayName || device.deviceId || "Unknown";
+  const ip = device.remoteIp || "";
+  const deviceId = device.deviceId || "";
+  const note = gatewayDeviceNotes[deviceId] || "";
+  return `
+    <div class="flex items-center gap-3 py-3 border-b border-border-default last:border-b-0">
+      <div class="w-8 h-8 rounded-full bg-[#22c55e18] flex items-center justify-center flex-shrink-0">
+        <i data-lucide="smartphone" class="w-4 h-4 text-status-success"></i>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="text-sm font-medium truncate">${escapeHtml(name)}</div>
+        <div class="text-xs text-text-muted mt-0.5">${escapeHtml(ip)}</div>
+      </div>
+      <input type="text" value="${escapeAttr(note)}" placeholder="Note..."
+        class="w-[140px] bg-bg-input border border-border-default rounded-sm text-xs text-text-primary placeholder:text-text-muted px-2 py-1.5 outline-none focus:border-accent-primary transition-colors"
+        onblur="saveDeviceNote('${escapeAttr(deviceId)}', this.value)">
+      <button class="text-text-muted hover:text-status-error transition-colors cursor-pointer bg-transparent border-0 p-1 flex-shrink-0" onclick="removeDevice('${escapeAttr(deviceId)}')">
+        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+      </button>
+    </div>`;
+}
+
+/* ---------- Gateway Interaction Functions ---------- */
+
+function toggleAllowAllOrigins(checked) {
+  gatewayAllowAll = checked;
+  renderGatewayPage();
+}
+
+function addOrigin() {
+  const input = document.getElementById("gateway-new-origin");
+  if (!input) return;
+  const val = input.value.trim();
+  if (!val) return;
+  if (gatewayOrigins.includes(val)) {
+    input.value = "";
+    return;
+  }
+  gatewayOrigins.push(val);
+  renderGatewayPage();
+}
+
+function removeOrigin(index) {
+  gatewayOrigins.splice(index, 1);
+  renderGatewayPage();
+}
+
+async function saveOrigins() {
+  try {
+    const resp = await window.pywebview.api.save_allowed_origins({
+      allow_all: gatewayAllowAll,
+      origins: gatewayOrigins,
+    });
+    if (!resp?.success) {
+      alert(resp?.error?.message || "Failed to save origins");
+    }
+  } catch {
+    alert("Connection error while saving origins");
+  }
+}
+
+async function approveDeviceFromGateway(requestId) {
+  try {
+    const resp = await window.pywebview.api.approve_device({ request_id: requestId });
+    if (resp?.success) {
+      await refreshDeviceList();
+    } else {
+      alert(resp?.error?.message || "Failed to approve device");
+    }
+  } catch {
+    alert("Connection error during approval");
+  }
+}
+
+async function rejectDevice(requestId) {
+  try {
+    const resp = await window.pywebview.api.reject_device({ request_id: requestId });
+    if (resp?.success) {
+      await refreshDeviceList();
+    } else {
+      alert(resp?.error?.message || "Failed to reject device");
+    }
+  } catch {
+    alert("Connection error during rejection");
+  }
+}
+
+async function removeDevice(deviceId) {
+  try {
+    const resp = await window.pywebview.api.remove_device({ device_id: deviceId });
+    if (resp?.success) {
+      await refreshDeviceList();
+    } else {
+      alert(resp?.error?.message || "Failed to remove device");
+    }
+  } catch {
+    alert("Connection error during removal");
+  }
+}
+
+async function saveDeviceNote(deviceId, note) {
+  try {
+    await window.pywebview.api.save_device_note({ device_id: deviceId, note: note });
+    gatewayDeviceNotes[deviceId] = note;
+  } catch {
+    // Silent — best-effort save
+  }
+}
+
+async function refreshDeviceList() {
+  try {
+    const [devicesResp, notesResp] = await Promise.all([
+      window.pywebview.api.list_devices(),
+      window.pywebview.api.get_device_notes(),
+    ]);
+    if (devicesResp?.success) {
+      gatewayDevices = {
+        pending: devicesResp.data.pending || [],
+        paired: devicesResp.data.paired || [],
+      };
+    }
+    if (notesResp?.success) {
+      gatewayDeviceNotes = notesResp.data.notes || {};
+    }
+  } catch {
+    // Keep existing data
+  }
+  renderGatewayPage();
+}
+
+/* ---------- Gateway Page Lifecycle ---------- */
+
+registerPage("gateway", {
+  onEnter: () => loadGatewayData(),
+  onLeave: () => {},
+});
+
+/* ============================================================
+ * 5.3 Deploy Skills Page (WBS 3.10, US-005)
+ * ============================================================ */
+
+/** @type {Array<{name:string, emoji:string, description:string, installed:boolean, source:string}>} */
+let skillsData = [];
+/** @type {Set<string>} Currently selected skill names */
+let skillsSelected = new Set();
+/** @type {"custom"|"community"} Active tab */
+let skillsTab = "custom";
+/** Whether deploy/remove is in progress */
+let skillsDeploying = false;
+/** @type {Object<string, {status:string, message:string}>} Progress state per skill */
+let skillsProgressMap = {};
+/** Whether page has been rendered at least once */
+let skillsRendered = false;
+
+/**
+ * Global callback for deploy/remove progress updates from Bridge.
+ */
+window.updateDeployProgress = function (name, status, message) {
+  skillsProgressMap[name] = { status, message };
+  renderSkillsProgressOverlay();
+};
+
+/* ---------- Render: Main Page ---------- */
+
+function renderSkillsPage() {
+  const skills = skillsData;
+  const deployedCount = skills.filter((s) => s.installed).length;
+
+  // Header badge
+  renderInto(
+    "deploy-skills-badge",
+    deployedCount > 0
+      ? renderStatusBadge({ status: "success", text: `${deployedCount} deployed` })
+      : renderStatusBadge({ status: "info", text: "0 deployed" })
+  );
+
+  // Summary banner
+  const bannerHtml = deployedCount > 0
+    ? `<div class="flex items-start gap-3 p-4 rounded-md border" style="background:#4CAF5015;border-color:#4CAF5040">
+        <i data-lucide="check-circle" class="w-5 h-5 text-status-success flex-shrink-0 mt-0.5"></i>
+        <div>
+          <div class="text-sm font-semibold text-status-success">${deployedCount} of ${skills.length} skills deployed</div>
+          <div class="text-xs text-text-secondary mt-0.5">Select skills below to deploy or remove</div>
+        </div>
+      </div>`
+    : `<div class="flex items-start gap-3 p-4 rounded-md border" style="background:#3b82f610;border-color:#3b82f630">
+        <i data-lucide="info" class="w-5 h-5 text-status-info flex-shrink-0 mt-0.5"></i>
+        <div>
+          <div class="text-sm font-semibold text-status-info">No skills deployed yet</div>
+          <div class="text-xs text-text-secondary mt-0.5">Select skills below and click Deploy to get started</div>
+        </div>
+      </div>`;
+
+  // Skills checklist
+  const checklistHtml = renderSectionPanel({
+    icon: "zap",
+    iconColor: "text-accent-primary",
+    title: "Available Skills",
+    description: "Scanned from module_pack/ (custom modules) and openclaw/skills/ (community skills)",
+    id: "skills-checklist-panel",
+    children: renderSkillsTabs() + renderSkillsList(),
+  });
+
+  renderInto("deploy-skills-content", bannerHtml + checklistHtml);
+  renderSkillsActionBar();
+}
+
+/* ---------- Render: Tabs ---------- */
+
+function renderSkillsTabs() {
+  const customCount = skillsData.filter((s) => s.source === "module_pack").length;
+  const communityCount = skillsData.filter((s) => s.source === "community").length;
+
+  const tabCls = (active) =>
+    active
+      ? "px-4 py-2 text-sm font-semibold text-accent-primary border-b-2 border-accent-primary cursor-pointer"
+      : "px-4 py-2 text-sm font-medium text-text-muted hover:text-text-primary cursor-pointer";
+
+  return `<div class="flex border-b border-border-default mb-3">
+    <div class="${tabCls(skillsTab === "custom")}" onclick="switchSkillsTab('custom')">Custom Modules (${customCount})</div>
+    <div class="${tabCls(skillsTab === "community")}" onclick="switchSkillsTab('community')">Community Skills (${communityCount})</div>
+  </div>`;
+}
+
+/* ---------- Render: Skills List ---------- */
+
+function renderSkillsList() {
+  const sourceFilter = skillsTab === "custom" ? "module_pack" : "community";
+  const filtered = skillsData.filter((s) => s.source === sourceFilter);
+
+  if (filtered.length === 0) {
+    return `<div class="py-8 text-center text-sm text-text-muted">No skills found in this category.</div>`;
+  }
+
+  // Select All
+  const allNames = filtered.map((s) => s.name);
+  const allSelected = allNames.length > 0 && allNames.every((n) => skillsSelected.has(n));
+  const selectAllChecked = allSelected ? "checked" : "";
+
+  const selectAllHtml = `<div class="flex items-center gap-3 px-4 py-2.5 border-b border-border-default">
+    <input type="checkbox" ${selectAllChecked}
+      class="w-4 h-4 rounded accent-accent-primary cursor-pointer"
+      onchange="toggleAllSkills()" id="skills-select-all" />
+    <label for="skills-select-all" class="text-sm font-medium text-text-secondary cursor-pointer select-none">Select All</label>
+  </div>`;
+
+  const rowsHtml = filtered.map((s) => renderSkillRow(s)).join("");
+
+  return selectAllHtml + `<div class="max-h-[420px] overflow-y-auto">${rowsHtml}</div>`;
+}
+
+/* ---------- Render: Single Skill Row ---------- */
+
+function renderSkillRow(skill) {
+  const checked = skillsSelected.has(skill.name) ? "checked" : "";
+  const badge = skill.installed
+    ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-xs font-medium bg-[#4CAF5015] text-status-success border border-[#4CAF5040]">Deployed</span>`
+    : `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-xs font-medium bg-bg-input text-text-muted border border-border-default">Available</span>`;
+
+  // Truncate description to ~80 chars
+  const desc = skill.description.length > 80
+    ? skill.description.slice(0, 80) + "..."
+    : skill.description;
+
+  return `<div class="flex items-center gap-3 px-4 py-3.5 border-b border-border-default last:border-b-0 hover:bg-bg-input transition-colors cursor-pointer"
+    onclick="toggleSkill('${escapeAttr(skill.name)}')">
+    <input type="checkbox" ${checked}
+      class="w-4 h-4 rounded accent-accent-primary cursor-pointer flex-shrink-0"
+      onclick="event.stopPropagation(); toggleSkill('${escapeAttr(skill.name)}')" />
+    <span class="text-base flex-shrink-0">${skill.emoji}</span>
+    <div class="flex-1 min-w-0">
+      <div class="text-sm font-semibold text-text-primary">${escapeHtml(skill.name)}</div>
+      <div class="text-xs text-text-secondary mt-0.5 truncate">${escapeHtml(desc)}</div>
+    </div>
+    ${badge}
+  </div>`;
+}
+
+/* ---------- Render: Action Bar ---------- */
+
+function renderSkillsActionBar() {
+  const bar = document.getElementById("deploy-skills-action-bar");
+  if (!bar) return;
+
+  const selectedCount = skillsSelected.size;
+  const hasUndeployedSelected = skillsData.some((s) => skillsSelected.has(s.name) && !s.installed);
+  const hasDeployedSelected = skillsData.some((s) => skillsSelected.has(s.name) && s.installed);
+
+  if (selectedCount === 0 && !skillsDeploying) {
+    bar.classList.add("hidden");
+    return;
+  }
+
+  bar.classList.remove("hidden");
+
+  bar.innerHTML = `<div class="flex items-center justify-between">
+    <span class="text-sm text-text-secondary">${selectedCount} skill${selectedCount !== 1 ? "s" : ""} selected</span>
+    <div class="flex items-center gap-3">
+      ${renderButton({
+        variant: "danger",
+        icon: "trash-2",
+        label: "Remove Selected",
+        disabled: !hasDeployedSelected || skillsDeploying,
+        onclick: "handleRemoveSkills()",
+        size: "sm",
+      })}
+      ${renderButton({
+        variant: "primary",
+        icon: "upload",
+        label: "Deploy Selected",
+        disabled: !hasUndeployedSelected || skillsDeploying,
+        onclick: "handleDeploySkills()",
+        size: "sm",
+      })}
+    </div>
+  </div>`;
+
+  lucide.createIcons({ nameAttr: "data-lucide" });
+}
+
+/* ---------- Render: Progress Overlay ---------- */
+
+function renderSkillsProgressOverlay() {
+  const panel = document.getElementById("skills-checklist-panel");
+  if (!panel) return;
+
+  const childrenContainer = panel.querySelector(":scope > div:last-child");
+  if (!childrenContainer) return;
+
+  const names = Object.keys(skillsProgressMap);
+  const allDone = names.length > 0 && names.every((n) => {
+    const s = skillsProgressMap[n].status;
+    return s === "done" || s === "failed";
+  });
+
+  let itemsHtml = names.map((name) => {
+    const p = skillsProgressMap[name];
+    const skill = skillsData.find((s) => s.name === name);
+    return renderProgressItem({
+      name: name,
+      description: p.message,
+      status: p.status,
+      icon: skill ? skill.emoji : "📦",
+    });
+  }).join("");
+
+  if (allDone) {
+    itemsHtml += `<div class="mt-4 flex justify-end">
+      ${renderButton({ variant: "secondary", icon: "refresh-cw", label: "Done", onclick: "reloadSkillsPage()" })}
+    </div>`;
+  }
+
+  childrenContainer.innerHTML = itemsHtml;
+  lucide.createIcons({ nameAttr: "data-lucide" });
+}
+
+/* ---------- Event Handlers ---------- */
+
+function toggleSkill(name) {
+  if (skillsDeploying) return;
+  if (skillsSelected.has(name)) {
+    skillsSelected.delete(name);
+  } else {
+    skillsSelected.add(name);
+  }
+  // Re-render list + action bar without full page reload
+  const panel = document.getElementById("skills-checklist-panel");
+  if (panel) {
+    const childrenContainer = panel.querySelector(":scope > div:last-child");
+    if (childrenContainer) {
+      childrenContainer.innerHTML = renderSkillsTabs() + renderSkillsList();
+      lucide.createIcons({ nameAttr: "data-lucide" });
+    }
+  }
+  renderSkillsActionBar();
+}
+
+function toggleAllSkills() {
+  if (skillsDeploying) return;
+  const sourceFilter = skillsTab === "custom" ? "module_pack" : "community";
+  const filtered = skillsData.filter((s) => s.source === sourceFilter);
+  const allNames = filtered.map((s) => s.name);
+  const allSelected = allNames.every((n) => skillsSelected.has(n));
+
+  if (allSelected) {
+    allNames.forEach((n) => skillsSelected.delete(n));
+  } else {
+    allNames.forEach((n) => skillsSelected.add(n));
+  }
+
+  // Re-render
+  const panel = document.getElementById("skills-checklist-panel");
+  if (panel) {
+    const childrenContainer = panel.querySelector(":scope > div:last-child");
+    if (childrenContainer) {
+      childrenContainer.innerHTML = renderSkillsTabs() + renderSkillsList();
+      lucide.createIcons({ nameAttr: "data-lucide" });
+    }
+  }
+  renderSkillsActionBar();
+}
+
+function switchSkillsTab(tab) {
+  skillsTab = tab;
+  const panel = document.getElementById("skills-checklist-panel");
+  if (panel) {
+    const childrenContainer = panel.querySelector(":scope > div:last-child");
+    if (childrenContainer) {
+      childrenContainer.innerHTML = renderSkillsTabs() + renderSkillsList();
+      lucide.createIcons({ nameAttr: "data-lucide" });
+    }
+  }
+}
+
+async function handleDeploySkills() {
+  const toDeploy = skillsData
+    .filter((s) => skillsSelected.has(s.name) && !s.installed)
+    .map((s) => s.name);
+
+  if (toDeploy.length === 0) return;
+
+  skillsDeploying = true;
+  skillsProgressMap = {};
+  toDeploy.forEach((n) => { skillsProgressMap[n] = { status: "pending", message: "Waiting..." }; });
+  renderSkillsProgressOverlay();
+  renderSkillsActionBar();
+
+  try {
+    await window.pywebview.api.deploy_skills(toDeploy);
+  } catch (err) {
+    // Progress overlay already shows per-skill status from callbacks
+  }
+
+  skillsDeploying = false;
+  renderSkillsActionBar();
+}
+
+async function handleRemoveSkills() {
+  const toRemove = skillsData
+    .filter((s) => skillsSelected.has(s.name) && s.installed)
+    .map((s) => s.name);
+
+  if (toRemove.length === 0) return;
+
+  if (!confirm(`Remove ${toRemove.length} skill(s)? This will delete the deployed files.`)) return;
+
+  skillsDeploying = true;
+  skillsProgressMap = {};
+  toRemove.forEach((n) => { skillsProgressMap[n] = { status: "pending", message: "Waiting..." }; });
+  renderSkillsProgressOverlay();
+  renderSkillsActionBar();
+
+  try {
+    await window.pywebview.api.remove_skills(toRemove);
+  } catch (err) {
+    // Progress overlay already shows per-skill status from callbacks
+  }
+
+  skillsDeploying = false;
+  renderSkillsActionBar();
+}
+
+async function reloadSkillsPage() {
+  skillsProgressMap = {};
+  skillsDeploying = false;
+  try {
+    const result = await window.pywebview.api.list_skills();
+    if (result?.success && result.data) {
+      skillsData = result.data;
+      // Pre-select deployed skills
+      skillsSelected = new Set(skillsData.filter((s) => s.installed).map((s) => s.name));
+    }
+  } catch {
+    // Keep existing data
+  }
+  renderSkillsPage();
+}
+
+/* ---------- Page Lifecycle ---------- */
+
+registerPage("deploy-skills", {
+  onEnter: async () => {
+    if (skillsRendered && !skillsDeploying) {
+      // Re-entering page — reload data
+      await reloadSkillsPage();
+      return;
+    }
+
+    // First load or still deploying
+    if (!skillsRendered) {
+      renderInto("deploy-skills-content",
+        `<div class="flex items-center justify-center py-16">
+          <i data-lucide="loader" class="w-5 h-5 text-text-muted animate-spin"></i>
+          <span class="text-sm text-text-muted ml-2">Loading skills...</span>
+        </div>`
+      );
+    }
+
+    try {
+      const result = await window.pywebview.api.list_skills();
+      if (result?.success && result.data) {
+        skillsData = result.data;
+        // Pre-select deployed skills
+        skillsSelected = new Set(skillsData.filter((s) => s.installed).map((s) => s.name));
+
+        // Default tab: show custom if available, else community
+        const hasCustom = skillsData.some((s) => s.source === "module_pack");
+        skillsTab = hasCustom ? "custom" : "community";
+
+        renderSkillsPage();
+        skillsRendered = true;
+      } else {
+        renderInto("deploy-skills-content",
+          `<div class="text-center py-16">
+            <p class="text-sm text-status-error">Failed to load skills</p>
+            <p class="text-xs text-text-muted mt-1">${escapeHtml(result?.error?.message || "Unknown error")}</p>
+            <div class="mt-4">${renderButton({ variant: "secondary", icon: "refresh-cw", label: "Retry", onclick: "reloadSkillsPage()" })}</div>
+          </div>`
+        );
+      }
+    } catch (err) {
+      renderInto("deploy-skills-content",
+        `<div class="text-center py-16">
+          <p class="text-sm text-status-error">Failed to load skills</p>
+          <div class="mt-4">${renderButton({ variant: "secondary", icon: "refresh-cw", label: "Retry", onclick: "reloadSkillsPage()" })}</div>
+        </div>`
+      );
+    }
+  },
+  onLeave: () => {
+    skillsDeploying = false;
   },
 });
 
