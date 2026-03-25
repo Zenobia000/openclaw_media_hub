@@ -23,6 +23,10 @@ let selectedMode = null;
 let sshTestPassed = false;
 let sshTestResult = null;
 let sshAuthMethod = "key"; // "key" | "password"
+/** Whether Config Step 1 has been rendered at least once (for page-switch preservation) */
+let configRendered = false;
+/** Cached form values for Config Step 1 (survives page navigation) */
+let configFormValues = {};
 
 /* ============================================================
  * 2. SPA Router
@@ -644,6 +648,111 @@ const DEPLOY_MODES = [
   { id: "remote-ssh",     icon: "cloud",    iconColor: "text-[#8b5cf6]",        borderColor: "#8b5cf6", name: "Remote Server (SSH)",  description: "Connect to a remote server via SSH" },
 ];
 
+/** Default field values per deployment mode */
+const MODE_DEFAULTS = {
+  "docker-windows": {
+    config_dir: "C:\\Users\\%USERNAME%\\.openclaw",
+    workspace_dir: "C:\\Users\\%USERNAME%\\.openclaw\\workspace",
+    gateway_bind: "lan",
+    gateway_mode: "local",
+    gateway_port: "18789",
+    bridge_port: "18790",
+    timezone: "Asia/Taipei",
+    docker_image: "openclaw:local",
+  },
+  "docker-linux": {
+    config_dir: "~/.openclaw",
+    workspace_dir: "~/.openclaw/workspace",
+    gateway_bind: "lan",
+    gateway_mode: "local",
+    gateway_port: "18789",
+    bridge_port: "18790",
+    timezone: "Asia/Taipei",
+    docker_image: "openclaw:local",
+  },
+  "native-linux": {
+    config_dir: "~/.openclaw",
+    workspace_dir: "~/.openclaw/workspace",
+    gateway_bind: "lan",
+    gateway_mode: "local",
+    gateway_port: "18789",
+    bridge_port: "18790",
+    timezone: "Asia/Taipei",
+    docker_image: "",
+  },
+  "remote-ssh": {
+    config_dir: "~/.openclaw",
+    workspace_dir: "~/.openclaw/workspace",
+    gateway_bind: "lan",
+    gateway_mode: "local",
+    gateway_port: "18789",
+    bridge_port: "18790",
+    timezone: "Asia/Taipei",
+    docker_image: "openclaw:local",
+  },
+};
+
+/** Field ID → config key mapping */
+const CONFIG_FIELD_MAP = {
+  "input-config-dir": "config_dir",
+  "input-workspace-dir": "workspace_dir",
+  "input-gateway-bind": "gateway_bind",
+  "input-gateway-mode": "gateway_mode",
+  "input-gateway-port": "gateway_port",
+  "input-bridge-port": "bridge_port",
+  "input-timezone": "timezone",
+  "input-docker-image": "docker_image",
+};
+
+/**
+ * Snapshot all Config Step 1 form values into configFormValues.
+ */
+function saveConfigFormState() {
+  for (const [inputId, key] of Object.entries(CONFIG_FIELD_MAP)) {
+    const el = document.getElementById(inputId);
+    if (el) configFormValues[key] = el.value;
+  }
+  const sandbox = document.getElementById("toggle-sandbox");
+  if (sandbox) configFormValues.sandbox = sandbox.checked;
+  // SSH fields
+  for (const id of ["input-ssh-host", "input-ssh-port", "input-ssh-username", "input-ssh-key-file", "input-ssh-password"]) {
+    const el = document.getElementById(id);
+    if (el) configFormValues[id] = el.value;
+  }
+}
+
+/**
+ * Restore saved form values into DOM inputs.
+ */
+function restoreConfigFormState() {
+  for (const [inputId, key] of Object.entries(CONFIG_FIELD_MAP)) {
+    const el = document.getElementById(inputId);
+    if (el && configFormValues[key] !== undefined) el.value = configFormValues[key];
+  }
+  const sandbox = document.getElementById("toggle-sandbox");
+  if (sandbox && configFormValues.sandbox !== undefined) sandbox.checked = configFormValues.sandbox;
+  for (const id of ["input-ssh-host", "input-ssh-port", "input-ssh-username", "input-ssh-key-file", "input-ssh-password"]) {
+    const el = document.getElementById(id);
+    if (el && configFormValues[id] !== undefined) el.value = configFormValues[id];
+  }
+}
+
+/**
+ * Apply mode defaults to form fields (only fills empty fields or replaces previous defaults).
+ */
+function applyModeDefaults(mode) {
+  const defaults = MODE_DEFAULTS[mode];
+  if (!defaults) return;
+  for (const [inputId, key] of Object.entries(CONFIG_FIELD_MAP)) {
+    const el = document.getElementById(inputId);
+    if (!el) continue;
+    // Fill if empty, or if value matches any mode's default (user hasn't customized)
+    const current = el.value.trim();
+    const isDefault = !current || Object.values(MODE_DEFAULTS).some(d => d[key] === current);
+    if (isDefault) el.value = defaults[key];
+  }
+}
+
 /* ---------- 5.2.2 Render: Radio Card ---------- */
 
 /**
@@ -735,21 +844,22 @@ function renderSSHSection() {
 /* ---------- 5.2.5 Render: Gateway & Directory Section ---------- */
 
 function renderGatewaySection() {
+  const d = MODE_DEFAULTS[selectedMode] || MODE_DEFAULTS["docker-windows"];
   const mainGrid = `
     <div class="grid grid-cols-2 gap-4">
-      ${renderInput({ id: "input-config-dir", label: "Config Directory", icon: "folder", placeholder: "~/.openclaw" })}
-      ${renderInput({ id: "input-workspace-dir", label: "Workspace Directory", icon: "folder", placeholder: "~/.openclaw/workspace" })}
-      ${renderInput({ id: "input-gateway-bind", label: "Gateway Bind Host", placeholder: "lan" })}
-      ${renderInput({ id: "input-gateway-mode", label: "Gateway Mode", placeholder: "local" })}
-      ${renderInput({ id: "input-gateway-port", label: "Gateway Port", type: "number", placeholder: "18789" })}
-      ${renderInput({ id: "input-bridge-port", label: "Bridge Port", type: "number", placeholder: "18790" })}
+      ${renderInput({ id: "input-config-dir", label: "Config Directory", icon: "folder", placeholder: "~/.openclaw", value: d.config_dir })}
+      ${renderInput({ id: "input-workspace-dir", label: "Workspace Directory", icon: "folder", placeholder: "~/.openclaw/workspace", value: d.workspace_dir })}
+      ${renderInput({ id: "input-gateway-bind", label: "Gateway Bind Host", placeholder: "lan", value: d.gateway_bind })}
+      ${renderInput({ id: "input-gateway-mode", label: "Gateway Mode", placeholder: "local", value: d.gateway_mode })}
+      ${renderInput({ id: "input-gateway-port", label: "Gateway Port", type: "number", placeholder: "18789", value: d.gateway_port })}
+      ${renderInput({ id: "input-bridge-port", label: "Bridge Port", type: "number", placeholder: "18790", value: d.bridge_port })}
     </div>`;
 
   const advancedContent = `
     <div id="advanced-settings" class="collapsible-content mt-4">
       <div class="grid grid-cols-2 gap-4">
-        ${renderInput({ id: "input-timezone", label: "Timezone", placeholder: "Asia/Taipei" })}
-        ${renderInput({ id: "input-docker-image", label: "Docker Image", placeholder: "openclaw:local" })}
+        ${renderInput({ id: "input-timezone", label: "Timezone", placeholder: "Asia/Taipei", value: d.timezone })}
+        ${renderInput({ id: "input-docker-image", label: "Docker Image", placeholder: "openclaw:local", value: d.docker_image })}
       </div>
       <div class="flex items-center gap-2 mt-4">
         <input type="checkbox" id="toggle-sandbox" class="checkbox-custom" checked />
@@ -864,6 +974,9 @@ function selectDeploymentMode(mode) {
     }
   }
 
+  // Apply mode-specific defaults to gateway/directory fields
+  applyModeDefaults(mode);
+
   // Update action bar
   renderConfigActionBar();
 }
@@ -875,7 +988,7 @@ async function browseSSHKey() {
   try {
     const result = await window.pywebview.api.browse_file(
       "Select SSH Key",
-      ["Key Files (*.pem;*.key;*)", "All Files (*.*)"]
+      ["Key Files (*.pem;*.key;*.ppk;*.pub)", "All Files (*.*)"]
     );
     if (result?.success && result.data?.path) {
       const input = document.getElementById("input-ssh-key-file");
@@ -1018,17 +1131,7 @@ async function configNextStep() {
 
   // Collect gateway/directory config
   const config = { deployment_mode: selectedMode };
-  const fieldMap = {
-    "input-config-dir": "config_dir",
-    "input-workspace-dir": "workspace_dir",
-    "input-gateway-bind": "gateway_bind",
-    "input-gateway-mode": "gateway_mode",
-    "input-gateway-port": "gateway_port",
-    "input-bridge-port": "bridge_port",
-    "input-timezone": "timezone",
-    "input-docker-image": "docker_image",
-  };
-  for (const [inputId, key] of Object.entries(fieldMap)) {
+  for (const [inputId, key] of Object.entries(CONFIG_FIELD_MAP)) {
     const val = document.getElementById(inputId)?.value?.trim();
     if (val) config[key] = val;
   }
@@ -1050,7 +1153,12 @@ async function configNextStep() {
 
 registerPage("configuration", {
   onEnter: async () => {
-    // Load persisted settings
+    if (configRendered) {
+      // Page revisited — restore cached form values without re-rendering
+      restoreConfigFormState();
+      return;
+    }
+    // First visit — load persisted settings and render
     try {
       const platform = await window.pywebview.api.detect_platform();
       selectedMode = platform?.data?.current_mode || platform?.data?.suggested_mode || "docker-windows";
@@ -1061,8 +1169,11 @@ registerPage("configuration", {
     sshTestResult = null;
     configStep = 1;
     renderConfigStep1();
+    configRendered = true;
   },
-  onLeave: () => { /* no-op */ },
+  onLeave: () => {
+    saveConfigFormState();
+  },
 });
 
 /* ============================================================
