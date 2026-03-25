@@ -301,6 +301,115 @@ function renderCheckCard({ icon, iconColor = "text-status-info", name, version, 
   </div>`;
 }
 
+/* ---------- 4.5.1 Environment Page Helpers ---------- */
+
+const CHECK_ICONS = {
+  "Docker":           { icon: "container",  color: "text-status-info" },
+  "Docker Compose":   { icon: "layers",     color: "text-status-info" },
+  "Docker Desktop":   { icon: "activity",   color: "text-status-success" },
+  "Docker Running":   { icon: "activity",   color: "text-status-success" },
+  "Node.js":          { icon: "hexagon",    color: "text-status-success" },
+  "OpenClaw CLI":     { icon: "terminal",   color: "text-accent-primary" },
+  "jq":               { icon: "braces",     color: "text-accent-secondary" },
+  "VS Code":          { icon: "code",       color: "text-status-info" },
+  "ngrok":            { icon: "globe",      color: "text-text-muted" },
+  "systemd Service":  { icon: "server",     color: "text-accent-secondary" },
+};
+
+/**
+ * Render the summary banner (green = all pass, red = failures).
+ */
+function renderSummaryBanner(checks, envFile, lastChecked) {
+  const passed = checks.filter(c => c.installed).length;
+  const total = checks.length;
+  const allPassed = passed === total && envFile.exists;
+  const envText = envFile.exists ? ".env file verified" : ".env file missing";
+
+  if (allPassed) {
+    return `<div class="flex items-center justify-between rounded-md p-4 border" style="background: #4CAF5015; border-color: #4CAF5040;">
+      <div class="flex items-center gap-3">
+        <i data-lucide="check-circle" class="w-5 h-5 text-status-success flex-shrink-0"></i>
+        <div>
+          <div class="text-sm font-semibold text-status-success">All checks passed — environment is ready</div>
+          <div class="text-xs text-text-secondary mt-0.5">${passed} of ${total} software checks passed · ${escapeHtml(envText)}</div>
+        </div>
+      </div>
+      <span class="text-xs text-text-muted">${escapeHtml(lastChecked)}</span>
+    </div>`;
+  }
+
+  const failCount = total - passed + (envFile.exists ? 0 : 1);
+  return `<div class="flex items-center justify-between rounded-md p-4 border" style="background: #F4433615; border-color: #F4433640;">
+    <div class="flex items-center gap-3">
+      <i data-lucide="alert-circle" class="w-5 h-5 text-status-error flex-shrink-0"></i>
+      <div>
+        <div class="text-sm font-semibold text-status-error">${failCount} check${failCount > 1 ? "s" : ""} failed — action required</div>
+        <div class="text-xs text-text-secondary mt-0.5">${passed} of ${total} passed · ${escapeHtml(envText)}</div>
+      </div>
+    </div>
+    <span class="text-xs text-text-muted">${escapeHtml(lastChecked)}</span>
+  </div>`;
+}
+
+/**
+ * Render the checks grid using CHECK_ICONS mapping.
+ */
+function renderChecksGrid(checks) {
+  const cards = checks.map(c => {
+    const meta = CHECK_ICONS[c.name] || { icon: "help-circle", color: "text-text-muted" };
+    return renderCheckCard({
+      icon: meta.icon,
+      iconColor: meta.color,
+      name: c.name,
+      version: c.version,
+      status: c.installed ? "installed" : "not-found",
+    });
+  }).join("");
+  return `<div class="flex flex-wrap gap-4">${cards}</div>`;
+}
+
+/**
+ * Render the .env file check card.
+ */
+function renderEnvFileCard(envFile) {
+  const status = envFile.exists ? "success" : "error";
+  const badgeText = envFile.exists ? "Verified" : "Missing";
+  return `<div class="bg-bg-card border border-border-default rounded-md p-4 flex items-center gap-3">
+    <div class="w-9 h-9 rounded-sm bg-bg-input flex items-center justify-center flex-shrink-0">
+      <i data-lucide="file-text" class="w-[18px] h-[18px] text-accent-secondary"></i>
+    </div>
+    <div class="flex-1 min-w-0">
+      <div class="text-sm font-semibold">.env Configuration File</div>
+      <div class="text-xs text-text-muted mt-0.5">${escapeHtml(envFile.message)}</div>
+    </div>
+    ${renderStatusBadge({ status, text: badgeText })}
+  </div>`;
+}
+
+/**
+ * Render error guidance block (only when failures exist).
+ */
+function renderErrorGuidance(checks) {
+  const failed = checks.filter(c => !c.installed);
+  if (failed.length === 0) return "";
+
+  const items = failed.map(c =>
+    `<li class="text-sm text-text-secondary">
+      <span class="font-medium text-text-primary">${escapeHtml(c.name)}</span> — ${escapeHtml(c.message)}
+    </li>`
+  ).join("");
+
+  return `<div class="rounded-md p-4 border" style="background: #F4433610; border-color: #F4433630;">
+    <div class="flex items-start gap-3">
+      <i data-lucide="alert-circle" class="w-5 h-5 text-status-error flex-shrink-0 mt-0.5"></i>
+      <div>
+        <div class="text-sm font-semibold text-status-error">Action Required</div>
+        <ul class="mt-2 space-y-1.5 list-disc list-inside">${items}</ul>
+      </div>
+    </div>
+  </div>`;
+}
+
 /* ---------- 4.6 SectionPanel ---------- */
 
 /**
@@ -447,6 +556,73 @@ function renderInto(containerId, html) {
     lucide.createIcons({ nameAttr: "data-lucide" });
   }
 }
+
+/* ============================================================
+ * 5.1 Environment Page — Lifecycle Hook (US-001, 3.4.5–3.4.8)
+ * ============================================================ */
+
+registerPage("environment", {
+  onEnter: async () => {
+    // Show loading state
+    renderInto("environment-content", `
+      <div class="flex items-center gap-3 text-text-muted py-8">
+        <i data-lucide="loader" class="w-5 h-5 animate-spin"></i>
+        <span class="text-sm">Running environment checks...</span>
+      </div>
+    `);
+
+    // Inject mode badge into header
+    const badgeEl = document.getElementById("env-mode-badge");
+    if (badgeEl && currentMode) {
+      const modeLabel = MODE_LABELS[currentMode] || currentMode;
+      badgeEl.innerHTML = renderStatusBadge({ status: "info", text: modeLabel });
+      lucide.createIcons({ nameAttr: "data-lucide" });
+    }
+
+    try {
+      const result = await window.pywebview.api.check_env();
+      if (!result || !result.success) {
+        const errMsg = result?.error?.message || "Unknown error";
+        const errType = result?.error?.type || "INTERNAL";
+        renderInto("environment-content", `
+          <div class="rounded-md p-4 border border-status-error" style="background: #ef444410;">
+            <div class="flex items-center gap-2">
+              <i data-lucide="alert-triangle" class="w-5 h-5 text-status-error"></i>
+              <span class="text-sm font-semibold text-status-error">${escapeHtml(errType)}</span>
+            </div>
+            <p class="text-sm text-text-secondary mt-2">${escapeHtml(errMsg)}</p>
+            <div class="mt-3">
+              ${renderButton({ variant: "secondary", icon: "refresh-cw", label: "Retry", onclick: "navigateTo('environment')" })}
+            </div>
+          </div>
+        `);
+        return;
+      }
+
+      const { checks, env_file } = result.data;
+      const lastChecked = "Last checked: just now";
+
+      const html = [
+        renderSummaryBanner(checks, env_file, lastChecked),
+        renderChecksGrid(checks),
+        renderEnvFileCard(env_file),
+        renderErrorGuidance(checks),
+      ].join("");
+
+      renderInto("environment-content", html);
+    } catch (err) {
+      renderInto("environment-content", `
+        <div class="rounded-md p-4 border border-status-error" style="background: #ef444410;">
+          <div class="text-sm text-status-error font-medium">Failed to run environment check</div>
+          <div class="text-xs text-text-muted mt-1">${escapeHtml(String(err))}</div>
+          <div class="mt-3">
+            ${renderButton({ variant: "secondary", icon: "refresh-cw", label: "Retry", onclick: "navigateTo('environment')" })}
+          </div>
+        </div>
+      `);
+    }
+  },
+});
 
 /* ============================================================
  * 6. Bridge Integration & App Bootstrap

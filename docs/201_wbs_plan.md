@@ -168,8 +168,8 @@
 | 3.15 Transport Layer | 17h    | 2026-03-25 | 2026-03-25 | ✅ 完成   | ★ 基礎層，提前完成 |
 | 3.1 專案環境初始化 | 8h       | 2026-03-23 | 2026-03-25 | ✅ 完成   | 3.1.2~3.1.4 於 03/25 補齊 |
 | 3.2 前端 UI 元件   | 11h      | 2026-03-25 | 2026-03-25 | ✅ 完成   | 提前完成，含 3.16.2 合併 |
-| 3.3 後端基礎模組   | 7h       | 2026-03-30 | 2026-04-12 | ⬜ 未開始 | 3.3.4 在 3.15.4 之後 |
-| 3.4 環境檢查       | 8h       | 2026-04-02 | 2026-04-07 | ⬜ 未開始 | |
+| 3.3 後端基礎模組   | 7h       | 2026-03-25 | 2026-03-25 | ✅ 完成   | 提前完成，含 SSH API |
+| 3.4 環境檢查       | 8h       | 2026-03-25 | 2026-03-25 | ✅ 完成   | 後端+前端+16 項測試 |
 | 3.5 設定管理模組   | 9h       | 2026-04-05 | 2026-04-08 | ⬜ 未開始 | |
 | 3.6 Config Step 1  | 9.5h     | 2026-04-12 | 2026-04-15 | ⬜ 未開始 | +1.5h (合併 3.16.1) |
 | 3.16.3 SSH Bridge  | 1.5h     | 2026-04-15 | 2026-04-16 | ⬜ 未開始 | 隨 3.6 整合 |
@@ -235,10 +235,10 @@
 
 | ID    | 任務                                                                                                            | 負責人 | 工時 | 狀態      | 開始日 | 完成日 | 備註                          |
 | :---- | :-------------------------------------------------------------------------------------------------------------- | :----- | :--- | :-------- | :----- | :----- | :---------------------------- |
-| 3.3.1 | platform_utils.py：OS 偵測 (win/linux) + Docker/Native 環境偵測 + deployment_mode 邏輯                          | DEV    | 2h   | ⬜ 未開始 | 03/30  | 03/31  | shutil.which + platform       |
-| 3.3.2 | process_manager.py：非同步 subprocess 封裝（list 形式、可設定 timeout、graceful shutdown、stdout/stderr 捕獲）   | DEV    | 2h   | ⬜ 未開始 | 03/31  | 04/01  | 禁 shell=True (ADR-003)       |
-| 3.3.3 | bridge.py 骨架：Bridge 類別 + 統一回傳格式 `{success, data/error}` + 錯誤類型映射 (TIMEOUT/PERMISSION/NOT_FOUND/INTERNAL) + 進度回呼機制 (evaluate_js) + Executor 注入點 | DEV | 2h | ⬜ 未開始 | 04/01 | 04/02 | 208 §5.1~5.3 |
-| 3.3.4 | bridge.py SSH 連線管理 API：`connect_remote()`, `disconnect_remote()`, `get_connection_status()`, `test_connection()` + executor 選擇邏輯（依連線狀態自動切換 LocalExecutor / RemoteExecutor） | DEV | 1h | ⬜ 未開始 | 04/12 | 04/12 | ADR-004，**依賴 3.15.1~3.15.4 完成** |
+| 3.3.1 | platform_utils.py：OS 偵測 (win/linux) + Docker/Native 環境偵測 + deployment_mode 邏輯                          | DEV    | 2h   | ✅ 完成 | 03/25  | 03/25  | shutil.which + platform       |
+| 3.3.2 | process_manager.py：非同步 subprocess 封裝（list 形式、可設定 timeout、graceful shutdown、stdout/stderr 捕獲）   | DEV    | 2h   | ✅ 完成 | 03/25  | 03/25  | 禁 shell=True (ADR-003)       |
+| 3.3.3 | bridge.py 骨架：Bridge 類別 + 統一回傳格式 `{success, data/error}` + 錯誤類型映射 (TIMEOUT/PERMISSION/NOT_FOUND/INTERNAL) + 進度回呼機制 (evaluate_js) + Executor 注入點 | DEV | 2h | ✅ 完成 | 03/25 | 03/25 | 208 §5.1~5.3 |
+| 3.3.4 | bridge.py SSH 連線管理 API：`connect_remote()`, `disconnect_remote()`, `get_connection_status()`, `test_connection()` + executor 選擇邏輯（依連線狀態自動切換 LocalExecutor / RemoteExecutor） | DEV | 1h | ✅ 完成 | 03/25 | 03/25 | ADR-004，3.15 已完成 |
 
 #### 3.4 環境檢查 — US-001 (8h)
 
@@ -246,14 +246,14 @@
 
 | ID    | 任務                                                                                           | 負責人 | 工時  | 狀態      | 開始日 | 完成日 | 備註                                    |
 | :---- | :--------------------------------------------------------------------------------------------- | :----- | :---- | :-------- | :----- | :----- | :-------------------------------------- |
-| 3.4.1 | env_checker.py：Docker 模式 5 項檢查（Docker, Docker Compose, Docker Desktop/Running, VS Code, ngrok） | DEV | 2h | ⬜ 未開始 | 04/02 | 04/02 | 透過 Executor.which() + Executor.run_command() |
-| 3.4.2 | env_checker.py：Native Linux 模式 6 項檢查（Node.js≥18, OpenClaw CLI, jq, VS Code, ngrok, systemd Service） | DEV | 1h | ⬜ 未開始 | 04/02 | 04/03 | |
-| 3.4.3 | env_checker.py：.env 檔案存在性檢查 + Bridge API `check_env()` 整合                            | DEV    | 0.5h  | ⬜ 未開始 | 04/03  | 04/03  | 回傳 `{checks, env_file}`              |
-| 3.4.4 | env_checker 單元測試                                                                           | DEV    | 0.5h  | ⬜ 未開始 | 04/03  | 04/03  | 透過 Mock Executor 測試                 |
-| 3.4.5 | 前端 Environment：Header (標題+副標題) + 環境模式 StatusBadge + Summary Banner（全通過綠/有失敗紅 兩種狀態） | DEV | 1h | ⬜ 未開始 | 04/05 | 04/05 | 208 §4.1，Week 3 |
-| 3.4.6 | 前端 Environment：CheckCards Grid（CHECK_ICONS mapping 10 種軟體 + 依部署模式動態渲染不同卡片數：Docker 5 張 / Native 6 張） | DEV | 1.5h | ⬜ 未開始 | 04/05 | 04/06 | Flexbox + flex-wrap |
-| 3.4.7 | 前端 Environment：.env File Check 單行卡片 (Verified/Missing badge) + Error Guidance 條件顯示區塊 | DEV | 0.5h | ⬜ 未開始 | 04/06 | 04/06 | 有失敗項目時顯示安裝指引 |
-| 3.4.8 | 前端 Environment：進入頁面自動觸發 `check_env()` + "Last checked" 時間戳                        | DEV    | 1h    | ⬜ 未開始 | 04/06  | 04/07  |                                         |
+| 3.4.1 | env_checker.py：Docker 模式 5 項檢查（Docker, Docker Compose, Docker Desktop/Running, VS Code, ngrok） | DEV | 2h | ✅ 完成 | 03/25 | 03/25 | 透過 Executor.which() + Executor.run_command() |
+| 3.4.2 | env_checker.py：Native Linux 模式 6 項檢查（Node.js≥18, OpenClaw CLI, jq, VS Code, ngrok, systemd Service） | DEV | 1h | ✅ 完成 | 03/25 | 03/25 | 含 Node.js ≥18 版本檢查 |
+| 3.4.3 | env_checker.py：.env 檔案存在性檢查 + Bridge API `check_env()` + `detect_platform()` 整合      | DEV    | 0.5h  | ✅ 完成 | 03/25  | 03/25  | 回傳 `{checks, env_file}`              |
+| 3.4.4 | env_checker 單元測試                                                                           | DEV    | 0.5h  | ✅ 完成 | 03/25  | 03/25  | 16 項測試，MockExecutor，全部通過       |
+| 3.4.5 | 前端 Environment：Header (標題+副標題) + 環境模式 StatusBadge + Summary Banner（全通過綠/有失敗紅 兩種狀態） | DEV | 1h | ✅ 完成 | 03/25 | 03/25 | 208 §4.1 |
+| 3.4.6 | 前端 Environment：CheckCards Grid（CHECK_ICONS mapping 10 種軟體 + 依部署模式動態渲染不同卡片數：Docker 5 張 / Native 6 張） | DEV | 1.5h | ✅ 完成 | 03/25 | 03/25 | Flexbox + flex-wrap |
+| 3.4.7 | 前端 Environment：.env File Check 單行卡片 (Verified/Missing badge) + Error Guidance 條件顯示區塊 | DEV | 0.5h | ✅ 完成 | 03/25 | 03/25 | 有失敗項目時顯示安裝指引 |
+| 3.4.8 | 前端 Environment：進入頁面自動觸發 `check_env()` + "Last checked" 時間戳                        | DEV    | 1h    | ✅ 完成 | 03/25  | 03/25  | registerPage lifecycle hook             |
 
 #### 3.5 設定管理模組 (9h)
 

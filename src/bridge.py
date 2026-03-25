@@ -160,6 +160,45 @@ class Bridge:
         """連線測試，前端用來確認 Bridge 可用。"""
         return _ok({"message": "pong"})
 
+    # ── 環境檢查 API (3.4, US-001) ────────────────────────
+
+    def check_env(self) -> dict:
+        """環境檢查 — 依部署模式檢查系統依賴。
+
+        Returns:
+            {checks: [{name, installed, version, message}], env_file: {exists, message}}
+        """
+        def _do() -> dict:
+            from src.env_checker import EnvChecker
+            from src.platform_utils import detect_platform as _detect
+
+            mode = _detect().deployment_mode
+            checker = EnvChecker(self._executor)
+            checks = self._run_async(checker.check_all(mode))
+            env_file = self._run_async(checker.check_env_file(".env"))
+            return _ok({"checks": checks, "env_file": env_file})
+
+        return self._safe_call(_do)
+
+    def detect_platform(self) -> dict:
+        """偵測平台資訊供前端 Sidebar 顯示。
+
+        Returns:
+            {os, env_type, suggested_mode, current_mode}
+        """
+        def _do() -> dict:
+            from src.platform_utils import detect_platform as _detect
+
+            info = _detect()
+            return _ok({
+                "os": info.os_name,
+                "env_type": "docker" if info.is_docker else "native",
+                "suggested_mode": info.deployment_mode,
+                "current_mode": None,  # TODO: 3.5 read from config_manager
+            })
+
+        return self._safe_call(_do)
+
     # ── SSH 連線管理 API (3.3.4, ADR-004) ────────────────
 
     def _on_ssh_state_change(self, state: ConnectionState) -> None:
