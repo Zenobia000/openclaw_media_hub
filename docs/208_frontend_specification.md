@@ -44,7 +44,8 @@ Root (SPA - Single Page Application)
 │   │   ├── Step 1: 環境與目錄設定
 │   │   ├── Step 2: API 金鑰與服務設定
 │   │   └── Step 3: 初始化執行與結果
-│   └── Environment            # 環境檢查頁
+│   ├── Environment            # 環境檢查頁
+│   └── Gateway               # Origin 存取控制 + 裝置配對管理 (ADR-006)
 └── [OPERATIONS]
     ├── Deploy Skills          # 技能部署
     ├── Install Plugins        # 外掛安裝
@@ -60,6 +61,7 @@ Root (SPA - Single Page Application)
 | **Dashboard** | `view-dashboard` | Dashboard | 服務狀態總覽、快速操作入口 | US-003 |
 | **Configuration** | `view-configuration` | Configuration | 3 步驟初始化精靈 | US-002 |
 | **Environment** | `view-environment` | Environment | 系統依賴檢查 | US-001 |
+| **Gateway** | `view-gateway` | Gateway | Origin 存取控制、裝置配對管理 | ADR-006 |
 | **Deploy Skills** | `view-deploy-skills` | Deploy Skills | 技能模組勾選部署 | US-005 |
 | **Install Plugins** | `view-install-plugins` | Install Plugins | 外掛模組勾選安裝 | US-006 |
 | **Fix Plugins** | `view-fix-plugins` | Fix Plugins | 外掛診斷與修復 | — |
@@ -159,6 +161,7 @@ Root (SPA - Single Page Application)
 │  📊 Dashboard           │
 │  ⚙️ Configuration       │
 │  🖥️ Environment         │
+│  🛡️ Gateway             │
 ├─────────────────────────┤
 │ OPERATIONS              │  ← Section Label
 │  🚀 Deploy Skills       │
@@ -941,6 +944,87 @@ const result = await window.pywebview.api.fix_all_plugins();
 - [ ] "Run Diagnostics" 按鈕可手動觸發重新診斷
 - [ ] 修復失敗時顯示具體錯誤訊息，不影響其他外掛的修復流程
 
+### 4.9 Gateway 頁面 (ADR-006)
+
+**進入條件**: 點擊 Sidebar MAIN 區段的 "Gateway" 項目
+
+**頁面佈局**: 兩欄式，左欄 Origin Access Control，右欄 Device Management
+
+#### 左欄：Origin Access Control
+
+1. **Section Panel** (與其他頁面一致的卡片樣式)
+   - Icon: `globe` (teal), 標題: "Origin Access Control"
+   - 說明: "Control which origins can access the Gateway Control UI"
+
+2. **模式切換列**:
+   - "Allow All Origins" 標題 + "Set allowedOrigins to wildcard (*)" 說明
+   - Toggle 開關（ON: `allowedOrigins: ["*"]`, OFF: 使用白名單）
+   - 切換時即時呼叫 `save_allowed_origins()` 寫入 `openclaw.json`
+
+3. **白名單編輯** (Toggle OFF 時顯示):
+   - "Whitelist" 標題 + "Add Origin" Button/Primary (帶 `plus` icon)
+   - 已設定 origin 列表：每行顯示 origin URL + `x` 刪除按鈕
+   - 新增 origin 時顯示 inline input + confirm 按鈕
+
+#### 右欄：Device Management
+
+1. **Section Panel**
+   - Icon: `monitor-smartphone` (red), 標題: "Device Management"
+   - 右上角: "Refresh" Button/Secondary (帶 `refresh-cw` icon)
+
+2. **Pending Requests 區塊**:
+   - "Pending Requests" 子標題
+   - 每個 pending device 一行：
+     - `circle-dot` icon (amber) + displayName/deviceId + remoteIp · roles
+     - "Approve" Button/Primary (小型) + "Reject" Button/Secondary (小型)
+
+3. **Paired Devices 區塊** (分隔線後):
+   - "Paired Devices" 子標題
+   - 每個 paired device 一行：
+     - `circle-check` icon (green) + displayName/deviceId + remoteIp · roles
+     - 備註欄位（inline 可編輯 text input，blur 時自動儲存至 `gui-settings.json`）
+     - `trash-2` 刪除按鈕
+
+**Bridge API 呼叫**:
+
+```javascript
+// 讀取 allowedOrigins
+const origins = await window.pywebview.api.get_allowed_origins();
+// origins.data = { origins: ["http://127.0.0.1:18789", ...], is_wildcard: false }
+
+// 儲存 allowedOrigins
+await window.pywebview.api.save_allowed_origins({
+  origins: ["http://127.0.0.1:18789", "http://localhost:18789"],
+  is_wildcard: false
+});
+
+// 列出所有裝置（pending + paired）
+const devices = await window.pywebview.api.list_devices();
+// devices.data = { pending: [...], paired: [...] }
+
+// 拒絕 pending 裝置
+await window.pywebview.api.reject_device({ request_id: "uuid-string" });
+
+// 移除 paired 裝置
+await window.pywebview.api.remove_device({ device_id: "device-id" });
+
+// 儲存/讀取裝置備註（本地 gui-settings.json）
+await window.pywebview.api.save_device_note({ device_id: "id", note: "備註" });
+const notes = await window.pywebview.api.get_device_notes();
+// notes.data = { "device-id-1": "辦公室桌機", "device-id-2": "測試手機" }
+```
+
+**Acceptance Criteria**:
+
+- [ ] Sidebar MAIN 區段顯示 Gateway 項目（`shield` icon）
+- [ ] 進入頁面時自動載入 allowedOrigins 和裝置列表
+- [ ] Allow All Origins toggle 切換後即時寫入 openclaw.json
+- [ ] 白名單可新增/刪除 origin，操作後自動儲存
+- [ ] Pending 裝置可 Approve / Reject，操作後自動刷新列表
+- [ ] Paired 裝置可添加備註（blur 自動儲存）和 Remove
+- [ ] Refresh 按鈕重新載入裝置列表
+- [ ] 所有操作的錯誤狀態有結構化 UI 回饋
+
 ---
 
 ## 5. API 整合策略 (API Integration)
@@ -1056,3 +1140,12 @@ window.updateConnectionStatus = function(status, message) {
 | `disconnect_remote()` | `ssh_connection.py` | `{success}` — 中斷 SSH 連線並釋放資源 |
 | `get_connection_status()` | `ssh_connection.py` | `{connected, status, host, uptime}` — 查詢當前 SSH 連線狀態 |
 | `test_connection(params)` | `ssh_connection.py` | `{success, server_info: {os, cpu_cores, memory_gb, disk_gb}}` — 測試 SSH 連線（不持久化） |
+| `get_allowed_origins()` | `config_manager.py` | `{origins: string[], is_wildcard: bool}` — 讀取 gateway.controlUi.allowedOrigins (ADR-006) |
+| `save_allowed_origins(params)` | `config_manager.py` | `{success}` — 寫入 allowedOrigins 至 openclaw.json (ADR-006) |
+| `list_devices()` | `bridge.py` | `{pending: [...], paired: [...]}` — 列出所有裝置（`openclaw devices list --json`）(ADR-006) |
+| `list_pending_devices()` | `bridge.py` | `{devices: [...]}` — 列出待核准裝置（Step 3 Device Pairing 用） |
+| `approve_device(params)` | `bridge.py` | `{message, output}` — 核准裝置（`openclaw devices approve`）|
+| `reject_device(params)` | `bridge.py` | `{message, output}` — 拒絕裝置（`openclaw devices reject`）(ADR-006) |
+| `remove_device(params)` | `bridge.py` | `{message, output}` — 移除已配對裝置（`openclaw devices remove`）(ADR-006) |
+| `save_device_note(params)` | `config_manager.py` | `{success}` — 儲存裝置備註至 gui-settings.json (ADR-006) |
+| `get_device_notes()` | `config_manager.py` | `{device_id: note, ...}` — 讀取所有裝置備註 (ADR-006) |

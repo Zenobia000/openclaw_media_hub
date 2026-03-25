@@ -124,6 +124,9 @@
 ├── 3.12 外掛修復
 │   ├── 3.12.1~2 後端診斷/修復邏輯 + Bridge API
 │   └── 3.12.3~4 前端 Fix Plugins 頁面
+├── 3.12a Gateway 控制頁面 (ADR-006)
+│   ├── 3.12a.1~3 後端 Bridge API（Origin + Device）
+│   └── 3.12a.4~6 前端 Gateway 頁面
 ├── 3.13 PyInstaller 打包 (US-004)
 │   ├── 3.13.1 build.py 配置
 │   ├── 3.13.2 CDN 資源離線化
@@ -179,12 +182,13 @@
 | 3.10 技能部署      | 10h      | 2026-04-24 | 2026-04-27 | ⬜ 未開始 | |
 | 3.11 外掛安裝      | 10h      | 2026-04-28 | 2026-04-30 | ⬜ 未開始 | |
 | 3.12 外掛修復      | 6h       | 2026-04-30 | 2026-05-01 | ⬜ 未開始 | |
+| 3.12a Gateway 控制  | 8h       | 2026-05-01 | 2026-05-02 | ⬜ 未開始 | Origin 存取控制 + 裝置管理 (ADR-006) |
 | 3.13 PyInstaller   | 8h       | 2026-04-30 | 2026-05-03 | ⬜ 未開始 | |
 | 3.14 QA 驗證       | 10h      | 2026-05-03 | 2026-05-06 | ⬜ 未開始 | |
 | 3.17 SSH 整合測試  | 6h       | 2026-05-02 | 2026-05-04 | ⬜ 未開始 | |
 | 3.16 SSH 前端整合  | ~~4h~~   | —          | —          | 已合併    | 拆入 3.2.3, 3.6.3, 3.16.3 |
 | 4.0 發佈上線       | 16h      | 2026-05-05 | 2026-05-08 | ⬜ 未開始 | |
-| **總計**           | **182h** | **2026-03-22** | **2026-05-08** | **🔄 進行中** | |
+| **總計**           | **190h** | **2026-03-22** | **2026-05-08** | **🔄 進行中** | +8h Gateway (ADR-006) |
 
 **狀態:** ✅ 完成 | 🔄 進行中 | ⏳ 計劃中 | ⬜ 未開始
 
@@ -316,6 +320,19 @@
 | 3.8.13 | 前端 Step 3：Initialization Progress 面板（Docker 10 個 / Native 8 個 ProgressItem + Done/Running/Pending 狀態切換） | DEV | 1.5h | ✅ 完成 | 03/25 | 03/25 | 後端→前端 step 映射 |
 | 3.8.14 | 前端 Step 3：Dashboard Info 面板（Dashboard URL 唯讀 + Access Token 遮罩/複製 + Device Pairing 區塊）— Gateway ready 前 disabled | DEV | 1h | ✅ 完成 | 03/25 | 03/25 | 固定寬度 340px |
 | 3.8.15 | 前端 Step 3：Action Bar (Back + Initialize) + Initialize 按鈕 loading 狀態 + 失敗 Retry                     | DEV    | 0.5h  | ✅ 完成 | 03/25  | 03/25  |                                   |
+
+#### 3.12a Gateway 控制頁面 — ADR-006 (8h)
+
+> Origin 存取控制（allowedOrigins 全域/白名單切換）與裝置配對管理（list/approve/reject/remove/備註）。
+
+| ID      | 任務                                                                                                          | 負責人 | 工時  | 狀態      | 開始日 | 完成日 | 備註                                   |
+| :------ | :------------------------------------------------------------------------------------------------------------ | :----- | :---- | :-------- | :----- | :----- | :------------------------------------- |
+| 3.12a.1 | Bridge API：`get_allowed_origins()`, `save_allowed_origins()` — 讀寫 openclaw.json `gateway.controlUi.allowedOrigins` | DEV | 1h | ⬜ 未開始 | 05/01 | 05/01 | 透過 config_manager |
+| 3.12a.2 | Bridge API：`list_devices()`, `reject_device()`, `remove_device()` — 透過 `_build_openclaw_cmd()` 執行 CLI | DEV | 1.5h | ⬜ 未開始 | 05/01 | 05/01 | 複用已有 approve_device |
+| 3.12a.3 | Bridge API：`save_device_note()`, `get_device_notes()` — gui-settings.json `device_notes` 映射 | DEV | 0.5h | ⬜ 未開始 | 05/01 | 05/01 | 本地儲存 |
+| 3.12a.4 | 前端 Gateway 頁面：Sidebar 導航項 + 頁面結構 + `registerPage("gateway")` | DEV | 1h | ⬜ 未開始 | 05/01 | 05/02 | MAIN 區段，shield icon |
+| 3.12a.5 | 前端 Origin Access Control 區塊：Toggle 全域/白名單 + 白名單增刪 + 即時儲存 | DEV | 2h | ⬜ 未開始 | 05/02 | 05/02 | |
+| 3.12a.6 | 前端 Device Management 區塊：Pending（Approve/Reject）+ Paired（備註+Remove）+ Refresh | DEV | 2h | ⬜ 未開始 | 05/02 | 05/02 | |
 
 #### 3.9 Dashboard 與服務控制 — US-003 (12h)
 
