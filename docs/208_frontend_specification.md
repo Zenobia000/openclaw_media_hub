@@ -407,7 +407,20 @@ await window.pywebview.api.connect_remote({
      - OpenRouter (`OPENROUTER_API_KEY`)
      - Ollama (無金鑰，僅需 URL 設定)
      - 更多...（收合區，含 Amazon Bedrock, Mistral, NVIDIA, Together, ZAI, MiniMax 等）
-   - 勾選的供應商下方展開對應金鑰輸入框（帶 `lock` icon，type=password）
+   - 勾選的供應商下方展開:
+     a. **金鑰輸入框**（帶 `lock` icon，type=password，可切換顯示/隱藏）
+     b. **模型勾選清單** — 金鑰欄位下方
+        - 標題行: "Available Models"（`text-xs font-medium text-gray-500`）
+        - 呈現為 Flexbox wrap 的 checkbox-pill 列表（每個 pill: checkbox + 模型顯示名稱 `text-sm`）
+        - 首次展開時**預設全選**
+        - 動態供應商（Ollama）不顯示勾選清單，改為提示: "Models are discovered at runtime"
+        - 無模型目錄的供應商（如 Amazon Bedrock）不顯示此區塊
+   - **Primary Model 選取** — 所有供應商的模型勾選清單下方，`1px` 分隔線後
+     - 標題: "Primary Model"（`text-xs font-medium text-gray-500`）
+     - 下拉選單（`<select>`），列出所有已勾選供應商中被選取的模型
+     - 選項格式: `provider/model-id`（e.g. `anthropic/claude-sonnet-4-6`）
+     - 預設值: 第一個被勾選供應商的第一個模型
+     - 變更 Primary 時即時更新下拉選單狀態
 
 3. **Channels 區塊** (SectionPanel)
    - Icon: `message-circle` (藍), 標題: "Channel Credentials"
@@ -439,7 +452,7 @@ await window.pywebview.api.connect_remote({
    - 右側: "Step 2 of 3" + "Next" Button/Primary (帶 `arrow-right` icon)
 
 **捲動行為**:
-- 本頁內容（Model Providers + Channel Credentials + Tools + Security Note）超出 `800px` 可視高度（實際內容高度約 `1076px`），採用 3.1 節定義的「固定 Action Bar + 可捲動內容區」模式
+- 本頁內容（Model Providers + Channel Credentials + Tools + Security Note）超出 `800px` 可視高度（實際內容高度約 `1400px`，含模型勾選清單展開高度），採用 3.1 節定義的「固定 Action Bar + 可捲動內容區」模式
 - Action Bar 固定於底部，Header 至 Security Note 為可捲動範圍
 - 初始載入時 Model Providers 區塊完整可見，Channel Credentials 區塊部分可見，Tools 區塊與 Security Note 需向下捲動
 
@@ -450,16 +463,50 @@ await window.pywebview.api.connect_remote({
 const providers = await window.pywebview.api.get_available_providers();
 // 回傳: [{name: "openai", env_var: "OPENAI_API_KEY", placeholder: "sk-..."}, ...]
 
+// 取得各供應商的可用模型目錄（從 MODEL_REGISTRY 讀取）
+const models = await window.pywebview.api.get_provider_models();
+// 回傳: {
+//   "anthropic": [
+//     {id: "claude-opus-4-6", name: "Claude Opus 4.6"},
+//     {id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6"},
+//     {id: "claude-opus-4-5", name: "Claude Opus 4.5"},
+//     {id: "claude-sonnet-4-5", name: "Claude Sonnet 4.5"},
+//     {id: "claude-haiku-4-5", name: "Claude Haiku 4.5"}
+//   ],
+//   "openai": [
+//     {id: "gpt-5.4", name: "GPT-5.4"},
+//     {id: "gpt-5.4-pro", name: "GPT-5.4 Pro"},
+//     {id: "gpt-5.4-mini", name: "GPT-5.4 Mini"},
+//     {id: "gpt-5.4-nano", name: "GPT-5.4 Nano"},
+//     {id: "gpt-5.2", name: "GPT-5.2"},
+//     {id: "gpt-5.0", name: "GPT-5.0"}
+//   ],
+//   "google": [
+//     {id: "gemini-3.1-pro", name: "Gemini 3.1 Pro"},
+//     {id: "gemini-3.1-flash", name: "Gemini 3.1 Flash"}
+//   ],
+//   "ollama": [],  // 動態供應商回傳空陣列
+//   ...
+// }
+
 const channels = await window.pywebview.api.get_available_channels();
 // 回傳: [{name: "line", fields: [{key: "line_channel_access_token", label: "Channel Access Token"}, {key: "line_channel_secret", label: "Channel Secret"}], icon: "L", icon_color: "#06C755"}, ...]
 
-// 載入目標機器 .env 中的既有金鑰（首次進入 Step 2 時呼叫）(ADR-005)
+// 載入目標機器 .env 中的既有金鑰與模型選擇（首次進入 Step 2 時呼叫）(ADR-005)
 const envKeys = await window.pywebview.api.load_env_keys();
-// 回傳: {providers: {OPENAI_API_KEY: "sk-..."}, channels: {LINE_CHANNEL_ACCESS_TOKEN: "..."}, tools: {BRAVE_API_KEY: "..."}}
-// 本機模式：讀取本機 {config_dir}/.env
-// SSH 模式：透過 RemoteExecutor 讀取遠端 .env
+// 回傳: {
+//   providers: {OPENAI_API_KEY: "sk-..."},
+//   channels: {LINE_CHANNEL_ACCESS_TOKEN: "..."},
+//   tools: {BRAVE_API_KEY: "..."},
+//   models: {
+//     primary: "anthropic/claude-sonnet-4-6",
+//     selected: ["anthropic/claude-opus-4-6", "anthropic/claude-sonnet-4-6", ...]
+//   }
+// }
+// 本機模式：讀取本機 {config_dir}/.env + openclaw.json agents.defaults
+// SSH 模式：透過 RemoteExecutor 讀取遠端 .env + openclaw.json
 
-// 儲存金鑰（寫入目標機器的 .env 檔案）(ADR-005)
+// 儲存金鑰與模型選擇（寫入目標機器的 .env + openclaw.json）(ADR-005)
 await window.pywebview.api.save_keys({
   providers: {
     OPENAI_API_KEY: "sk-...",
@@ -472,19 +519,33 @@ await window.pywebview.api.save_keys({
   },
   tools: {
     BRAVE_API_KEY: "..."
+  },
+  model_selection: {
+    primary: "anthropic/claude-sonnet-4-6",
+    models: {
+      "anthropic/claude-opus-4-6": {},
+      "anthropic/claude-sonnet-4-6": {},
+      "openai/gpt-5.4": {},
+      "openai/gpt-5.4-mini": {}
+    }
   }
 });
+// model_selection.primary → 寫入 openclaw.json agents.defaults.model.primary
+// model_selection.models  → 寫入 openclaw.json agents.defaults.models（allowlist）
 ```
 
 **驗收標準**:
-- [ ] 進入頁面時呼叫 `get_available_providers()` / `get_available_channels()` 動態渲染可選項
+- [ ] 進入頁面時呼叫 `get_available_providers()` / `get_available_channels()` / `get_provider_models()` 動態渲染可選項
 - [ ] 金鑰欄位以密碼模式顯示（可切換顯示/隱藏）
 - [ ] 勾選供應商/管道後展開對應金鑰欄位，取消勾選後收合
+- [ ] 勾選供應商後，金鑰欄位下方顯示該供應商的模型勾選清單（預設全選）
+- [ ] 動態供應商（Ollama）顯示提示文字而非模型勾選清單
+- [ ] 底部 Primary Model 下拉選單僅列出所有已勾選供應商中被選取的模型
 - [ ] Channel 區塊根據金鑰填寫狀態自動顯示 "Configured" / "Not Configured" badge
 - [ ] Tools 區塊預設收合，點擊標題展開
 - [ ] 點擊 "Back" 回到 Step 1（保留已填資料）
-- [ ] 進入 Step 2 時呼叫 `load_env_keys()` 載入既有金鑰並自動勾選對應項目
-- [ ] 點擊 "Next" 儲存金鑰至目標機器 `.env` 後進入 Step 3
+- [ ] 進入 Step 2 時呼叫 `load_env_keys()` 載入既有金鑰、模型選擇與 Primary Model 並自動回填
+- [ ] 點擊 "Next" 儲存金鑰至目標機器 `.env` + 模型選擇至 `openclaw.json` `agents.defaults` 後進入 Step 3
 
 ---
 
@@ -1161,7 +1222,7 @@ window.updateConnectionStatus = function(status, message) {
 | :--- | :--- | :--- |
 | `check_env()` | `env_checker.py` | `{checks: [{name, installed, version, message}], env_file: {exists, message}}` |
 | `detect_platform()` | `platform_utils.py` | `{os, env_type, suggested_mode, current_mode}` |
-| `save_keys(keys)` | `config_manager.py` / `executor` (remote) | `{success, saved_count}` — 本機寫 .env，SSH 模式透過 executor 寫遠端 .env + chmod 600 (ADR-005) |
+| `save_keys(keys)` | `config_manager.py` / `executor` (remote) | `{success, saved_count}` — 本機寫 .env + 模型選擇寫入 openclaw.json `agents.defaults`，SSH 模式透過 executor (ADR-005) |
 | `save_config(config)` | `config_manager.py` | `{success}` |
 | `initialize(params)` | `initializer.py` | 透過回呼逐步回報，最終 `{success, dashboard_url, access_token}` |
 | `get_service_status()` | `service_controller.py` | `{running, services: [{name, status}], uptime, skills_count, plugins_count}` |
@@ -1178,6 +1239,8 @@ window.updateConnectionStatus = function(status, message) {
 | `fix_plugins(names)` | `plugin_manager.py` | 透過回呼逐項回報，最終 `{success, fixed, failed}` |
 | `fix_all_plugins()` | `plugin_manager.py` | 透過回呼逐項回報，最終 `{success, fixed, failed}` |
 | `get_available_providers()` | `plugin_manager.py` | `[{name, env_var, placeholder}]` — 從 extensions 取得可用供應商列表 |
+| `get_provider_models()` | `registries.py` | `{provider_name: [{id, name}]}` — 各供應商的可用模型目錄 |
+| `load_env_keys()` | `config_manager.py` | `{providers, channels, tools, models: {primary, selected}}` — 讀取 .env 金鑰 + openclaw.json 模型選擇 |
 | `get_available_channels()` | `plugin_manager.py` | `[{name, fields: [{key, label}], icon, icon_color}]` — 從 extensions 取得可用管道列表 |
 | `get_openclaw_config()` | `config_manager.py` | `{meta, agents, channels, gateway, plugins, ...}` — 讀取 openclaw.json |
 | `save_openclaw_config(section, data)` | `config_manager.py` | `{success}` — 寫入 openclaw.json 指定區段（deep merge） |
