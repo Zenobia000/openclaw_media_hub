@@ -356,7 +356,7 @@
 
 | ID     | 任務                                                                                                         | 負責人 | 工時  | 狀態      | 開始日 | 完成日 | 備註                                   |
 | :----- | :----------------------------------------------------------------------------------------------------------- | :----- | :---- | :-------- | :----- | :----- | :------------------------------------- |
-| 3.10.1 | skill_manager.py：掃描 `module_pack/`（自訂業務模組）+ `openclaw/skills/`（55+ 社群技能）目錄                 | DEV    | 1.5h  | ✅ 完成 | 03/25  | 03/25  | custom nested 二層 + community flat 一層 |
+| 3.10.1 | skill_manager.py：掃描 `module_pack/`（自訂業務模組）+ `openclaw/skills/`（52 社群技能）目錄                   | DEV    | 1.5h  | ✅ 完成 | 03/25  | 03/25  | custom nested 二層 + community flat 一層 |
 | 3.10.2 | skill_manager.py：SKILL.md YAML frontmatter 解析（name, description, homepage, metadata.openclaw.emoji/requires） | DEV | 1.5h | ✅ 完成 | 03/25 | 03/25 | PyYAML 解析 |
 | 3.10.3 | skill_manager.py：部署邏輯 (Executor.copy_tree → `~/.openclaw/workspace/skills/`) + 移除邏輯 (Executor.remove_tree) + 已部署偵測 | DEV | 1h | ✅ 完成 | 03/25 | 03/25 | 遠端模式用 transfer_service |
 | 3.10.4 | Bridge API：`list_skills()`, `deploy_skills(names)`, `remove_skills(names)` + 進度回呼 (`window.updateDeployProgress`) + 單元測試 | DEV | 1.5h | ✅ 完成 | 03/25 | 03/25 | 21 項測試全通過 |
@@ -366,7 +366,7 @@
 
 #### 3.11 外掛安裝 — US-006 (10h) ✅
 
-> 提前於 2026-03-25~03/26 完成。plugin_manager.py 全面重寫（_categorize 分類 + _scan_extensions 掃描 75 外掛 + install/uninstall config-driven）+ Bridge API + 前端 Install Plugins 頁面 + 21 項測試。
+> 提前於 2026-03-25~03/26 完成。plugin_manager.py 全面重寫（_categorize 分類 + _scan_extensions 掃描 77 外掛 + install/uninstall config-driven）+ Bridge API + 前端 Install Plugins 頁面 + 21 項測試。
 
 | ID     | 任務                                                                                                          | 負責人 | 工時  | 狀態      | 開始日 | 完成日 | 備註                                   |
 | :----- | :------------------------------------------------------------------------------------------------------------ | :----- | :---- | :-------- | :----- | :----- | :------------------------------------- |
@@ -493,7 +493,7 @@
   - `ADR-005` keyring → .env 遷移（config_manager.py 重寫金鑰儲存邏輯）。
 - **已完成 (03/25~03/26 — 3.9 前端 + 3.11 外掛安裝)**:
   - `3.9.5~9` 前端 Dashboard：Header + StatusBadge + 4 StatCards + Service Control 區塊 + Quick Actions + 10 秒狀態輪詢。
-  - `3.11.1~6` plugin_manager.py 全面重寫：_categorize() 4 分類 + _scan_extensions() 掃描 75 外掛 + install/uninstall config-driven + Bridge API + 前端 Install Plugins 頁面（4 Tab + 品牌色圓形 icon + Progress Overlay）+ 21 項測試。
+  - `3.11.1~6` plugin_manager.py 全面重寫：_categorize() 4 分類 + _scan_extensions() 掃描 77 外掛 + install/uninstall config-driven + Bridge API + 前端 Install Plugins 頁面（4 Tab + 品牌色圓形 icon + Progress Overlay）+ 21 項測試。
   - `94ebb1d` Bridge API + Frontend State Management 重構。
   - **累計測試**：213 passed, 2 skipped，零回歸。
 - **計劃中**:

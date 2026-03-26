@@ -686,7 +686,7 @@ function stopPolling() {
    - 描述: "Scanned from module_pack/ (custom modules) and openclaw/skills/ (community skills)"
    - **Tab 切換列**: 頂部，2 個 Tab:
      - "Custom Modules"（來自 `module_pack/`，自訂業務模組）
-     - "Community Skills"（來自 `openclaw/skills/`，55+ 社群技能）
+     - "Community Skills"（來自 `openclaw/skills/`，52 社群技能）
    - 當前 Tab 以 `accent-primary` 底線高亮
    - **Select All 列**: 頂部，checkbox + "Select All" 文字 + 底部 `1px` 分隔線
    - **技能列表**: 垂直排列，每項以 `1px` 分隔線間隔，padding `14px 16px`
@@ -781,7 +781,7 @@ const result = await window.pywebview.api.remove_skills(["google-search"]);
      - "Providers"（模型供應商: openai, anthropic, google, ollama, amazon-bedrock, openrouter, mistral, nvidia, together 等）
      - "Channels"（通訊管道: line, discord, telegram, slack, whatsapp, matrix, signal, msteams, zalo, irc 等）
      - "Tools"（工具: brave, perplexity, firecrawl, elevenlabs, tavily 等）
-     - "Infrastructure"（基礎設施: memory-core, memory-lancedb, diagnostics-otel, thread-ownership 等）
+     - "Infrastructure"（基礎設施: memory-core, memory-lancedb）
    - 當前 Tab 以 `accent-secondary` 底線高亮
    - **Select All 列**: 頂部，checkbox + "Select All" 文字 + 底部 `1px` 分隔線
    - **外掛列表**: 垂直排列，每項以 `1px` 分隔線間隔，padding `14px 16px`
@@ -888,7 +888,7 @@ const result = await window.pywebview.api.uninstall_plugins(["line-bot"]);
          - StatusBadge（margin-left auto）:
            - Healthy: 綠底 "Healthy" badge（`status-success`）
            - Broken: 紅底 "Broken" badge（`status-error`）
-           - Warning: 黃底 "Warning" badge（`#eab308`）
+           - Warning: 黃底 "Warning" badge（`#eab308`）— reserved for future use, 目前未使用
        - **下方列** — 僅在有問題時顯示（margin-top `10px`, padding-left `36px`）:
          - **Issues 清單**: 垂直排列，每項帶 `alert-circle` icon（12px, `status-error`）+ 問題描述文字（13px, `text-secondary`）
            - 例: "Missing configuration file: line-bot.json"
