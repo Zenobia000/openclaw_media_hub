@@ -1028,6 +1028,16 @@ const result = await window.pywebview.api.fix_all_plugins();
 
 6. **Save Settings 按鈕**: Button/Primary "Save Settings"（`save` icon），點擊呼叫 `save_gateway_settings()`
    - 僅在 Bind Mode 或 Control UI 有變更時 enabled
+   - **儲存後自動重啟服務**：`save_gateway_settings()` 後端在寫入設定後，依部署模式自動重啟 Gateway 服務使變更生效：
+     - **Docker** (Windows / Linux / WSL2): `docker compose restart openclaw-gateway`
+     - **Native Linux** (systemd): `systemctl restart openclaw-gateway`
+     - **Remote Server** (SSH): 透過 `RemoteExecutor` 在遠端執行 `systemctl restart openclaw-gateway`
+   - **前端 UX 流程**：
+     1. 點擊 Save Settings → 按鈕進入 loading 狀態（spinner + "Saving & Restarting..."）
+     2. 後端完成設定寫入 + 服務重啟後回傳結果
+     3. 成功：顯示 success toast "Settings saved. Gateway restarted."，按鈕恢復 disabled（無未儲存變更）
+     4. 部分失敗（設定已寫入但重啟失敗）：顯示 warning toast "Settings saved but Gateway restart failed. Please restart manually."，按鈕恢復 disabled
+     5. 失敗（設定寫入失敗）：顯示 error toast，按鈕恢復 enabled（仍有未儲存變更）
 
 #### 左欄：Origin Access Control
 
@@ -1080,11 +1090,16 @@ const info = await window.pywebview.api.get_gateway_info();
 //   control_ui_enabled: true
 // }
 
-// 儲存 Gateway 設定（Bind Mode + Control UI）
-await window.pywebview.api.save_gateway_settings({
+// 儲存 Gateway 設定（Bind Mode + Control UI）+ 自動重啟服務
+const result = await window.pywebview.api.save_gateway_settings({
   bind: "lan",              // "loopback" | "lan"
   control_ui_enabled: true
 });
+// result.data = {
+//   saved: true,
+//   restarted: true,              // false 表示重啟失敗（設定已寫入）
+//   restart_error: null            // 重啟失敗時包含錯誤訊息
+// }
 
 // 讀取 allowedOrigins
 const origins = await window.pywebview.api.get_allowed_origins();
@@ -1121,6 +1136,8 @@ const notes = await window.pywebview.api.get_device_notes();
 - [ ] Gateway Token 遮罩顯示，支援 Show/Hide 與 Copy
 - [ ] Control UI Enabled checkbox 控制是否啟用 Control UI
 - [ ] Bind Mode 或 Control UI 變更後，Save Settings 按鈕 enabled，儲存呼叫 save_gateway_settings()
+- [ ] Save Settings 儲存後自動重啟 Gateway 服務，按鈕顯示 "Saving & Restarting..." loading 狀態
+- [ ] 儲存+重啟成功顯示 success toast；設定已存但重啟失敗顯示 warning toast；設定寫入失敗顯示 error toast
 - [ ] Allow All Origins toggle 切換後更新 UI，點擊 Save Origins 儲存至 openclaw.json
 - [ ] 白名單可新增/刪除 origin，點擊 Save Origins 後儲存
 - [ ] Pending 裝置可 Approve / Reject，操作後自動刷新列表

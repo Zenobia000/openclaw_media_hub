@@ -495,7 +495,7 @@ class Bridge:
 
     @_bridge_api
     def save_gateway_settings(self, params: dict) -> dict:
-        """儲存 Gateway 設定（Bind Mode + Control UI Enabled）。"""
+        """儲存 Gateway 設定（Bind Mode + Control UI Enabled）+ 自動重啟服務。"""
         config_dir = self._get_config_dir()
         data: dict = {}
 
@@ -511,7 +511,24 @@ class Bridge:
             return _err(ErrorType.INTERNAL, "No valid settings provided")
 
         self._config_manager.write_openclaw_config(config_dir, data, "gateway")
-        return _ok({"message": "Gateway settings saved"})
+
+        # 儲存成功後自動重啟 Gateway 服務使變更生效
+        restart_error = None
+        restarted = False
+        try:
+            ctrl = self._build_service_controller()
+            result = self._run_async(ctrl.restart())
+            restarted = result.get("success", False)
+            if not restarted:
+                restart_error = result.get("message", "Unknown restart error")
+        except Exception as exc:
+            restart_error = str(exc)
+
+        return _ok({
+            "saved": True,
+            "restarted": restarted,
+            "restart_error": restart_error,
+        })
 
     @_bridge_api
     def get_allowed_origins(self) -> dict:

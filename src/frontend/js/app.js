@@ -34,6 +34,29 @@ function refreshIcons() {
   lucide.createIcons({ nameAttr: "data-lucide" });
 }
 
+/** Toast 通知（type: "success" | "warning" | "error"） */
+function showToast(message, type = "success", duration = 4000) {
+  const colors = {
+    success: "bg-status-success text-white",
+    warning: "bg-[#f59e0b] text-white",
+    error:   "bg-status-error text-white",
+  };
+  const icons = { success: "check-circle", warning: "alert-triangle", error: "x-circle" };
+  let container = document.getElementById("toast-container");
+  if (!container) {
+    container = document.createElement("div");
+    container.id = "toast-container";
+    container.className = "fixed top-4 right-4 z-[9999] flex flex-col gap-2";
+    document.body.appendChild(container);
+  }
+  const toast = document.createElement("div");
+  toast.className = `flex items-center gap-2 px-4 py-3 rounded-md shadow-lg text-sm font-medium ${colors[type] || colors.success} transition-opacity duration-300`;
+  toast.innerHTML = `<i data-lucide="${icons[type] || icons.success}" class="w-4 h-4"></i><span>${esc(message)}</span>`;
+  container.appendChild(toast);
+  refreshIcons();
+  setTimeout(() => { toast.classList.add("opacity-0"); setTimeout(() => toast.remove(), 300); }, duration);
+}
+
 /** 將 HTML 注入容器並刷新圖示 */
 function renderInto(containerId, html) {
   const el = document.getElementById(containerId);
@@ -2700,17 +2723,30 @@ async function saveGatewaySettings() {
   const params = {};
   if (gatewayState.pendingBind != null) params.bind = gatewayState.pendingBind;
   if (gatewayState.pendingControlUi != null) params.control_ui_enabled = gatewayState.pendingControlUi;
+
+  // 進入 loading 狀態
+  const btn = document.querySelector("#gateway-info-panel button[onclick*='saveGateway']");
+  if (btn) { btn.disabled = true; btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i><span>Saving &amp; Restarting...</span>`; refreshIcons(); }
+
   try {
     const resp = await window.pywebview.api.save_gateway_settings(params);
     if (resp?.success) {
+      const d = resp.data;
       gatewayState.pendingBind = null;
       gatewayState.pendingControlUi = null;
       gatewayState.settingsDirty = false;
+      if (d.restarted) {
+        showToast("Settings saved. Gateway restarted.", "success");
+      } else {
+        showToast("Settings saved but Gateway restart failed. Please restart manually.", "warning", 6000);
+      }
       await loadGatewayData();
     } else {
-      alert(resp?.error?.message || "Failed to save gateway settings");
+      showToast(resp?.error?.message || "Failed to save gateway settings", "error");
     }
-  } catch { alert("Connection error while saving gateway settings"); }
+  } catch {
+    showToast("Connection error while saving gateway settings", "error");
+  }
 }
 
 function toggleAllowAllOrigins(checked) {
