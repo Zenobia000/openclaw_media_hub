@@ -3596,137 +3596,6 @@
                             },
                             {
                               "type": "frame",
-                              "id": "U4P9q",
-                              "name": "f4",
-                              "width": "fill_container",
-                              "layout": "vertical",
-                              "gap": 6,
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "0Cd5q",
-                                  "name": "f4label",
-                                  "fill": "$text-secondary",
-                                  "content": "Bridge Port",
-                                  "fontFamily": "Inter",
-                                  "fontSize": 12,
-                                  "fontWeight": "500"
-                                },
-                                {
-                                  "type": "frame",
-                                  "id": "vIOsg",
-                                  "name": "f4input",
-                                  "width": "fill_container",
-                                  "height": 40,
-                                  "fill": "$bg-input",
-                                  "cornerRadius": "$radius-sm",
-                                  "stroke": {
-                                    "thickness": 1,
-                                    "fill": "$border-default"
-                                  },
-                                  "gap": 8,
-                                  "padding": [
-                                    0,
-                                    12
-                                  ],
-                                  "alignItems": "center",
-                                  "children": [
-                                    {
-                                      "type": "icon_font",
-                                      "id": "1k2pN",
-                                      "name": "f4icon",
-                                      "width": 16,
-                                      "height": 16,
-                                      "iconFontName": "hash",
-                                      "iconFontFamily": "lucide",
-                                      "fill": "$text-muted"
-                                    },
-                                    {
-                                      "type": "text",
-                                      "id": "tp2dj",
-                                      "name": "f4txt",
-                                      "fill": "$text-muted",
-                                      "content": "18790",
-                                      "fontFamily": "Inter",
-                                      "fontSize": 14,
-                                      "fontWeight": "normal"
-                                    }
-                                  ]
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "QkjiE",
-                          "name": "gwRow3",
-                          "width": "fill_container",
-                          "gap": 12,
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "zq7Ut",
-                              "name": "f5",
-                              "width": "fill_container",
-                              "layout": "vertical",
-                              "gap": 6,
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "lXWIl",
-                                  "name": "f5lbl",
-                                  "fill": "$text-secondary",
-                                  "content": "Gateway Mode",
-                                  "fontFamily": "Inter",
-                                  "fontSize": 12,
-                                  "fontWeight": "500"
-                                },
-                                {
-                                  "type": "frame",
-                                  "id": "SEepD",
-                                  "name": "f5input",
-                                  "width": "fill_container",
-                                  "height": 40,
-                                  "fill": "$bg-input",
-                                  "cornerRadius": "$radius-sm",
-                                  "stroke": {
-                                    "thickness": 1,
-                                    "fill": "$border-default"
-                                  },
-                                  "gap": 8,
-                                  "padding": [
-                                    0,
-                                    12
-                                  ],
-                                  "alignItems": "center",
-                                  "children": [
-                                    {
-                                      "type": "icon_font",
-                                      "id": "BckIp",
-                                      "name": "f5ico",
-                                      "width": 16,
-                                      "height": 16,
-                                      "iconFontName": "settings",
-                                      "iconFontFamily": "lucide",
-                                      "fill": "$text-muted"
-                                    },
-                                    {
-                                      "type": "text",
-                                      "id": "4733Q",
-                                      "name": "f5txt",
-                                      "fill": "$text-muted",
-                                      "content": "local",
-                                      "fontFamily": "Inter",
-                                      "fontSize": 14,
-                                      "fontWeight": "normal"
-                                    }
-                                  ]
-                                }
-                              ]
-                            },
-                            {
-                              "type": "frame",
                               "id": "6iyCg",
                               "name": "f6",
                               "width": "fill_container",
@@ -3778,6 +3647,76 @@
                                       "name": "f6txt",
                                       "fill": "$text-muted",
                                       "content": "18789",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 14,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "QkjiE",
+                          "name": "gwRow3",
+                          "width": "fill_container",
+                          "gap": 12,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "U4P9q",
+                              "name": "f4",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 6,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "0Cd5q",
+                                  "name": "f4label",
+                                  "fill": "$text-secondary",
+                                  "content": "Bridge Port",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "vIOsg",
+                                  "name": "f4input",
+                                  "width": "fill_container",
+                                  "height": 40,
+                                  "fill": "$bg-input",
+                                  "cornerRadius": "$radius-sm",
+                                  "stroke": {
+                                    "thickness": 1,
+                                    "fill": "$border-default"
+                                  },
+                                  "gap": 8,
+                                  "padding": [
+                                    0,
+                                    12
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "icon_font",
+                                      "id": "1k2pN",
+                                      "name": "f4icon",
+                                      "width": 16,
+                                      "height": 16,
+                                      "iconFontName": "hash",
+                                      "iconFontFamily": "lucide",
+                                      "fill": "$text-muted"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "tp2dj",
+                                      "name": "f4txt",
+                                      "fill": "$text-muted",
+                                      "content": "18790",
                                       "fontFamily": "Inter",
                                       "fontSize": 14,
                                       "fontWeight": "normal"

@@ -318,10 +318,11 @@ const result = await window.pywebview.api.check_env();
 
 5. **Gateway & Directory 區塊** (SectionPanel)
    - Icon: `globe` (teal), 標題: "Gateway & Directory"
-   - 3×2 表單 Grid (gap: 16px):
+   - 2×2 + 1×1 表單 Grid (gap: 16px):
      - Row 1: Config Directory (`placeholder: ~/.openclaw`, 對應 `OPENCLAW_CONFIG_DIR`) + Workspace Directory (`placeholder: ~/.openclaw/workspace`, 對應 `OPENCLAW_WORKSPACE_DIR`)
-     - Row 2: Gateway Bind Host (`placeholder: lan`, 對應 `OPENCLAW_GATEWAY_BIND`) + Gateway Mode (`placeholder: local`)
-     - Row 3: Gateway Port (`placeholder: 18789`, 對應 `OPENCLAW_GATEWAY_PORT`) + Bridge Port (`placeholder: 18790`, 對應 `OPENCLAW_BRIDGE_PORT`)
+     - Row 2: Gateway Bind Host (`placeholder: lan`, 對應 `OPENCLAW_GATEWAY_BIND`) + Gateway Port (`placeholder: 18789`, 對應 `OPENCLAW_GATEWAY_PORT`)
+     - Row 3: Bridge Port (`placeholder: 18790`, 對應 `OPENCLAW_BRIDGE_PORT`)
+   - ~~Gateway Mode 欄位已移除~~：Docker/Native Linux 模式下由後端硬編碼為 `local`（`setup.sh` L128: `config set gateway.mode local`），使用者不需設定
    - **進階設定** (預設收合，點擊展開):
      - Timezone (`placeholder: Asia/Taipei`, 對應 `OPENCLAW_TZ`)
      - Docker Image (`placeholder: openclaw:local`, 對應 `OPENCLAW_IMAGE`)
