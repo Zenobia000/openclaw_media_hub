@@ -1371,7 +1371,7 @@ const DEPLOY_MODES = [
 
 const MODE_BASE = {
   config_dir: "~/.openclaw", workspace_dir: "~/.openclaw/workspace",
-  gateway_bind: "lan", gateway_mode: "local", gateway_port: "18789",
+  gateway_bind: "lan", gateway_port: "18789",
   bridge_port: "18790", timezone: "Asia/Taipei", docker_image: "openclaw:local",
 };
 
@@ -1384,7 +1384,7 @@ const MODE_DEFAULTS = {
 
 const CONFIG_FIELD_MAP = {
   "input-config-dir": "config_dir", "input-workspace-dir": "workspace_dir",
-  "input-gateway-bind": "gateway_bind", "input-gateway-mode": "gateway_mode",
+  "input-gateway-bind": "gateway_bind",
   "input-gateway-port": "gateway_port", "input-bridge-port": "bridge_port",
   "input-timezone": "timezone", "input-docker-image": "docker_image",
 };
@@ -1506,8 +1506,9 @@ function renderGatewaySection() {
       ${renderInput({ id: "input-config-dir", label: "Config Directory", icon: "folder", placeholder: "~/.openclaw", value: v("config_dir") })}
       ${renderInput({ id: "input-workspace-dir", label: "Workspace Directory", icon: "folder", placeholder: "~/.openclaw/workspace", value: v("workspace_dir") })}
       ${renderInput({ id: "input-gateway-bind", label: "Gateway Bind Host", placeholder: "lan", value: v("gateway_bind") })}
-      ${renderInput({ id: "input-gateway-mode", label: "Gateway Mode", placeholder: "local", value: v("gateway_mode") })}
       ${renderInput({ id: "input-gateway-port", label: "Gateway Port", type: "number", placeholder: "18789", value: v("gateway_port") })}
+    </div>
+    <div class="grid grid-cols-2 gap-4 mt-4">
       ${renderInput({ id: "input-bridge-port", label: "Bridge Port", type: "number", placeholder: "18790", value: v("bridge_port") })}
     </div>`;
 
@@ -2202,7 +2203,6 @@ async function startInitialization() {
     config_dir: configState.formValues.config_dir || "~/.openclaw",
     workspace_dir: configState.formValues.workspace_dir || "~/.openclaw/workspace",
     gateway_bind: configState.formValues.gateway_bind || "lan",
-    gateway_mode: configState.formValues.gateway_mode || "local",
     gateway_port: parseInt(configState.formValues.gateway_port, 10) || 18789,
     bridge_port: parseInt(configState.formValues.bridge_port, 10) || 18790,
     timezone: configState.formValues.timezone || "Asia/Taipei",
@@ -2345,7 +2345,7 @@ registerPage("configuration", {
       const saved = await window.pywebview.api.load_config();
       if (saved?.success && saved.data) {
         const s = saved.data;
-        for (const key of ["config_dir", "workspace_dir", "gateway_bind", "gateway_mode", "gateway_port", "bridge_port", "timezone", "docker_image"]) {
+        for (const key of ["config_dir", "workspace_dir", "gateway_bind", "gateway_port", "bridge_port", "timezone", "docker_image"]) {
           if (s[key] !== undefined) configState.formValues[key] = String(s[key]);
         }
         if (s.sandbox !== undefined) configState.formValues.sandbox = s.sandbox;

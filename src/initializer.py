@@ -32,7 +32,6 @@ class InitParams:
     config_dir: str  # e.g. "~/.openclaw"
     workspace_dir: str  # e.g. "~/.openclaw/workspace"
     gateway_bind: str  # "loopback" | "lan"
-    gateway_mode: str  # "local"
     gateway_port: int  # 18789
     bridge_port: int  # 18790
     timezone: str  # "Asia/Taipei"
@@ -167,7 +166,6 @@ class Initializer:
             "OPENCLAW_CONFIG_DIR": params.config_dir,
             "OPENCLAW_WORKSPACE_DIR": params.workspace_dir,
             "OPENCLAW_GATEWAY_BIND": params.gateway_bind,
-            "OPENCLAW_GATEWAY_MODE": params.gateway_mode,
             "OPENCLAW_GATEWAY_PORT": str(params.gateway_port),
             "OPENCLAW_BRIDGE_PORT": str(params.bridge_port),
             "OPENCLAW_GATEWAY_TOKEN": self._gateway_token or "",
@@ -221,7 +219,7 @@ class Initializer:
     async def _step_sync_gateway(self, params: InitParams) -> dict:
         """Step 9: 同步 Gateway 設定至 openclaw.json。"""
         gateway_data = {
-            "mode": params.gateway_mode,
+            "mode": "local",
             "bind": params.gateway_bind,
             "controlUi": {
                 "allowedOrigins": [
