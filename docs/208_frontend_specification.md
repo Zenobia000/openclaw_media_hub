@@ -2,8 +2,8 @@
 
 ---
 
-**版本:** `v1.0`
-**日期:** `2026-03-24`
+**版本:** `v1.1`
+**日期:** `2026-03-26`
 **狀態:** `Draft`
 **依據:** `202_architecture_design.md v2.0`, `200_project_brief_prd.md v2.0`, `pencil-new.pen UI Mockup`
 
@@ -87,7 +87,7 @@ Root (SPA - Single Page Application)
     └── action-bar (固定底部, padding: 16px 24px 32px 24px, border-top: 1px)
     ```
   - **Action Bar 固定規則**: Action Bar 不隨內容捲動，始終固定於主內容區底部，上方以 `1px solid border-default` 分隔線區隔
-  - **捲動提示**: 當內容溢出時，scroll-area 底部以 `4px` 漸層淡出（`linear-gradient(transparent, bg-primary)`）暗示可繼續捲動
+  - **捲動提示**: CSS 已定義 `.scroll-fade` class（`4px` 漸層淡出 `linear-gradient(transparent, bg-primary)`），可選擇性套用至 scroll-area 容器暗示可繼續捲動（目前未啟用）
   - **不適用頁面**: Dashboard、Environment、Configuration Step 3 等內容未溢出的頁面維持現有非捲動佈局；Deploy Skills / Install Plugins / Fix Plugins 的列表面板以獨立 `overflow-y: auto` 處理內部捲動
 
 ### 3.2 Design Tokens
@@ -569,14 +569,16 @@ await window.pywebview.api.initialize({
      - Running 時: 綠色圓點 + "Running" 綠字（`status-success`）
      - Stopped 時: 紅色圓點 + "Stopped" 紅字（`status-error`）
 
-2. **StatCards Row** — 水平排列 4 張 StatCard（Flexbox, gap: 16px, 等寬）
+2. **StatCards Row** — 水平排列 4 張 StatCard（Flexbox, gap: 12px, 等寬）
    - **Services**: icon `server`（`accent-primary`），數值 "X/1"，描述 "Services Running"（目前僅 Gateway），badge 依啟動/停止顯示 success/error
    - **Uptime**: icon `clock`（`accent-secondary`），數值 "Xh Xm" 或 "—"（未啟動），描述 "Uptime"，badge info
    - **Skills**: icon `zap`（`status-info`），數值 數量，描述 "Skills Deployed"，badge info
    - **Plugins**: icon `puzzle`（`accent-secondary`），數值 數量，描述 "Plugins Installed"，badge info
    - 每張卡片: `bg-card` 背景, `radius-md` 圓角, `1px solid border-default` 邊框, padding `20px`
 
-3. **Service Control 區塊** (SectionPanel)
+3. **底部雙欄** — Service Control 與 Quick Actions 水平並排（Flexbox, gap: 16px, 各佔 `flex: 1`）
+
+   **左欄: Service Control 區塊** (SectionPanel)
    - Icon: `activity`（紅）, 標題: "Service Control"
    - 描述: "Start or stop the OpenClaw service stack"
    - **服務列表**: 垂直排列各服務狀態行（`1px` 分隔線間隔）
@@ -588,12 +590,12 @@ await window.pywebview.api.initialize({
      - 服務運行中時:
        - Button/Secondary "Restart Services"（`refresh-cw` icon）
        - Button/Danger "Stop Services"（`square` icon）
-     - 操作進行中時: 按鈕 disabled，文字變為 "Starting..." / "Stopping..."，icon 替換為旋轉 `loader` 動畫
+     - 操作進行中時: 按鈕 disabled，文字變為 "Processing..."，icon 替換為旋轉 `loader` 動畫
 
-4. **Quick Actions 區塊** (SectionPanel)
+   **右欄: Quick Actions 區塊** (SectionPanel)
    - Icon: `compass`（`accent-secondary`）, 標題: "Quick Actions"
    - 描述: "Navigate to common tasks"
-   - 3 張 Action Card 水平排列（Flexbox, gap: 16px, 等寬）:
+   - 3 張 Action Card **垂直排列**（Flexbox column, gap: 8px）:
      - **Environment Check**: icon `monitor`（`status-info`），標題 "Check Environment"，描述 "Verify dependencies"，點擊導航至 Environment 頁面
      - **Deploy Skills**: icon `zap`（`accent-primary`），標題 "Deploy Skills"，描述 "Manage skill modules"，點擊導航至 Deploy Skills 頁面
      - **Install Plugins**: icon `puzzle`（`accent-secondary`），標題 "Install Plugins"，描述 "Manage plugin modules"，點擊導航至 Install Plugins 頁面
@@ -948,46 +950,68 @@ const result = await window.pywebview.api.fix_all_plugins();
 
 **進入條件**: 點擊 Sidebar MAIN 區段的 "Gateway" 項目
 
-**頁面佈局**: 兩欄式，左欄 Origin Access Control，右欄 Device Management
+**頁面佈局**: 上方 Connection Info（整列）+ 下方兩欄式（左 Origin Access Control，右 Device Management）
+
+#### 上方：Connection Info
+
+1. **Section Panel**
+   - Icon: `link` (`accent-secondary`), 標題: "Connection Info"
+   - 說明: "Gateway endpoint and authentication for device pairing"
+   - **2×2 Info Grid**:
+     - Gateway URL（唯讀 code 顯示）
+     - Bind Mode（唯讀 code 顯示）
+     - Port（唯讀 code 顯示）
+     - Security（TLS + Auth StatusBadge）
+   - **Gateway Token**: 遮罩顯示（前 8 字元 + `…`）+ Show/Hide 按鈕 + Copy 按鈕
+   - **Pairing 提示**: info icon + 說明文字（如何分享 URL 與 Token 給裝置使用者）
 
 #### 左欄：Origin Access Control
 
 1. **Section Panel** (與其他頁面一致的卡片樣式)
-   - Icon: `globe` (teal), 標題: "Origin Access Control"
-   - 說明: "Control which origins can access the Gateway Control UI"
+   - Icon: `globe` (`status-info`), 標題: "Origin Access Control"
+   - 說明: "Manage which origins can access the Gateway Control UI"
 
 2. **模式切換列**:
-   - "Allow All Origins" 標題 + "Set allowedOrigins to wildcard (*)" 說明
+   - "Allow All Origins" 標題 + 'Set allowedOrigins to ["*"] — allows any origin' 說明
    - Toggle 開關（ON: `allowedOrigins: ["*"]`, OFF: 使用白名單）
-   - 切換時即時呼叫 `save_allowed_origins()` 寫入 `openclaw.json`
+   - 切換時即時更新 UI（儲存需點擊 Save Origins 按鈕）
 
 3. **白名單編輯** (Toggle OFF 時顯示):
-   - "Whitelist" 標題 + "Add Origin" Button/Primary (帶 `plus` icon)
-   - 已設定 origin 列表：每行顯示 origin URL + `x` 刪除按鈕
-   - 新增 origin 時顯示 inline input + confirm 按鈕
+   - "Whitelist" 子標題
+   - 已設定 origin 列表：每行顯示 `globe` icon + origin URL + `trash-2` 刪除按鈕
+   - 底部: inline input (`placeholder: https://example.com`) + "Add" Button/Secondary (帶 `plus` icon, 小型)
+
+4. **Save Origins 按鈕**: Button/Primary "Save Origins"（`save` icon），點擊呼叫 `save_allowed_origins()`
 
 #### 右欄：Device Management
 
 1. **Section Panel**
-   - Icon: `monitor-smartphone` (red), 標題: "Device Management"
-   - 右上角: "Refresh" Button/Secondary (帶 `refresh-cw` icon)
+   - Icon: `smartphone` (`accent-primary`), 標題: "Device Management"
+   - 說明: "Approve, reject, or remove paired devices"
 
 2. **Pending Requests 區塊**:
-   - "Pending Requests" 子標題
+   - "Pending Requests (N)" 子標題
    - 每個 pending device 一行：
-     - `circle-dot` icon (amber) + displayName/deviceId + remoteIp · roles
-     - "Approve" Button/Primary (小型) + "Reject" Button/Secondary (小型)
+     - `clock` icon (amber 底圓) + displayName/deviceId + remoteIp · roles
+     - "Approve" Button/Primary (小型, `check` icon) + "Reject" Button/Danger (小型, `x` icon)
 
 3. **Paired Devices 區塊** (分隔線後):
-   - "Paired Devices" 子標題
+   - "Paired Devices (N)" 子標題
    - 每個 paired device 一行：
-     - `circle-check` icon (green) + displayName/deviceId + remoteIp · roles
+     - `smartphone` icon (green 底圓) + displayName/deviceId + remoteIp
      - 備註欄位（inline 可編輯 text input，blur 時自動儲存至 `gui-settings.json`）
      - `trash-2` 刪除按鈕
+
+4. **Refresh 按鈕**: Button/Secondary "Refresh"（`refresh-cw` icon），位於列表底部
 
 **Bridge API 呼叫**:
 
 ```javascript
+// 讀取 Gateway 連線資訊（URL, Bind, Port, Token, TLS, Auth）
+const info = await window.pywebview.api.get_gateway_info();
+// info.data = { url: "http://127.0.0.1:18789", bind: "lan", port: 18789,
+//   gateway_token: "...", tls: false, has_credential: true, auth_label: "Token" }
+
 // 讀取 allowedOrigins
 const origins = await window.pywebview.api.get_allowed_origins();
 // origins.data = { origins: ["http://127.0.0.1:18789", ...], is_wildcard: false }
@@ -995,7 +1019,7 @@ const origins = await window.pywebview.api.get_allowed_origins();
 // 儲存 allowedOrigins
 await window.pywebview.api.save_allowed_origins({
   origins: ["http://127.0.0.1:18789", "http://localhost:18789"],
-  is_wildcard: false
+  allow_all: false
 });
 
 // 列出所有裝置（pending + paired）
@@ -1011,15 +1035,16 @@ await window.pywebview.api.remove_device({ device_id: "device-id" });
 // 儲存/讀取裝置備註（本地 gui-settings.json）
 await window.pywebview.api.save_device_note({ device_id: "id", note: "備註" });
 const notes = await window.pywebview.api.get_device_notes();
-// notes.data = { "device-id-1": "辦公室桌機", "device-id-2": "測試手機" }
+// notes.data = { notes: { "device-id-1": "辦公室桌機", "device-id-2": "測試手機" } }
 ```
 
 **Acceptance Criteria**:
 
 - [ ] Sidebar MAIN 區段顯示 Gateway 項目（`shield` icon）
-- [ ] 進入頁面時自動載入 allowedOrigins 和裝置列表
-- [ ] Allow All Origins toggle 切換後即時寫入 openclaw.json
-- [ ] 白名單可新增/刪除 origin，操作後自動儲存
+- [ ] 進入頁面時自動載入 Connection Info、allowedOrigins 和裝置列表
+- [ ] Connection Info 區塊顯示 Gateway URL/Bind/Port/Security/Token
+- [ ] Allow All Origins toggle 切換後更新 UI，點擊 Save Origins 儲存至 openclaw.json
+- [ ] 白名單可新增/刪除 origin，點擊 Save Origins 後儲存
 - [ ] Pending 裝置可 Approve / Reject，操作後自動刷新列表
 - [ ] Paired 裝置可添加備註（blur 自動儲存）和 Remove
 - [ ] Refresh 按鈕重新載入裝置列表
@@ -1140,8 +1165,9 @@ window.updateConnectionStatus = function(status, message) {
 | `disconnect_remote()` | `ssh_connection.py` | `{success}` — 中斷 SSH 連線並釋放資源 |
 | `get_connection_status()` | `ssh_connection.py` | `{connected, status, host, uptime}` — 查詢當前 SSH 連線狀態 |
 | `test_connection(params)` | `ssh_connection.py` | `{success, server_info: {os, cpu_cores, memory_gb, disk_gb}}` — 測試 SSH 連線（不持久化） |
+| `get_gateway_info()` | `bridge.py` | `{url, bind, port, gateway_token, tls, has_credential, auth_label}` — 讀取 Gateway 連線資訊 (ADR-006) |
 | `get_allowed_origins()` | `config_manager.py` | `{origins: string[], is_wildcard: bool}` — 讀取 gateway.controlUi.allowedOrigins (ADR-006) |
-| `save_allowed_origins(params)` | `config_manager.py` | `{success}` — 寫入 allowedOrigins 至 openclaw.json (ADR-006) |
+| `save_allowed_origins(params)` | `config_manager.py` | `{success}` — 寫入 allowedOrigins 至 openclaw.json，params: `{allow_all, origins}` (ADR-006) |
 | `list_devices()` | `bridge.py` | `{pending: [...], paired: [...]}` — 列出所有裝置（`openclaw devices list --json`）(ADR-006) |
 | `list_pending_devices()` | `bridge.py` | `{devices: [...]}` — 列出待核准裝置（Step 3 Device Pairing 用） |
 | `approve_device(params)` | `bridge.py` | `{message, output}` — 核准裝置（`openclaw devices approve`）|

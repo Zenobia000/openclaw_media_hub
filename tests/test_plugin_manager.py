@@ -392,3 +392,274 @@ class TestRemoteMode:
 
         main_ex.write_file.assert_called_once()
         local_ex.write_file.assert_not_called()
+
+
+# ── TestDiagnosePlugins ─────────────────────────────────
+
+
+def _config_with_plugins(
+    entries: dict | None = None,
+    installs: dict | None = None,
+    paths: list[str] | None = None,
+) -> bytes:
+    """Helper: build openclaw.json bytes with plugins section."""
+    return json.dumps({
+        "plugins": {
+            "enabled": True,
+            "entries": entries or {},
+            "installs": installs or {},
+            "load": {"paths": paths or []},
+        },
+    }).encode()
+
+
+def _setup_diagnose(executor, *, config_bytes: bytes, scan_dirs: dict[str, bytes | None]):
+    """Set up executor for diagnose tests.
+
+    scan_dirs: {plugin_id: manifest_bytes_or_None}
+    None means the extension dir does not exist.
+    """
+    async def _read(path: str) -> bytes:
+        if path.endswith("openclaw.json"):
+            return config_bytes
+        for pid, manifest in scan_dirs.items():
+            if path.endswith(f"/{pid}/openclaw.plugin.json"):
+                if manifest is None:
+                    raise FileNotFoundError(path)
+                return manifest
+        raise FileNotFoundError(path)
+
+    async def _list_dir(path: str) -> list[str]:
+        if path.endswith("/extensions"):
+            return list(scan_dirs.keys())
+        for pid, manifest in scan_dirs.items():
+            if path.endswith(f"/{pid}"):
+                if manifest is None:
+                    raise FileNotFoundError(path)
+                return ["openclaw.plugin.json"]
+        raise FileNotFoundError(path)
+
+    executor.read_file = AsyncMock(side_effect=_read)
+    executor.list_dir = AsyncMock(side_effect=_list_dir)
+
+
+class TestDiagnosePlugins:
+    @pytest.mark.asyncio
+    async def test_all_healthy(self):
+        ex = _make_executor()
+        _setup_diagnose(ex, config_bytes=_config_with_plugins(
+            entries={"openai": {"enabled": True}, "brave": {"enabled": True}},
+            installs={"openai": {"installedAt": "t"}, "brave": {"installedAt": "t"}},
+            paths=["extensions/openai", "extensions/brave"],
+        ), scan_dirs={"openai": PLUGIN_OPENAI, "brave": PLUGIN_BRAVE})
+
+        mgr = _make_manager(ex)
+        result = await mgr.diagnose_plugins()
+
+        assert len(result) == 2
+        assert all(r["status"] == "healthy" for r in result)
+        assert all(r["issues"] == [] for r in result)
+
+    @pytest.mark.asyncio
+    async def test_missing_entries(self):
+        ex = _make_executor()
+        _setup_diagnose(ex, config_bytes=_config_with_plugins(
+            entries={},  # no entry for openai
+            installs={"openai": {"installedAt": "t"}},
+            paths=["extensions/openai"],
+        ), scan_dirs={"openai": PLUGIN_OPENAI})
+
+        mgr = _make_manager(ex)
+        result = await mgr.diagnose_plugins()
+
+        assert result[0]["status"] == "broken"
+        assert any("entries" in i for i in result[0]["issues"])
+
+    @pytest.mark.asyncio
+    async def test_source_not_found(self):
+        ex = _make_executor()
+        _setup_diagnose(ex, config_bytes=_config_with_plugins(
+            entries={"gone": {"enabled": True}},
+            installs={"gone": {"installedAt": "t"}},
+            paths=["extensions/gone"],
+        ), scan_dirs={"gone": None})  # dir not found
+
+        mgr = _make_manager(ex)
+        result = await mgr.diagnose_plugins()
+
+        assert result[0]["status"] == "broken"
+        assert any("not found" in i for i in result[0]["issues"])
+
+    @pytest.mark.asyncio
+    async def test_invalid_manifest_json(self):
+        ex = _make_executor()
+        _setup_diagnose(ex, config_bytes=_config_with_plugins(
+            entries={"bad": {"enabled": True}},
+            installs={"bad": {"installedAt": "t"}},
+            paths=["extensions/bad"],
+        ), scan_dirs={"bad": b"{invalid json"})
+
+        mgr = _make_manager(ex)
+        result = await mgr.diagnose_plugins()
+
+        assert result[0]["status"] == "broken"
+        assert any("invalid JSON" in i for i in result[0]["issues"])
+
+    @pytest.mark.asyncio
+    async def test_missing_load_path(self):
+        ex = _make_executor()
+        _setup_diagnose(ex, config_bytes=_config_with_plugins(
+            entries={"openai": {"enabled": True}},
+            installs={"openai": {"installedAt": "t"}},
+            paths=[],  # missing
+        ), scan_dirs={"openai": PLUGIN_OPENAI})
+
+        mgr = _make_manager(ex)
+        result = await mgr.diagnose_plugins()
+
+        assert result[0]["status"] == "broken"
+        assert any("load path" in i for i in result[0]["issues"])
+
+    @pytest.mark.asyncio
+    async def test_no_installs_empty(self):
+        ex = _make_executor()
+        ex.read_file = AsyncMock(return_value=OPENCLAW_CONFIG_EMPTY)
+        mgr = _make_manager(ex)
+        result = await mgr.diagnose_plugins()
+        assert result == []
+
+    @pytest.mark.asyncio
+    async def test_mixed_healthy_and_broken(self):
+        ex = _make_executor()
+        _setup_diagnose(ex, config_bytes=_config_with_plugins(
+            entries={"openai": {"enabled": True}},
+            installs={"openai": {"installedAt": "t"}, "gone": {"installedAt": "t"}},
+            paths=["extensions/openai"],
+        ), scan_dirs={"openai": PLUGIN_OPENAI, "gone": None})
+
+        mgr = _make_manager(ex)
+        result = await mgr.diagnose_plugins()
+
+        statuses = {r["name"]: r["status"] for r in result}
+        assert statuses["openai"] == "healthy"
+        assert statuses["gone"] == "broken"
+        # broken sorted first
+        assert result[0]["name"] == "gone"
+
+    @pytest.mark.asyncio
+    async def test_icon_and_color(self):
+        ex = _make_executor()
+        _setup_diagnose(ex, config_bytes=_config_with_plugins(
+            entries={"openai": {"enabled": True}},
+            installs={"openai": {"installedAt": "t"}},
+            paths=["extensions/openai"],
+        ), scan_dirs={"openai": PLUGIN_OPENAI})
+
+        mgr = _make_manager(ex)
+        result = await mgr.diagnose_plugins()
+
+        assert result[0]["icon"] == "O"
+        assert result[0]["icon_color"] == "#8B5CF6"  # providers color
+
+
+# ── TestFixPlugins ──────────────────────────────────────
+
+
+class TestFixPlugins:
+    @pytest.mark.asyncio
+    async def test_fix_missing_entries(self):
+        ex = _make_executor()
+        _setup_diagnose(ex, config_bytes=_config_with_plugins(
+            entries={},
+            installs={"openai": {"installedAt": "t"}},
+            paths=["extensions/openai"],
+        ), scan_dirs={"openai": PLUGIN_OPENAI})
+
+        mgr = _make_manager(ex)
+        result = await mgr.fix_plugins(["openai"])
+
+        assert result["fixed"] == ["openai"]
+        written = json.loads(ex.write_file.call_args[0][1].decode())
+        assert written["plugins"]["entries"]["openai"]["enabled"] is True
+
+    @pytest.mark.asyncio
+    async def test_fix_missing_load_path(self):
+        ex = _make_executor()
+        _setup_diagnose(ex, config_bytes=_config_with_plugins(
+            entries={"openai": {"enabled": True}},
+            installs={"openai": {"installedAt": "t"}},
+            paths=[],
+        ), scan_dirs={"openai": PLUGIN_OPENAI})
+
+        mgr = _make_manager(ex)
+        result = await mgr.fix_plugins(["openai"])
+
+        assert result["fixed"] == ["openai"]
+        written = json.loads(ex.write_file.call_args[0][1].decode())
+        assert "extensions/openai" in written["plugins"]["load"]["paths"]
+
+    @pytest.mark.asyncio
+    async def test_fix_orphaned_install(self):
+        ex = _make_executor()
+        _setup_diagnose(ex, config_bytes=_config_with_plugins(
+            entries={"gone": {"enabled": True}},
+            installs={"gone": {"installedAt": "t"}},
+            paths=["extensions/gone"],
+        ), scan_dirs={"gone": None})
+
+        mgr = _make_manager(ex)
+        result = await mgr.fix_plugins(["gone"])
+
+        assert result["fixed"] == ["gone"]
+        written = json.loads(ex.write_file.call_args[0][1].decode())
+        assert "gone" not in written["plugins"]["installs"]
+        assert "gone" not in written["plugins"]["entries"]
+        assert "extensions/gone" not in written["plugins"]["load"]["paths"]
+
+    @pytest.mark.asyncio
+    async def test_fix_invalid_manifest_fails(self):
+        ex = _make_executor()
+        _setup_diagnose(ex, config_bytes=_config_with_plugins(
+            entries={"bad": {"enabled": True}},
+            installs={"bad": {"installedAt": "t"}},
+            paths=["extensions/bad"],
+        ), scan_dirs={"bad": b"{not json"})
+
+        mgr = _make_manager(ex)
+        result = await mgr.fix_plugins(["bad"])
+
+        assert len(result["failed"]) == 1
+        assert result["failed"][0]["id"] == "bad"
+
+    @pytest.mark.asyncio
+    async def test_fix_all_plugins(self):
+        ex = _make_executor()
+        _setup_diagnose(ex, config_bytes=_config_with_plugins(
+            entries={},
+            installs={"openai": {"installedAt": "t"}, "brave": {"installedAt": "t"}},
+            paths=[],
+        ), scan_dirs={"openai": PLUGIN_OPENAI, "brave": PLUGIN_BRAVE})
+
+        mgr = _make_manager(ex)
+        result = await mgr.fix_all_plugins()
+
+        assert set(result["fixed"]) == {"openai", "brave"}
+
+    @pytest.mark.asyncio
+    async def test_fix_progress_callback(self):
+        ex = _make_executor()
+        _setup_diagnose(ex, config_bytes=_config_with_plugins(
+            entries={},
+            installs={"openai": {"installedAt": "t"}},
+            paths=[],
+        ), scan_dirs={"openai": PLUGIN_OPENAI})
+
+        progress = MagicMock()
+        mgr = _make_manager(ex, on_progress=progress)
+        await mgr.fix_plugins(["openai"])
+
+        progress.assert_any_call("openai", "running", "Diagnosing...")
+        assert any(
+            c[0][1] == "done" and "Fixed" in c[0][2]
+            for c in progress.call_args_list
+        )

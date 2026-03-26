@@ -16,6 +16,12 @@ from src.executor import Executor
 logger = logging.getLogger(__name__)
 
 _CATEGORY_PRIORITY = {"providers": 0, "channels": 1, "tools": 2, "infrastructure": 3}
+_CATEGORY_COLORS = {
+    "providers": "#8B5CF6",
+    "channels": "#3B82F6",
+    "tools": "#F59E0B",
+    "infrastructure": "#10B981",
+}
 
 
 def _categorize(plugin_json: dict) -> str:
@@ -47,6 +53,7 @@ class PluginManager:
         self._local_executor = local_executor
         self._on_progress = on_progress
         self._cached_plugins: list[dict] | None = None
+        self._last_diagnosis: list[dict] | None = None
 
     # ── 內部工具 ──────────────────────────────────────────
 
@@ -240,6 +247,181 @@ class PluginManager:
         self._cached_plugins = None
         return {"uninstalled": uninstalled, "failed": failed}
 
-    async def fix_plugin(self, plugin_id: str) -> dict:
-        """診斷並修復指定外掛（WBS 3.12）。"""
-        raise NotImplementedError
+    # ── 診斷與修復 (WBS 3.12) ──────────────────────────────
+
+    async def _get_plugin_category(self, plugin_id: str) -> str:
+        """從本機 extensions 讀取外掛分類（若無法讀取則回傳 "tools"）。"""
+        scan = self._local_executor or self._executor
+        try:
+            raw = await scan.read_file(
+                f"{self._extensions_dir}/{plugin_id}/openclaw.plugin.json",
+            )
+            pj = json.loads(raw.decode("utf-8"))
+            return _categorize(pj)
+        except Exception:
+            return "tools"
+
+    async def diagnose_plugins(self) -> list[dict]:
+        """診斷已安裝外掛的健康狀態。
+
+        Returns:
+            [{"name", "status", "issues", "icon", "icon_color"}]
+        """
+        config = await self._read_target_config()
+        installs = config.get("plugins", {}).get("installs", {})
+        if not installs:
+            self._last_diagnosis = []
+            return []
+
+        entries = config.get("plugins", {}).get("entries", {})
+        paths = config.get("plugins", {}).get("load", {}).get("paths", [])
+        scan = self._local_executor or self._executor
+
+        results: list[dict] = []
+        for pid in installs:
+            issues: list[str] = []
+
+            # Check 1: entries sync
+            entry = entries.get(pid)
+            if not entry or not entry.get("enabled"):
+                issues.append(
+                    "Missing or disabled entry in plugins.entries"
+                    " \u2014 plugin may not load",
+                )
+
+            # Check 2: source directory exists
+            ext_dir = f"{self._extensions_dir}/{pid}"
+            try:
+                await scan.list_dir(ext_dir)
+            except Exception:
+                issues.append(
+                    f"Extension source directory not found: {ext_dir}",
+                )
+
+            # Check 3: manifest valid
+            manifest_ok = True
+            try:
+                raw = await scan.read_file(f"{ext_dir}/openclaw.plugin.json")
+                pj = json.loads(raw.decode("utf-8"))
+                if not pj.get("id"):
+                    issues.append("Plugin manifest missing required 'id' field")
+                    manifest_ok = False
+            except json.JSONDecodeError:
+                issues.append("Plugin manifest contains invalid JSON")
+                manifest_ok = False
+            except Exception:
+                # source dir already flagged above; skip duplicate
+                manifest_ok = False
+
+            # Check 4: load path present
+            expected_path = f"extensions/{pid}"
+            if expected_path not in paths:
+                issues.append(
+                    f"Missing load path '{expected_path}' in plugins.load.paths",
+                )
+
+            category = _categorize(pj) if manifest_ok else await self._get_plugin_category(pid)
+            results.append({
+                "name": pid,
+                "status": "healthy" if not issues else "broken",
+                "issues": issues,
+                "icon": pid[0].upper(),
+                "icon_color": _CATEGORY_COLORS.get(category, "#6B7280"),
+            })
+
+        results.sort(key=lambda x: (0 if x["status"] == "broken" else 1, x["name"]))
+        self._last_diagnosis = results
+        return results
+
+    async def fix_plugins(self, ids: list[str]) -> dict:
+        """修復指定外掛（自動修正可修復的問題）。
+
+        Returns:
+            {"fixed": [str], "failed": [{"id": str, "error": str}]}
+        """
+        config = await self._read_target_config()
+        entries, installs, paths = self._ensure_plugins_section(config)
+        scan = self._local_executor or self._executor
+
+        fixed: list[str] = []
+        failed: list[dict] = []
+
+        for pid in ids:
+            self._fire(pid, "running", "Diagnosing...")
+            repairs: list[str] = []
+            unfixable: list[str] = []
+
+            # Check source exists
+            ext_dir = f"{self._extensions_dir}/{pid}"
+            source_exists = True
+            try:
+                await scan.list_dir(ext_dir)
+            except Exception:
+                source_exists = False
+
+            if not source_exists:
+                # Orphaned install — clean up
+                self._fire(pid, "running", "Removing orphaned install...")
+                installs.pop(pid, None)
+                entries.pop(pid, None)
+                expected = f"extensions/{pid}"
+                if expected in paths:
+                    paths.remove(expected)
+                repairs.append("Removed orphaned install (source not found)")
+            else:
+                # Validate manifest
+                manifest_valid = True
+                try:
+                    raw = await scan.read_file(f"{ext_dir}/openclaw.plugin.json")
+                    pj = json.loads(raw.decode("utf-8"))
+                    if not pj.get("id"):
+                        unfixable.append("Manifest missing 'id' field — manual fix required")
+                        manifest_valid = False
+                except json.JSONDecodeError:
+                    unfixable.append("Invalid JSON in manifest — manual fix required")
+                    manifest_valid = False
+                except Exception:
+                    unfixable.append("Cannot read manifest — manual fix required")
+                    manifest_valid = False
+
+                # Fix missing entries
+                entry = entries.get(pid)
+                if not entry or not entry.get("enabled"):
+                    self._fire(pid, "running", "Restoring plugin entry...")
+                    entries[pid] = {"enabled": True}
+                    repairs.append("Restored plugins.entries")
+
+                # Fix missing load path
+                expected = f"extensions/{pid}"
+                if expected not in paths:
+                    self._fire(pid, "running", "Restoring load path...")
+                    paths.append(expected)
+                    repairs.append("Restored load path")
+
+            if unfixable:
+                msg = "; ".join(unfixable)
+                self._fire(pid, "failed", msg)
+                failed.append({"id": pid, "error": msg})
+            elif repairs:
+                self._fire(pid, "done", "Fixed: " + ", ".join(repairs))
+                fixed.append(pid)
+            else:
+                self._fire(pid, "done", "Already healthy")
+                fixed.append(pid)
+
+        await self._write_target_config(config)
+        self._cached_plugins = None
+        self._last_diagnosis = None
+        return {"fixed": fixed, "failed": failed}
+
+    async def fix_all_plugins(self) -> dict:
+        """修復所有有問題的外掛。"""
+        if self._last_diagnosis is None:
+            await self.diagnose_plugins()
+        broken_ids = [
+            r["name"] for r in (self._last_diagnosis or [])
+            if r["status"] == "broken"
+        ]
+        if not broken_ids:
+            return {"fixed": [], "failed": []}
+        return await self.fix_plugins(broken_ids)

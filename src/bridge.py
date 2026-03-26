@@ -680,3 +680,22 @@ class Bridge:
     def uninstall_plugins(self, ids: list) -> dict:
         """移除指定外掛。"""
         return _ok(self._run_async(self._build_plugin_manager().uninstall_plugins(ids)))
+
+    @_bridge_api
+    def diagnose_plugins(self) -> dict:
+        """診斷已安裝外掛的健康狀態。"""
+        return _ok(self._run_async(self._build_plugin_manager().diagnose_plugins()))
+
+    @_bridge_api
+    def fix_plugins(self, ids: list) -> dict:
+        """修復指定外掛。"""
+        mgr = self._build_plugin_manager()
+        mgr._on_progress = self._notify_fix_progress
+        return _ok(self._run_async(mgr.fix_plugins(ids)))
+
+    @_bridge_api
+    def fix_all_plugins(self) -> dict:
+        """修復所有有問題的外掛。"""
+        mgr = self._build_plugin_manager()
+        mgr._on_progress = self._notify_fix_progress
+        return _ok(self._run_async(mgr.fix_all_plugins()))
