@@ -307,7 +307,10 @@ const result = await window.pywebview.api.check_env();
    - 2×2 表單 Grid (`grid-cols-2 gap-4`):
      - Row 1: Host (`placeholder: 192.168.1.100`, **required**) + Port (`placeholder: 22`, type=number, default=22)
      - Row 2: Username (`placeholder: ubuntu`, **required**) + SSH Key File (`Browse` 按鈕，file picker，`placeholder: ~/.ssh/id_rsa`)
-   - **Password 備用** (預設隱藏): 文字連結 "Use password instead" 切換顯示 Password 欄位（type=password）
+   - **驗證方式切換** (key/password toggle):
+     - 預設顯示 SSH Key File 欄位，Password 欄位隱藏
+     - 底部文字連結 "Use password instead" / "Use SSH key instead" 切換兩種驗證模式
+     - 切換時對應欄位 show/hide（`hidden` class），互斥顯示
    - **Test Connection 按鈕** (`Button/Secondary`，帶 `wifi` icon):
      - 點擊後呼叫 `test_connection()` Bridge API
      - 按鈕右側顯示 inline 狀態 badge:
@@ -320,7 +323,7 @@ const result = await window.pywebview.api.check_env();
    - Icon: `globe` (teal), 標題: "Gateway & Directory"
    - 2×2 + 1×1 表單 Grid (gap: 16px):
      - Row 1: Config Directory (`placeholder: ~/.openclaw`, 對應 `OPENCLAW_CONFIG_DIR`) + Workspace Directory (`placeholder: ~/.openclaw/workspace`, 對應 `OPENCLAW_WORKSPACE_DIR`)
-     - Row 2: Gateway Bind Host (`placeholder: lan`, 對應 `OPENCLAW_GATEWAY_BIND`) + Gateway Port (`placeholder: 18789`, 對應 `OPENCLAW_GATEWAY_PORT`)
+     - Row 2: Gateway Bind Host (`placeholder: lan`, 對應 `OPENCLAW_GATEWAY_BIND`；實際支援 5 種：`loopback` / `lan` / `auto` / `custom` / `tailnet`，v1.0 GUI 僅提供 text input，不限制值域) + Gateway Port (`placeholder: 18789`, 對應 `OPENCLAW_GATEWAY_PORT`)
      - Row 3: Bridge Port (`placeholder: 18790`, 對應 `OPENCLAW_BRIDGE_PORT`)
    - ~~Gateway Mode 欄位已移除~~：Docker/Native Linux 模式下由後端硬編碼為 `local`（`setup.sh` L128: `config set gateway.mode local`），使用者不需設定
    - **進階設定** (預設收合，點擊展開):
@@ -362,14 +365,15 @@ await window.pywebview.api.save_config({ deployment_mode: "docker-windows" });
 // SSH 連線測試（僅 remote-ssh 模式）
 const result = await window.pywebview.api.test_connection({
   host: "192.168.1.100", port: 22,
-  username: "ubuntu", key_file: "~/.ssh/id_rsa"
+  username: "ubuntu", key_path: "~/.ssh/id_rsa"
+  // 或 password auth: password: "secret"
 });
 // 回傳: { success: true, server_info: { os, cpu_cores, memory_gb, disk_gb } }
 
 // SSH 連線建立（Step 1 完成後自動呼叫）
 await window.pywebview.api.connect_remote({
   host: "192.168.1.100", port: 22,
-  username: "ubuntu", key_file: "~/.ssh/id_rsa"
+  username: "ubuntu", key_path: "~/.ssh/id_rsa"
 });
 // 回傳: { success: true, server_info: { ... } }
 ```
@@ -492,24 +496,28 @@ await window.pywebview.api.save_keys({
 
 2. **Initialization Progress 面板** (左側，flex: 1)
    - Icon: `loader` (紅), 標題: "Initialization Progress"
-   - 描述: "Running 10 steps to set up your environment"（對齊 `openclaw/scripts/docker/setup.sh` 實際流程）
-   - **Docker 模式** — 10 個 ProgressItem 垂直列表（以 `1px` 分隔線間隔）:
+   - 描述: "Running N steps to set up your environment"（N = 步驟數，Docker 11 / Native 8，動態帶入）
+   - **Docker 模式** — 11 個 ProgressItem 垂直列表（以 `1px` 分隔線間隔）:
      1. "Validate environment" — `Checking Docker and Docker Compose availability`
-     2. "Create directory structure" — `~/.openclaw/identity/, agents/main/agent/, agents/main/sessions/`
-     3. "Generate gateway token" — `Reading from config or generating new token`
-     4. "Write environment file" — `.env with 16 variables (ports, paths, token, timezone)`
-     5. "Build/Pull Docker image" — `Building openclaw:local or pulling image`（⚠️ 最耗時步驟，需進度提示）
-     6. "Fix directory permissions" — `Setting ownership for container user`
-     7. "Run onboarding" — `openclaw onboard --mode local`
-     8. "Configure gateway" — `Set mode=local, bind, controlUi.allowedOrigins`
-     9. "Start gateway" — `docker compose up -d openclaw-gateway`
-     10. "Verify health" — `Health check on http://127.0.0.1:{port}/healthz`
-   - **Native Linux 模式** — 步驟 1/5/6/7 替換為:
+     2. "Validate parameters" — `Checking required configuration values`
+     3. "Create directory structure" — `~/.openclaw/identity/, agents/main/agent/, agents/main/sessions/`
+     4. "Generate gateway token" — `Reading from config or generating new token`
+     5. "Write environment file" — `.env with 16 variables (ports, paths, token, timezone)`
+     6. "Build/Pull Docker image" — `Building openclaw:local or pulling image`（⚠️ 最耗時步驟，需進度提示）
+     7. "Fix directory permissions" — `Setting ownership for container user`
+     8. "Run onboarding" — `openclaw onboard --mode local --no-install-daemon`
+     9. "Configure gateway" — `Set mode=local, bind, controlUi.allowedOrigins`
+     10. "Start gateway" — `docker compose up -d openclaw-gateway`
+     11. "Verify health" — `Health check on http://127.0.0.1:{port}/healthz`
+   - **Native Linux 模式** — 8 個 ProgressItem:
      1. "Validate environment" — `Checking Node.js, OpenClaw CLI, systemd availability`
-     5. *(略過 — 無 Docker image)*
-     6. *(略過 — 無 Docker 權限問題)*
-     7. "Run onboarding" — `openclaw onboard --mode local`
-     9. "Start gateway" — `systemctl start openclaw-gateway`
+     2. "Validate parameters" — `Checking required configuration values`
+     3. "Create directory structure" — `~/.openclaw/identity/, agents/main/agent/, sessions/`
+     4. "Generate gateway token" — `Reading from config or generating new token`
+     5. "Write environment file" — `.env with environment variables`
+     6. "Configure gateway" — `Set mode=local, bind, controlUi.allowedOrigins`
+     7. "Start gateway" — `systemctl start openclaw-gateway`
+     8. "Verify health" — `Health check on http://127.0.0.1:{port}/healthz`
    - 狀態圖示:
      - Done: 綠底白勾圓圈 + "Done" 綠字
      - Running: 紅底白 loader 圓圈 + "Running..." 紅字
@@ -532,7 +540,7 @@ await window.pywebview.api.save_keys({
 **Bridge API 呼叫**:
 
 ```javascript
-// 啟動初始化（非同步，透過回呼更新 10 步進度）
+// 啟動初始化（非同步，透過回呼更新 11 步進度）
 await window.pywebview.api.initialize({
   mode: "docker-windows",
   config_dir: "~/.openclaw",           // OPENCLAW_CONFIG_DIR
@@ -545,7 +553,7 @@ await window.pywebview.api.initialize({
   docker_image: "openclaw:local"       // OPENCLAW_IMAGE
 });
 // 進度更新透過 Bridge 回呼: window.updateInitProgress(step, status, message)
-// step: 1-10，對應 Initialization Progress 面板的 10 個步驟
+// step: 1-11，對應 Initialization Progress 面板的 11 個步驟（Docker 模式）
 ```
 
 **驗收標準**:
@@ -830,7 +838,7 @@ const plugins = await window.pywebview.api.list_plugins();
 //   ...
 // ]
 // category 由 openclaw.plugin.json 的 providers[]/channels[] 欄位推導
-// 安裝方式: 修改 openclaw.json 的 plugins.load.paths[] 與 plugins.installs 區段
+// 安裝方式: 修改 openclaw.json 的 plugins.entries[id]（啟用狀態）、plugins.installs[id]（安裝紀錄）與 plugins.load.paths[]（載入路徑）
 
 // 安裝選取的外掛（非同步，透過回呼更新進度）
 const result = await window.pywebview.api.install_plugins(["discord-bot"]);
@@ -1066,7 +1074,7 @@ const notes = await window.pywebview.api.get_device_notes();
 | Native Linux (systemd) | **Native** | `systemctl start/stop/restart openclaw-gateway` | `openclaw <cmd>`（直接呼叫） |
 | Remote Server (SSH) | **Remote** | 透過 `RemoteExecutor` 在遠端執行 `systemctl` 指令 (**v1.0 限制：遠端僅支援 Native Linux**) | 透過 SSH 在遠端執行 `openclaw <cmd>` |
 
-**模式持久化**: 使用者選擇的模式儲存於 `{app_data}/openclaw-gui/gui-settings.json`（如 `%APPDATA%/openclaw-gui/` 或 `~/.config/openclaw-gui/`，與 `openclaw.json` 分開），所有後端 API 自動讀取此設定決定分流邏輯，前端不需在每次 API 呼叫傳遞 mode 參數。Remote SSH 模式額外儲存 `ssh_host`, `ssh_port`, `ssh_username`, `ssh_key_file` 欄位。
+**模式持久化**: 使用者選擇的模式儲存於 `{app_data}/openclaw-gui/gui-settings.json`（如 `%APPDATA%/openclaw-gui/` 或 `~/.config/openclaw-gui/`，與 `openclaw.json` 分開），所有後端 API 自動讀取此設定決定分流邏輯，前端不需在每次 API 呼叫傳遞 mode 參數。Remote SSH 模式額外儲存 `ssh_host`, `ssh_port`, `ssh_username`, `ssh_key_path` 欄位。
 
 **影響範圍**:
 - `check_env()`: Docker 模式檢查 4 項（Docker, Docker Desktop, VS Code, ngrok），Native 模式檢查 6 項（Node.js, OpenClaw CLI, jq, VS Code, ngrok, systemd），Remote 模式透過 SSH 在遠端執行 Native 模式檢查

@@ -2078,9 +2078,10 @@ const INIT_STEPS_DOCKER = [
   { id: 5,  label: "Write environment file",     desc: ".env with 16 variables (ports, paths, token, timezone)" },
   { id: 6,  label: "Build/Pull Docker image",    desc: "Building openclaw:local or pulling image" },
   { id: 7,  label: "Fix directory permissions",   desc: "Setting ownership for container user" },
-  { id: 8,  label: "Configure gateway",          desc: "Set mode=local, bind, controlUi.allowedOrigins" },
-  { id: 9,  label: "Start gateway",              desc: "docker compose up -d openclaw-gateway" },
-  { id: 10, label: "Verify health",              desc: "Health check on http://127.0.0.1:{port}/healthz" },
+  { id: 8,  label: "Run onboarding",             desc: "openclaw onboard --mode local --no-install-daemon" },
+  { id: 9,  label: "Configure gateway",          desc: "Set mode=local, bind, controlUi.allowedOrigins" },
+  { id: 10, label: "Start gateway",              desc: "docker compose up -d openclaw-gateway" },
+  { id: 11, label: "Verify health",              desc: "Health check on http://127.0.0.1:{port}/healthz" },
 ];
 
 const INIT_STEPS_NATIVE = [

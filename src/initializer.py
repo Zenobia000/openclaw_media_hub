@@ -1,8 +1,8 @@
 """Initializer — 初始化邏輯 (目錄建立、config 產生、docker compose)。
 
-依序執行初始化流程（Docker 10 步 / Native 8 步）：
+依序執行初始化流程（Docker 11 步 / Native 8 步）：
 驗證環境、建立目錄結構、產生設定檔、Build/Pull Docker Image、
-啟動 Gateway、Health Check。
+Onboarding、同步 Gateway 設定、啟動 Gateway、Health Check。
 
 所有操作透過 Executor 介面，自然支援本機 / SSH 遠端模式 (ADR-004)。
 """
@@ -216,6 +216,21 @@ class Initializer:
             return _step_result(True, "Permission fix completed (with warnings)")
         return _step_result(True, "Directory permissions fixed")
 
+    async def _step_onboarding(self, params: InitParams) -> dict:
+        """Step 8 (Docker): 執行 Onboarding（初次設定 agent/session）。"""
+        result = await self._executor.run_command(
+            [
+                "docker", "compose", "run", "--rm",
+                "openclaw-cli", "onboard",
+                "--mode", "local",
+                "--no-install-daemon",
+            ],
+            timeout=120,
+        )
+        if not result.success:
+            return _step_result(False, f"Onboarding failed: {result.stderr[:200]}")
+        return _step_result(True, "Onboarding completed")
+
     async def _step_sync_gateway(self, params: InitParams) -> dict:
         """Step 9: 同步 Gateway 設定至 openclaw.json。"""
         gateway_data = {
@@ -303,6 +318,7 @@ class Initializer:
             (self._step_write_env, "Write environment file"),
             (self._step_docker_image, "Build/Pull Docker image"),
             (self._step_fix_permissions, "Fix directory permissions"),
+            (self._step_onboarding, "Run onboarding"),
             (self._step_sync_gateway, "Configure gateway"),
             (self._step_start_gateway_docker, "Start gateway"),
             (self._step_health_check, "Verify health"),
