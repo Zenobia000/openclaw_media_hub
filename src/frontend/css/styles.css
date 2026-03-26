@@ -14,8 +14,9 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 12px;
-  border-radius: 6px;
+  padding: 0 12px;
+  height: 40px;
+  border-radius: 12px;
   font-size: 14px;
   font-weight: 500;
   color: #d4d4d8; /* text-secondary */
@@ -31,8 +32,8 @@ body {
 
 .nav-item-active,
 .nav-item-active:hover {
-  background-color: #1f1318; /* bg-active */
-  border-color: rgba(255, 92, 92, 0.19); /* border-active */
+  background-color: #ff5c5c1a; /* accent-subtle */
+  border-color: #ff5c5c33; /* accent-glow */
   color: #f4f4f5; /* text-primary */
   font-weight: 600;
 }

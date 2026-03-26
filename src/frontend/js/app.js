@@ -2387,7 +2387,7 @@ function renderGatewayPage() {
 
   renderInto("gateway-content", `
     ${renderGatewayPairingInfoSection()}
-    <div class="flex gap-6">
+    <div class="flex gap-5">
       <div class="flex-1 min-w-0">${renderOriginControlSection()}</div>
       <div class="flex-1 min-w-0">${renderDeviceManagementSection()}</div>
     </div>

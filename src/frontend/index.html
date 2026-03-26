@@ -18,19 +18,27 @@
         extend: {
           colors: {
             "bg-primary":       "#0e1015",
+            "bg-accent":        "#13151b",
             "bg-card":          "#161920",
+            "bg-elevated":      "#191c24",
             "bg-input":         "#1e2028",
+            "bg-hover":         "#1f2330",
             "bg-active":        "#1f1318",
             "border-default":   "#1e2028",
+            "border-strong":    "#2e3040",
             "border-active":    "rgba(255, 92, 92, 0.19)",
             "text-primary":     "#f4f4f5",
             "text-secondary":   "#d4d4d8",
+            "text-strong":      "#f4f4f5",
             "text-muted":       "#838387",
             "accent-primary":   "#ff5c5c",
             "accent-secondary": "#14b8a6",
+            "accent-subtle":    "#ff5c5c1a",
+            "accent-glow":      "#ff5c5c33",
             "status-success":   "#22c55e",
             "status-error":     "#ef4444",
             "status-info":      "#3b82f6",
+            "warn":             "#f59e0b",
             "text-on-accent":   "#FFFFFF",
           },
           fontFamily: {
@@ -39,6 +47,8 @@
           borderRadius: {
             sm: "6px",
             md: "10px",
+            lg: "14px",
+            xl: "20px",
           },
         },
       },
@@ -72,18 +82,18 @@
   <div id="app-main" class="h-full flex hidden">
 
     <!-- Sidebar -->
-    <aside id="sidebar" class="w-[260px] min-w-[260px] h-full flex flex-col bg-bg-primary border-r border-border-default">
+    <aside id="sidebar" class="w-[260px] min-w-[260px] h-full flex flex-col bg-bg-accent border-r border-border-default">
 
       <!-- Logo -->
-      <div class="flex items-center gap-3 px-5 py-5">
-        <img src="img/logo.png" alt="OpenClaw" class="w-8 h-8 rounded-sm">
-        <span class="text-lg font-bold text-text-primary">OpenClaw</span>
+      <div class="flex items-center gap-2.5 px-4 py-5">
+        <img src="img/logo.png" alt="OpenClaw" class="w-[34px] h-[34px] rounded-lg">
+        <span class="text-[15px] font-[650] text-text-primary tracking-[-0.3px]">OpenClaw</span>
       </div>
 
       <!-- Nav: MAIN -->
       <div class="px-3 mt-2">
-        <div class="px-3 mb-2 text-[10px] font-bold text-text-muted tracking-[1.2px] uppercase">Main</div>
-        <nav class="flex flex-col gap-0.5">
+        <div class="px-3 mb-2 text-[11px] font-bold text-text-muted tracking-[0.7px] uppercase">Main</div>
+        <nav class="flex flex-col gap-1">
           <a class="nav-item" data-view="dashboard" onclick="navigateTo('dashboard')">
             <i data-lucide="layout-dashboard" class="nav-icon"></i>
             <span>Dashboard</span>
@@ -105,10 +115,10 @@
 
       <!-- Nav: OPERATIONS -->
       <div class="px-3 mt-5">
-        <div class="px-3 mb-2 text-[10px] font-bold text-text-muted tracking-[1.2px] uppercase">Operations</div>
-        <nav class="flex flex-col gap-0.5">
+        <div class="px-3 mb-2 text-[11px] font-bold text-text-muted tracking-[0.7px] uppercase">Operations</div>
+        <nav class="flex flex-col gap-1">
           <a class="nav-item" data-view="deploy-skills" onclick="navigateTo('deploy-skills')">
-            <i data-lucide="rocket" class="nav-icon"></i>
+            <i data-lucide="zap" class="nav-icon"></i>
             <span>Deploy Skills</span>
           </a>
           <a class="nav-item" data-view="install-plugins" onclick="navigateTo('install-plugins')">
@@ -144,7 +154,7 @@
     <main id="main-content" class="flex-1 flex flex-col h-full overflow-hidden">
 
       <!-- View: Dashboard -->
-      <div id="view-dashboard" class="view-container flex-1 flex flex-col overflow-y-auto p-8 gap-6 hidden">
+      <div id="view-dashboard" class="view-container flex-1 flex flex-col overflow-y-auto pt-5 pr-6 pb-8 pl-6 gap-5 hidden">
         <div class="flex items-center justify-between">
           <div>
             <h1 class="text-2xl font-bold">Dashboard</h1>
@@ -152,15 +162,15 @@
           </div>
           <div id="dashboard-status-badge"></div>
         </div>
-        <div id="dashboard-content" class="flex flex-col gap-6"></div>
+        <div id="dashboard-content" class="flex flex-col gap-5"></div>
       </div>
 
       <!-- View: Configuration -->
       <div id="view-configuration" class="view-container flex-1 flex flex-col overflow-hidden hidden">
-        <div id="config-scroll-area" class="flex-1 overflow-y-auto px-6 pt-5 pb-3">
+        <div id="config-scroll-area" class="flex-1 overflow-y-auto pt-5 pr-6 pb-3 pl-6">
           <div class="flex flex-col gap-5">
             <div>
-              <h1 class="text-[26px] font-bold">System Initialization</h1>
+              <h1 class="text-2xl font-bold">System Initialization</h1>
               <p class="text-text-secondary text-sm mt-1">Set up your OpenClaw environment step by step</p>
             </div>
             <div id="config-content">
@@ -174,7 +184,7 @@
       </div>
 
       <!-- View: Environment -->
-      <div id="view-environment" class="view-container flex-1 flex flex-col overflow-y-auto p-8 gap-6 hidden">
+      <div id="view-environment" class="view-container flex-1 flex flex-col overflow-y-auto pt-5 pr-6 pb-8 pl-6 gap-5 hidden">
         <div class="flex items-center justify-between">
           <div>
             <h1 class="text-2xl font-bold">Environment Check</h1>
@@ -182,14 +192,14 @@
           </div>
           <span id="env-mode-badge"></span>
         </div>
-        <div id="environment-content" class="flex flex-col gap-6">
+        <div id="environment-content" class="flex flex-col gap-5">
           <p class="text-text-muted text-sm">Environment check will be rendered here.</p>
         </div>
       </div>
 
       <!-- View: Deploy Skills -->
       <div id="view-deploy-skills" class="view-container flex-1 flex flex-col overflow-hidden hidden">
-        <div class="flex-1 overflow-y-auto p-8 pb-3">
+        <div class="flex-1 overflow-y-auto pt-5 pr-6 pb-3 pl-6">
           <div class="flex items-center justify-between">
             <div>
               <h1 class="text-2xl font-bold">Deploy Skills</h1>
@@ -197,7 +207,7 @@
             </div>
             <div id="deploy-skills-badge"></div>
           </div>
-          <div id="deploy-skills-content" class="mt-6 flex flex-col gap-6">
+          <div id="deploy-skills-content" class="mt-5 flex flex-col gap-5">
             <p class="text-text-muted text-sm">Skills list will be rendered here.</p>
           </div>
         </div>
@@ -208,7 +218,7 @@
 
       <!-- View: Install Plugins -->
       <div id="view-install-plugins" class="view-container flex-1 flex flex-col overflow-hidden hidden">
-        <div class="flex-1 overflow-y-auto p-8 pb-3">
+        <div class="flex-1 overflow-y-auto pt-5 pr-6 pb-3 pl-6">
           <div class="flex items-center justify-between">
             <div>
               <h1 class="text-2xl font-bold">Install Plugins</h1>
@@ -216,7 +226,7 @@
             </div>
             <div id="install-plugins-badge"></div>
           </div>
-          <div id="install-plugins-content" class="mt-6 flex flex-col gap-6">
+          <div id="install-plugins-content" class="mt-5 flex flex-col gap-5">
             <p class="text-text-muted text-sm">Plugins list will be rendered here.</p>
           </div>
         </div>
@@ -227,7 +237,7 @@
 
       <!-- View: Fix Plugins -->
       <div id="view-fix-plugins" class="view-container flex-1 flex flex-col overflow-hidden hidden">
-        <div class="flex-1 overflow-y-auto p-8 pb-3">
+        <div class="flex-1 overflow-y-auto pt-5 pr-6 pb-3 pl-6">
           <div class="flex items-center justify-between">
             <div>
               <h1 class="text-2xl font-bold">Fix Plugins</h1>
@@ -235,7 +245,7 @@
             </div>
             <div id="fix-plugins-header-actions"></div>
           </div>
-          <div id="fix-plugins-content" class="mt-6 flex flex-col gap-5">
+          <div id="fix-plugins-content" class="mt-5 flex flex-col gap-5">
           </div>
         </div>
         <div id="fix-plugins-action-bar" class="px-6 py-4 pb-8 border-t border-border-default hidden">
@@ -243,14 +253,14 @@
       </div>
 
       <!-- View: Gateway -->
-      <div id="view-gateway" class="view-container flex-1 flex flex-col overflow-y-auto p-8 gap-6 hidden">
+      <div id="view-gateway" class="view-container flex-1 flex flex-col overflow-y-auto pt-5 pr-6 pb-8 pl-6 gap-5 hidden">
         <div class="flex items-center justify-between">
           <div>
-            <h1 class="text-2xl font-bold">Gateway Control</h1>
-            <p class="text-text-secondary text-sm mt-1">Manage origin access and device pairing</p>
+            <h1 class="text-2xl font-bold">Gateway</h1>
+            <p class="text-text-secondary text-sm mt-1">Manage origin access control and device pairing</p>
           </div>
         </div>
-        <div id="gateway-content" class="flex flex-col gap-6"></div>
+        <div id="gateway-content" class="flex flex-col gap-5"></div>
       </div>
 
     </main>

@@ -154,8 +154,8 @@
 
 | 週次 | 日期 | 主要工作 |
 | :--- | :--- | :--- |
-| Week 1 | 03/22 - 03/28 | Phase 1 ✅ + Phase 2 設計🔄 + **3.1~3.8 全部提前完成✅** + **3.9 Dashboard✅ + 3.10 Deploy Skills✅ + 3.11 Install Plugins✅ + 3.12a Gateway✅**（213 tests） |
-| Week 2 | 03/29 - 04/04 | 3.12 外掛修復 + 3.13 PyInstaller 打包 + Phase 2 收尾（API Spec、QA 計劃） |
+| Week 1 | 03/22 - 03/28 | Phase 1 ✅ + Phase 2 設計🔄 + **3.1~3.8 全部提前完成✅** + **3.9 Dashboard✅ + 3.10 Deploy Skills✅ + 3.11 Install Plugins✅ + 3.12a Gateway✅ + 3.12 Fix Plugins✅**（225 tests） |
+| Week 2 | 03/29 - 04/04 | 3.13 PyInstaller 打包 + Phase 2 收尾（API Spec、QA 計劃） |
 | Week 3 | 04/05 - 04/11 | 3.17 SSH 整合測試 + 3.14 QA 功能驗證 |
 | Week 4 | 04/12 - 04/18 | Phase 4 發佈上線（封閉測試 + Bug 修復 + 文件 + 正式發佈） |
 | ~~Week 5~~ | ~~04/19 - 04/25~~ | ~~已無排程~~ |
@@ -181,7 +181,7 @@
 | 3.9 Dashboard      | 12h      | 2026-03-25 | 2026-03-26 | ✅ 完成   | 提前完成，28 項測試 |
 | 3.10 技能部署      | 10h      | 2026-03-25 | 2026-03-25 | ✅ 完成   | 提前完成，21 項測試 |
 | 3.11 外掛安裝      | 10h      | 2026-03-25 | 2026-03-26 | ✅ 完成   | 提前完成，21 項測試 |
-| 3.12 外掛修復      | 6h       | 2026-04-30 | 2026-05-01 | ⬜ 未開始 | |
+| 3.12 外掛修復      | 6h       | 2026-03-26 | 2026-03-26 | ✅ 完成   | 提前完成，14 項測試 |
 | 3.12a Gateway 控制  | 8h       | 2026-03-25 | 2026-03-25 | ✅ 完成   | 提前完成，Origin + Device + Info |
 | 3.13 PyInstaller   | 8h       | 2026-04-30 | 2026-05-03 | ⬜ 未開始 | |
 | 3.14 QA 驗證       | 10h      | 2026-05-03 | 2026-05-06 | ⬜ 未開始 | |
@@ -381,10 +381,10 @@
 
 | ID     | 任務                                                                                                           | 負責人 | 工時  | 狀態      | 開始日 | 完成日 | 備註                           |
 | :----- | :------------------------------------------------------------------------------------------------------------- | :----- | :---- | :-------- | :----- | :----- | :----------------------------- |
-| 3.12.1 | plugin_manager.py：診斷邏輯（設定檔存在性、目錄完整性、Docker container 健康度檢查）                            | DEV    | 2h    | ⬜ 未開始 | 04/30  | 04/30  |                                |
-| 3.12.2 | plugin_manager.py：修復邏輯（重建設定檔、修正目錄、重啟容器）+ Bridge API (`diagnose_plugins()`, `fix_plugins()`, `fix_all_plugins()`) + 進度回呼 | DEV | 1.5h | ⬜ 未開始 | 04/30 | 05/01 | |
-| 3.12.3 | 前端 Fix Plugins：Header (Run Diagnostics 按鈕) + Summary Banner (健康綠/有問題紅/診斷中藍 三種狀態 + Last checked) + Diagnostic Report 區塊（外掛列表 + Issues 清單 + Healthy/Broken/Warning badge + 個別 Fix 按鈕） | DEV | 2h | ⬜ 未開始 | 05/01 | 05/01 | 208 §4.8 |
-| 3.12.4 | 前端 Fix Plugins：Fix Progress Overlay + Action Bar (Fix All 按鈕) + 修復完成後自動重新診斷                     | DEV    | 0.5h  | ⬜ 未開始 | 05/01  | 05/01  |                                |
+| 3.12.1 | plugin_manager.py：診斷邏輯（entries sync、source dir exists、manifest valid、load.paths present 四項檢查）+ `_CATEGORY_COLORS` + `_get_plugin_category()` | DEV | 2h | ✅ 完成 | 03/26 | 03/26 | 8 項診斷測試 |
+| 3.12.2 | plugin_manager.py：修復邏輯（missing entries/load.paths 重建、orphaned installs 清理、invalid manifest 回報失敗）+ Bridge API (`diagnose_plugins()`, `fix_plugins()`, `fix_all_plugins()`) + 進度回呼 | DEV | 1.5h | ✅ 完成 | 03/26 | 03/26 | 6 項修復測試 |
+| 3.12.3 | 前端 Fix Plugins：Header (Run Diagnostics 按鈕) + Summary Banner (健康綠/有問題紅/診斷中藍/無安裝藍 四種狀態 + Last checked) + Diagnostic Report 區塊（SectionPanel stethoscope + 外掛列表 + Issues 清單 + Healthy/Broken badge + 個別 Fix 按鈕） | DEV | 2h | ✅ 完成 | 03/26 | 03/26 | 208 §4.8 |
+| 3.12.4 | 前端 Fix Plugins：Fix Progress Overlay (renderProgressItem + Done → finishFixAndRediagnose) + Action Bar (Fix All 按鈕) + 修復完成後自動重新診斷 | DEV | 0.5h | ✅ 完成 | 03/26 | 03/26 | |
 
 #### 3.13 PyInstaller 打包 — US-004 (8h)
 
