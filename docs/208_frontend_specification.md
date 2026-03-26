@@ -422,39 +422,17 @@ await window.pywebview.api.connect_remote({
      - 預設值: 第一個被勾選供應商的第一個模型
      - 變更 Primary 時即時更新下拉選單狀態
 
-3. **Channels 區塊** (SectionPanel)
-   - Icon: `message-circle` (藍), 標題: "Channel Credentials"
-   - 描述: "Select messaging channels and enter credentials"
-   - **管道勾選清單**（水平 Flexbox，每個帶品牌色 icon）:
-     - LINE: 綠底 "L" (`#06C755`) → 展開 2 欄位: Channel Access Token + Channel Secret
-     - Discord: 紫底 "D" (`#5865F2`) → 展開 1 欄位: Bot Token (`DISCORD_BOT_TOKEN`)
-     - Telegram: 藍底 "T" (`#0088CC`) → 展開 1 欄位: Bot Token (`TELEGRAM_BOT_TOKEN`)
-     - Slack: 紫底 "S" (`#4A154B`) → 展開 2 欄位: Bot Token (`SLACK_BOT_TOKEN`) + App Token (`SLACK_APP_TOKEN`)
-     - WhatsApp: 綠底 "W" (`#25D366`) → 提示需在初始化後透過 `channels login` 配對
-     - 更多...（收合區，含 Matrix, Signal, Mattermost, Zalo, IRC 等）
-   - 每個已勾選管道顯示 "Configured" / "Not Configured" badge
-
-4. **Tools 區塊** (SectionPanel, 預設收合)
-   - Icon: `wrench` (teal), 標題: "Tool API Keys"
-   - 描述: "Optional — enable search, speech, and web scraping tools"
-   - 展開後顯示金鑰輸入框:
-     - Brave Search (`BRAVE_API_KEY`)
-     - Perplexity (`PERPLEXITY_API_KEY`)
-     - Firecrawl (`FIRECRAWL_API_KEY`)
-     - ElevenLabs (`ELEVENLABS_API_KEY`)
-     - Deepgram (`DEEPGRAM_API_KEY`)
-
-5. **Security Note** — 底部安全提示
+3. **Security Note** — 底部安全提示
    - `shield-check` icon (紅) + 文字: "All keys are stored in .env with restricted file permissions (owner-only access). Each server maintains its own independent .env configuration." (ADR-005)
 
-6. **Action Bar** — 底部固定，上方 `1px` 分隔線
+5. **Action Bar** — 底部固定，上方 `1px` 分隔線
    - 左側: "Back" Button/Secondary (帶 `arrow-left` icon)
    - 右側: "Step 2 of 3" + "Next" Button/Primary (帶 `arrow-right` icon)
 
 **捲動行為**:
-- 本頁內容（Model Providers + Channel Credentials + Tools + Security Note）超出 `800px` 可視高度（實際內容高度約 `1400px`，含模型勾選清單展開高度），採用 3.1 節定義的「固定 Action Bar + 可捲動內容區」模式
+- 本頁內容（Model Providers + Security Note）採用 3.1 節定義的「固定 Action Bar + 可捲動內容區」模式
 - Action Bar 固定於底部，Header 至 Security Note 為可捲動範圍
-- 初始載入時 Model Providers 區塊完整可見，Channel Credentials 區塊部分可見，Tools 區塊與 Security Note 需向下捲動
+- 初始載入時 Model Providers 區塊完整可見，Security Note 需向下捲動
 
 **Bridge API 呼叫**:
 
@@ -489,15 +467,10 @@ const models = await window.pywebview.api.get_provider_models();
 //   ...
 // }
 
-const channels = await window.pywebview.api.get_available_channels();
-// 回傳: [{name: "line", fields: [{key: "line_channel_access_token", label: "Channel Access Token"}, {key: "line_channel_secret", label: "Channel Secret"}], icon: "L", icon_color: "#06C755"}, ...]
-
 // 載入目標機器 .env 中的既有金鑰與模型選擇（首次進入 Step 2 時呼叫）(ADR-005)
 const envKeys = await window.pywebview.api.load_env_keys();
 // 回傳: {
 //   providers: {OPENAI_API_KEY: "sk-..."},
-//   channels: {LINE_CHANNEL_ACCESS_TOKEN: "..."},
-//   tools: {BRAVE_API_KEY: "..."},
 //   models: {
 //     primary: "anthropic/claude-sonnet-4-6",
 //     selected: ["anthropic/claude-opus-4-6", "anthropic/claude-sonnet-4-6", ...]
@@ -511,14 +484,6 @@ await window.pywebview.api.save_keys({
   providers: {
     OPENAI_API_KEY: "sk-...",
     ANTHROPIC_API_KEY: "sk-ant-..."
-  },
-  channels: {
-    LINE_CHANNEL_ACCESS_TOKEN: "...",
-    LINE_CHANNEL_SECRET: "...",
-    DISCORD_BOT_TOKEN: "..."
-  },
-  tools: {
-    BRAVE_API_KEY: "..."
   },
   model_selection: {
     primary: "anthropic/claude-sonnet-4-6",
@@ -542,7 +507,6 @@ await window.pywebview.api.save_keys({
 - [ ] 動態供應商（Ollama）顯示提示文字而非模型勾選清單
 - [ ] 底部 Primary Model 下拉選單僅列出所有已勾選供應商中被選取的模型
 - [ ] Channel 區塊根據金鑰填寫狀態自動顯示 "Configured" / "Not Configured" badge
-- [ ] Tools 區塊預設收合，點擊標題展開
 - [ ] 點擊 "Back" 回到 Step 1（保留已填資料）
 - [ ] 進入 Step 2 時呼叫 `load_env_keys()` 載入既有金鑰、模型選擇與 Primary Model 並自動回填
 - [ ] 點擊 "Next" 儲存金鑰至目標機器 `.env` + 模型選擇至 `openclaw.json` `agents.defaults` 後進入 Step 3
@@ -1240,7 +1204,7 @@ window.updateConnectionStatus = function(status, message) {
 | `fix_all_plugins()` | `plugin_manager.py` | 透過回呼逐項回報，最終 `{success, fixed, failed}` |
 | `get_available_providers()` | `plugin_manager.py` | `[{name, env_var, placeholder}]` — 從 extensions 取得可用供應商列表 |
 | `get_provider_models()` | `registries.py` | `{provider_name: [{id, name}]}` — 各供應商的可用模型目錄 |
-| `load_env_keys()` | `config_manager.py` | `{providers, channels, tools, models: {primary, selected}}` — 讀取 .env 金鑰 + openclaw.json 模型選擇 |
+| `load_env_keys()` | `config_manager.py` | `{providers, channels, models: {primary, selected}}` — 讀取 .env 金鑰 + openclaw.json 模型選擇 |
 | `get_available_channels()` | `plugin_manager.py` | `[{name, fields: [{key, label}], icon, icon_color}]` — 從 extensions 取得可用管道列表 |
 | `get_openclaw_config()` | `config_manager.py` | `{meta, agents, channels, gateway, plugins, ...}` — 讀取 openclaw.json |
 | `save_openclaw_config(section, data)` | `config_manager.py` | `{success}` — 寫入 openclaw.json 指定區段（deep merge） |

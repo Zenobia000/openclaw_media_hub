@@ -128,15 +128,11 @@ const configState = {
 /** 設定精靈 — 第二步 */
 const step2State = {
   cachedProviders: null,
-  cachedChannels: null,
-  cachedTools: null,
   cachedModels: null,
   checkedProviders: new Set(),
-  checkedChannels: new Set(),
   checkedModels: {},
   primaryModel: null,
   keyValues: {},
-  toolsExpanded: false,
 };
 
 /** 設定精靈 — 第三步（初始化） */
@@ -1785,19 +1781,6 @@ function restoreStep2FormState() {
     const chk = document.getElementById(`provider-chk-${name}`);
     if (chk) chk.checked = true;
   }
-  for (const name of step2State.checkedChannels) {
-    const fields = document.getElementById(`channel-fields-${name}`);
-    if (fields) fields.classList.add("expanded");
-    const chk = document.getElementById(`channel-chk-${name}`);
-    if (chk) chk.checked = true;
-    updateChannelBadge(name);
-  }
-  if (step2State.toolsExpanded) {
-    const content = document.getElementById("tools-collapsible");
-    const chevron = document.getElementById("tools-chevron");
-    if (content) content.classList.add("expanded");
-    if (chevron) chevron.classList.add("rotated");
-  }
 }
 
 /** 渲染 Provider 卡片 */
@@ -1907,41 +1890,6 @@ function updatePrimaryModelDropdown() {
   }
 }
 
-/** 渲染 Channel 卡片 */
-function renderChannelCard(channel, checked) {
-  let fieldsHtml = "";
-  if (channel.fields?.length > 0) {
-    const inputs = channel.fields.map(f =>
-      renderInput({ id: `key-${f.key}`, label: f.label, icon: "lock", type: "password", placeholder: "", value: step2State.keyValues[`key-${f.key}`] || "" })
-    ).join("");
-    fieldsHtml = `<div id="channel-fields-${channel.name}" class="collapsible-content ${checked ? "expanded" : ""}">
-      <div class="mt-3 grid gap-3">${inputs}</div>
-    </div>`;
-  } else if (channel.info_note) {
-    fieldsHtml = `<div id="channel-fields-${channel.name}" class="collapsible-content ${checked ? "expanded" : ""}">
-      <div class="mt-2 flex items-center gap-2 text-xs text-text-muted">
-        <i data-lucide="info" class="w-3.5 h-3.5 flex-shrink-0"></i>
-        <span>${esc(channel.info_note)}</span>
-      </div>
-    </div>`;
-  }
-
-  return `<div class="channel-card-wrap">
-    <div class="flex items-center gap-3">
-      <div class="brand-icon flex-shrink-0" style="background: ${channel.icon_color};">
-        <span class="text-xs font-bold text-white">${esc(channel.icon)}</span>
-      </div>
-      <label class="flex items-center gap-3 cursor-pointer select-none flex-1">
-        <input type="checkbox" id="channel-chk-${channel.name}" class="checkbox-custom channel-checkbox" data-channel="${channel.name}" ${checked ? "checked" : ""}
-          onchange="toggleChannelCheck('${channel.name}')" />
-        <span class="text-sm font-medium text-text-primary">${esc(channel.label)}</span>
-      </label>
-      <span id="channel-badge-${channel.name}"></span>
-    </div>
-    ${fieldsHtml}
-  </div>`;
-}
-
 /** 渲染區段（primary / secondary 分組 + More 展開） */
 function renderGroupedSection({ icon, iconColor, title, description, items, checkedSet, renderCard, sectionKey, footer }) {
   const primary = items.filter(i => i.primary);
@@ -1963,28 +1911,6 @@ function renderGroupedSection({ icon, iconColor, title, description, items, chec
   return renderSectionPanel({ icon, iconColor, title, description, children: `<div class="grid gap-1">${primaryCards}</div>${moreSection}${footerHtml}` });
 }
 
-function renderToolsSection(tools) {
-  const toolInputs = tools.map(t =>
-    renderInput({ id: `key-${t.env_var}`, label: t.label, icon: "lock", type: "password", placeholder: t.placeholder || "", value: step2State.keyValues[`key-${t.env_var}`] || "" })
-  ).join("");
-
-  const expandedCls = step2State.toolsExpanded ? "expanded" : "";
-  const chevronCls = step2State.toolsExpanded ? "rotated" : "";
-
-  return renderSectionPanel({
-    icon: "wrench", iconColor: "text-accent-secondary",
-    title: "Tool API Keys", description: "Optional \u2014 enable search, speech, and web scraping tools",
-    children: `
-      <button type="button" class="flex items-center gap-1.5 text-xs text-text-muted hover:text-text-secondary cursor-pointer bg-transparent border-0 p-0" onclick="toggleStep2Tools()">
-        <i data-lucide="chevron-right" class="w-3.5 h-3.5 collapsible-chevron ${chevronCls}" id="tools-chevron"></i>
-        <span>Show tool keys</span>
-      </button>
-      <div id="tools-collapsible" class="collapsible-content ${expandedCls}">
-        <div class="mt-3 grid gap-3">${toolInputs}</div>
-      </div>`,
-  });
-}
-
 function renderConfigStep2ActionBar() {
   const html = `<div class="flex items-center justify-between">
     <div>${renderButton({ variant: "secondary", icon: "arrow-left", label: "Back", onclick: "configPrevStep()" })}</div>
@@ -2000,28 +1926,21 @@ async function renderConfigStep2() {
   // 從 Bridge 取得資料（快取）
   if (!step2State.cachedProviders) {
     try {
-      const [pRes, cRes, tRes, mRes] = await Promise.all([
+      const [pRes, mRes] = await Promise.all([
         window.pywebview.api.get_available_providers(),
-        window.pywebview.api.get_available_channels(),
-        window.pywebview.api.get_available_tools(),
         window.pywebview.api.get_provider_models(),
       ]);
       step2State.cachedProviders = pRes?.data || [];
-      step2State.cachedChannels = cRes?.data || [];
-      step2State.cachedTools = tRes?.data || [];
       step2State.cachedModels = mRes?.data || {};
     } catch {
       step2State.cachedProviders = [];
-      step2State.cachedChannels = [];
-      step2State.cachedTools = [];
       step2State.cachedModels = {};
     }
   }
 
   // 首次進入時從 .env 載入既有金鑰
   const isFirstLoad = Object.keys(step2State.keyValues).length === 0
-    && step2State.checkedProviders.size === 0
-    && step2State.checkedChannels.size === 0;
+    && step2State.checkedProviders.size === 0;
   if (isFirstLoad) {
     try {
       const envRes = await window.pywebview.api.load_env_keys();
@@ -2031,15 +1950,6 @@ async function renderConfigStep2() {
         step2State.keyValues[`key-${envVar}`] = val;
         const provider = step2State.cachedProviders.find(p => p.env_var === envVar);
         if (provider) step2State.checkedProviders.add(provider.name);
-      }
-      for (const [envVar, val] of Object.entries(envKeys.channels || {})) {
-        if (!val) continue;
-        step2State.keyValues[`key-${envVar}`] = val;
-        const channel = step2State.cachedChannels.find(c => c.fields?.some(f => f.key === envVar));
-        if (channel) step2State.checkedChannels.add(channel.name);
-      }
-      for (const [envVar, val] of Object.entries(envKeys.tools || {})) {
-        if (val) step2State.keyValues[`key-${envVar}`] = val;
       }
       // 還原模型選擇
       if (envKeys.models) {
@@ -2065,13 +1975,6 @@ async function renderConfigStep2() {
       renderCard: renderProviderCard, sectionKey: "providers",
       footer: renderPrimaryModelDropdown(),
     }),
-    renderGroupedSection({
-      icon: "message-circle", iconColor: "text-status-info",
-      title: "Channel Credentials", description: "Select messaging channels and enter credentials",
-      items: step2State.cachedChannels, checkedSet: step2State.checkedChannels,
-      renderCard: renderChannelCard, sectionKey: "channels",
-    }),
-    renderToolsSection(step2State.cachedTools),
     `<div class="flex items-start gap-3 px-2 py-3">
       <i data-lucide="shield-check" class="w-5 h-5 text-accent-primary flex-shrink-0 mt-0.5"></i>
       <p class="text-xs text-text-secondary leading-relaxed">All keys are stored in .env with restricted file permissions (owner-only access). Each server maintains its own independent .env configuration.</p>
@@ -2081,7 +1984,6 @@ async function renderConfigStep2() {
   renderInto("config-content", html);
   renderConfigStep2ActionBar();
   restoreStep2FormState();
-  for (const name of step2State.checkedChannels) updateChannelBadge(name);
 }
 
 /* ---------- 9.5.1 第二步 — 事件處理 ---------- */
@@ -2120,31 +2022,6 @@ function onPrimaryModelChange(value) {
   step2State.primaryModel = value;
 }
 
-function toggleChannelCheck(name) {
-  const chk = document.getElementById(`channel-chk-${name}`);
-  if (!chk) return;
-  chk.checked ? step2State.checkedChannels.add(name) : step2State.checkedChannels.delete(name);
-  const fields = document.getElementById(`channel-fields-${name}`);
-  if (fields) fields.classList.toggle("expanded", chk.checked);
-  updateChannelBadge(name);
-}
-
-function updateChannelBadge(name) {
-  const badgeEl = document.getElementById(`channel-badge-${name}`);
-  if (!badgeEl) return;
-  if (!step2State.checkedChannels.has(name)) { badgeEl.innerHTML = ""; return; }
-  const channel = step2State.cachedChannels?.find(c => c.name === name);
-  if (!channel || channel.fields.length === 0) { badgeEl.innerHTML = ""; return; }
-  const allFilled = channel.fields.every(f => {
-    const input = document.getElementById(`key-${f.key}`);
-    return input && input.value.trim().length > 0;
-  });
-  badgeEl.innerHTML = allFilled
-    ? renderStatusBadge({ status: "success", text: "Configured" })
-    : renderStatusBadge({ status: "warning", text: "Not Configured" });
-  refreshIcons();
-}
-
 function toggleStep2More(section) {
   const content = document.getElementById(`${section}-more`);
   const chevron = document.getElementById(`${section}-more-chevron`);
@@ -2152,33 +2029,13 @@ function toggleStep2More(section) {
   if (chevron) chevron.classList.toggle("rotated");
 }
 
-function toggleStep2Tools() {
-  const content = document.getElementById("tools-collapsible");
-  const chevron = document.getElementById("tools-chevron");
-  if (content) content.classList.toggle("expanded");
-  if (chevron) chevron.classList.toggle("rotated");
-  step2State.toolsExpanded = content?.classList.contains("expanded") || false;
-}
-
 function collectStep2Keys() {
-  const keys = { providers: {}, channels: {}, tools: {} };
+  const keys = { providers: {} };
   for (const name of step2State.checkedProviders) {
     const provider = step2State.cachedProviders?.find(p => p.name === name);
     if (!provider?.env_var) continue;
     const val = document.getElementById(`key-${provider.env_var}`)?.value?.trim();
     if (val) keys.providers[provider.env_var] = val;
-  }
-  for (const name of step2State.checkedChannels) {
-    const channel = step2State.cachedChannels?.find(c => c.name === name);
-    if (!channel) continue;
-    for (const f of channel.fields) {
-      const val = document.getElementById(`key-${f.key}`)?.value?.trim();
-      if (val) keys.channels[f.key] = val;
-    }
-  }
-  for (const tool of step2State.cachedTools || []) {
-    const val = document.getElementById(`key-${tool.env_var}`)?.value?.trim();
-    if (val) keys.tools[tool.env_var] = val;
   }
 
   // 模型選擇
@@ -2226,17 +2083,6 @@ async function configNextStep2() {
 
   configState.step = 3;
   renderConfigStep3();
-}
-
-function attachChannelBadgeListeners() {
-  for (const name of step2State.checkedChannels) {
-    const channel = step2State.cachedChannels?.find(c => c.name === name);
-    if (!channel) continue;
-    for (const f of channel.fields) {
-      const input = document.getElementById(`key-${f.key}`);
-      if (input) input.addEventListener("input", () => updateChannelBadge(name));
-    }
-  }
 }
 
 /* ---------- 9.6 第三步 — 初始化 ---------- */
