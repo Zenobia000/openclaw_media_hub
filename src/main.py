@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import webview
@@ -30,7 +31,8 @@ def main() -> None:
         height=800,
         resizable=False,
     )
-    webview.start(lambda: _on_started(bridge, window), debug=True)
+    debug = os.environ.get("OPENCLAW_DEBUG", "").lower() in ("1", "true")
+    webview.start(lambda: _on_started(bridge, window), debug=debug)
 
 
 if __name__ == "__main__":

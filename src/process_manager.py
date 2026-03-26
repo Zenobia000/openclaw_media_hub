@@ -35,6 +35,8 @@ class ProcessManager:
 
     @executor.setter
     def executor(self, value: Executor) -> None:
+        if not isinstance(value, Executor):
+            raise TypeError(f"Expected Executor, got {type(value).__name__}")
         self._executor = value
 
     async def run(

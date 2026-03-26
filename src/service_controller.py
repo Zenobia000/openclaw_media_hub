@@ -9,11 +9,32 @@ from __future__ import annotations
 import json
 import logging
 import re
+from datetime import datetime
 from pathlib import PurePosixPath
 
 from src.executor import Executor
 
 logger = logging.getLogger(__name__)
+
+# ── 服務指令註冊表 ────────────────────────────────────────
+
+_SERVICE_COMMANDS: dict[str, dict] = {
+    "start": {
+        "docker": (["docker", "compose", "up", "-d", "openclaw-gateway"], 60),
+        "native": (["systemctl", "start", "openclaw-gateway"], 30),
+        "msg": "All services started",
+    },
+    "stop": {
+        "docker": (["docker", "compose", "down"], 60),
+        "native": (["systemctl", "stop", "openclaw-gateway"], 30),
+        "msg": "All services stopped",
+    },
+    "restart": {
+        "docker": (["docker", "compose", "restart", "openclaw-gateway"], 60),
+        "native": (["systemctl", "restart", "openclaw-gateway"], 30),
+        "msg": "All services restarted",
+    },
+}
 
 
 class ServiceController:
@@ -32,64 +53,33 @@ class ServiceController:
         self._executor = executor
         self._mode = deployment_mode
         self._config_dir = config_dir
+        self._is_docker = deployment_mode in (
+            "docker-windows", "docker-linux", "remote-ssh",
+        )
 
-    @property
-    def _is_docker(self) -> bool:
-        return self._mode in ("docker-windows", "docker-linux", "remote-ssh")
+    # ── 服務啟停（統一實作）──────────────────────────────
 
-    # ── 服務啟停 ──────────────────────────────────────────
+    async def _run_service_action(self, action: str) -> dict:
+        """執行服務控制指令，回傳 {success, message}。"""
+        spec = _SERVICE_COMMANDS[action]
+        key = "docker" if self._is_docker else "native"
+        args, timeout = spec[key]
+        result = await self._executor.run_command(args, timeout=timeout)
+        if not result.success:
+            return {"success": False, "message": f"{action.title()} failed: {result.stderr[:200]}"}
+        return {"success": True, "message": spec["msg"]}
 
     async def start(self) -> dict:
-        """啟動服務。
-
-        Returns:
-            {"success": bool, "message": str}
-        """
-        if self._is_docker:
-            result = await self._executor.run_command(
-                ["docker", "compose", "up", "-d", "openclaw-gateway"],
-                timeout=60,
-            )
-        else:
-            result = await self._executor.run_command(
-                ["systemctl", "start", "openclaw-gateway"],
-                timeout=30,
-            )
-        if not result.success:
-            return {"success": False, "message": f"Start failed: {result.stderr[:200]}"}
-        return {"success": True, "message": "All services started"}
+        """啟動服務。"""
+        return await self._run_service_action("start")
 
     async def stop(self) -> dict:
         """停止服務。"""
-        if self._is_docker:
-            result = await self._executor.run_command(
-                ["docker", "compose", "down"],
-                timeout=60,
-            )
-        else:
-            result = await self._executor.run_command(
-                ["systemctl", "stop", "openclaw-gateway"],
-                timeout=30,
-            )
-        if not result.success:
-            return {"success": False, "message": f"Stop failed: {result.stderr[:200]}"}
-        return {"success": True, "message": "All services stopped"}
+        return await self._run_service_action("stop")
 
     async def restart(self) -> dict:
         """重啟服務。"""
-        if self._is_docker:
-            result = await self._executor.run_command(
-                ["docker", "compose", "restart", "openclaw-gateway"],
-                timeout=60,
-            )
-        else:
-            result = await self._executor.run_command(
-                ["systemctl", "restart", "openclaw-gateway"],
-                timeout=30,
-            )
-        if not result.success:
-            return {"success": False, "message": f"Restart failed: {result.stderr[:200]}"}
-        return {"success": True, "message": "All services restarted"}
+        return await self._run_service_action("restart")
 
     # ── 狀態查詢 ──────────────────────────────────────────
 
@@ -174,7 +164,7 @@ class ServiceController:
 
         return [{"name": "gateway", "status": status}], uptime
 
-    # ── Skills / Plugins 計數 ─────────────────────────────
+    # ── 技能/外掛計數 ─────────────────────────────────────
 
     async def _count_skills(self) -> int:
         """計算已部署技能數量。"""
@@ -197,7 +187,7 @@ class ServiceController:
             return 0
 
 
-# ── Helper ────────────────────────────────────────────
+# ── 輔助函式 ─────────────────────────────────────────────
 
 
 def _parse_docker_uptime(status_str: str) -> str:
@@ -234,9 +224,6 @@ def _parse_docker_uptime(status_str: str) -> str:
         minutes = max(minutes, 1)
 
     if hours == 0 and minutes == 0:
-        sec_match = re.search(r"(\d+)\s*second", s)
-        if sec_match:
-            return "< 1m"
         return "< 1m"
 
     parts = []
@@ -255,15 +242,12 @@ def _parse_systemd_uptime(prop_line: str) -> str:
     if "=" not in prop_line:
         return "—"
 
-    from datetime import datetime, timezone
-
     ts_str = prop_line.split("=", 1)[1].strip()
     if not ts_str:
         return "—"
 
     try:
-        # systemd 時間格式: "Day YYYY-MM-DD HH:MM:SS TZ"
-        # 去掉星期和時區，只取中間部分
+        # systemd 格式: "Day YYYY-MM-DD HH:MM:SS TZ"
         parts = ts_str.split()
         if len(parts) >= 3:
             dt_str = f"{parts[1]} {parts[2]}"

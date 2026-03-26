@@ -30,30 +30,47 @@ class TransferService:
         self._source = source
         self._target = target
 
+    # ── 公開 API ──────────────────────────────────────────
+
     async def upload_tree(
         self,
         local_src: str,
         remote_dst: str,
         on_progress: ProgressCallback | None = None,
     ) -> int:
-        """上傳目錄樹：source → target。
+        """上傳目錄樹：source → target。"""
+        return await self._transfer_tree(local_src, remote_dst, on_progress)
 
-        Args:
-            local_src: 來源路徑（source executor 上的目錄）。
-            remote_dst: 目標路徑（target executor 上的目錄）。
-            on_progress: 進度回呼 (current, total, filename)。
+    async def download_tree(
+        self,
+        remote_src: str,
+        local_dst: str,
+        on_progress: ProgressCallback | None = None,
+    ) -> int:
+        """下載目錄樹：source → target（語義包裝，邏輯同 upload）。"""
+        return await self._transfer_tree(remote_src, local_dst, on_progress)
+
+    # ── 核心傳輸邏輯（統一實作）──────────────────────────
+
+    async def _transfer_tree(
+        self,
+        src_path: str,
+        dst_path: str,
+        on_progress: ProgressCallback | None = None,
+    ) -> int:
+        """source → target 目錄樹傳輸。
 
         Returns:
             傳輸的檔案數量。
         """
-        files = await self._collect_files(self._source, local_src, "")
+        files = await self._collect_files(self._source, src_path, "")
         total = len(files)
 
-        await self._target.mkdir(remote_dst)
+        await self._target.mkdir(dst_path)
 
         for i, rel_path in enumerate(files, 1):
-            src_full = f"{local_src}/{rel_path}"
-            dst_full = f"{remote_dst}/{rel_path}"
+            src_full = f"{src_path}/{rel_path}"
+            dst_full = f"{dst_path}/{rel_path}"
 
             # 確保目標子目錄存在
             if "/" in rel_path:
@@ -68,37 +85,7 @@ class TransferService:
 
         return total
 
-    async def download_tree(
-        self,
-        remote_src: str,
-        local_dst: str,
-        on_progress: ProgressCallback | None = None,
-    ) -> int:
-        """下載目錄樹：source → target（反向操作，source=remote, target=local）。
-
-        注意：此方法假設 self._source 為遠端，self._target 為本機。
-        若需反向，請在建構時調換 source/target。
-        """
-        files = await self._collect_files(self._source, remote_src, "")
-        total = len(files)
-
-        await self._target.mkdir(local_dst)
-
-        for i, rel_path in enumerate(files, 1):
-            src_full = f"{remote_src}/{rel_path}"
-            dst_full = f"{local_dst}/{rel_path}"
-
-            if "/" in rel_path:
-                parent = dst_full.rsplit("/", 1)[0]
-                await self._target.mkdir(parent)
-
-            data = await self._source.read_file(src_full)
-            await self._target.write_file(dst_full, data)
-
-            if on_progress:
-                on_progress(i, total, rel_path)
-
-        return total
+    # ── 輔助函式 ─────────────────────────────────────────
 
     async def _collect_files(
         self,

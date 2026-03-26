@@ -38,7 +38,7 @@ class ConfigManager:
         self._app_data_dir = (app_data_dir or _default_app_data_dir()).expanduser()
         self._settings_path = self._app_data_dir / "gui-settings.json"
 
-    # ── gui-settings.json (3.5.1 + 3.5.7) ────────────────
+    # ── gui-settings.json ──────────────────────────────
 
     def read_gui_settings(self) -> dict:
         """讀取 gui-settings.json，不存在回傳空 dict。"""
@@ -82,7 +82,7 @@ class ConfigManager:
             data["ssh_key_path"] = key_path
         self.write_gui_settings(data)
 
-    # ── openclaw.json (3.5.3) ────────────────────────────
+    # ── openclaw.json ──────────────────────────────────
 
     def read_openclaw_config(
         self, config_dir: str, section: str | None = None,
@@ -101,12 +101,13 @@ class ConfigManager:
     ) -> None:
         """Deep merge 寫入 openclaw.json。寫入前建立 .bak 備份。"""
         path = Path(config_dir).expanduser() / "openclaw.json"
-        existing = json.loads(path.read_text("utf-8")) if path.exists() else {}
+        raw = path.read_text("utf-8") if path.exists() else "{}"
+        existing = json.loads(raw)
 
-        # 備份
-        if path.exists():
+        # 備份（用已讀取的內容，避免重複 I/O）
+        if raw != "{}":
             bak = path.with_name("openclaw.json.bak")
-            bak.write_text(path.read_text("utf-8"), encoding="utf-8")
+            bak.write_text(raw, encoding="utf-8")
 
         if section:
             existing[section] = _deep_merge(existing.get(section, {}), data)
@@ -121,7 +122,7 @@ class ConfigManager:
         )
         tmp.replace(path)
 
-    # ── .env (3.5.4, ADR-005: API 金鑰統一儲存) ─────────
+    # ── .env（ADR-005: API 金鑰統一儲存）────────────
 
     @staticmethod
     def parse_env_content(content: str) -> dict[str, str]:

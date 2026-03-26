@@ -48,7 +48,7 @@ class PluginManager:
         self._on_progress = on_progress
         self._cached_plugins: list[dict] | None = None
 
-    # ── private helpers ──────────────────────────────────────
+    # ── 內部工具 ──────────────────────────────────────────
 
     def _fire(self, name: str, status: str, message: str) -> None:
         if self._on_progress:
@@ -121,7 +121,18 @@ class PluginManager:
 
         return plugins
 
-    # ── public API ───────────────────────────────────────────
+    @staticmethod
+    def _ensure_plugins_section(config: dict) -> tuple[dict, dict, list[str]]:
+        """確保 config 中 plugins 區段完整，回傳 (entries, installs, paths)。"""
+        section = config.setdefault("plugins", {})
+        section.setdefault("enabled", True)
+        entries = section.setdefault("entries", {})
+        installs = section.setdefault("installs", {})
+        load = section.setdefault("load", {})
+        paths: list[str] = load.setdefault("paths", [])
+        return entries, installs, paths
+
+    # ── 公開 API ─────────────────────────────────────────────
 
     async def list_plugins(self) -> list[dict]:
         """掃描可用外掛，回傳分類清單（含已安裝狀態）。
@@ -165,12 +176,7 @@ class PluginManager:
         scan_map = {p["id"]: p for p in scanned}
 
         config = await self._read_target_config()
-        plugins_section = config.setdefault("plugins", {})
-        plugins_section.setdefault("enabled", True)
-        entries = plugins_section.setdefault("entries", {})
-        installs = plugins_section.setdefault("installs", {})
-        load = plugins_section.setdefault("load", {})
-        paths: list[str] = load.setdefault("paths", [])
+        entries, installs, paths = self._ensure_plugins_section(config)
 
         installed: list[str] = []
         failed: list[dict] = []
@@ -207,10 +213,7 @@ class PluginManager:
             {"uninstalled": [str], "failed": [{"id": str, "error": str}]}
         """
         config = await self._read_target_config()
-        plugins_section = config.get("plugins", {})
-        entries = plugins_section.get("entries", {})
-        installs = plugins_section.get("installs", {})
-        paths: list[str] = plugins_section.get("load", {}).get("paths", [])
+        entries, installs, paths = self._ensure_plugins_section(config)
 
         uninstalled: list[str] = []
         failed: list[dict] = []
@@ -218,11 +221,15 @@ class PluginManager:
         for pid in ids:
             self._fire(pid, "running", "Uninstalling...")
             try:
+                # 從 installs 記錄取得實際路徑，避免寫死
+                install_info = installs.pop(pid, None)
                 entries.pop(pid, None)
-                installs.pop(pid, None)
-                lp = f"extensions/{pid}"
-                if lp in paths:
-                    paths.remove(lp)
+                lp = (install_info or {}).get("installPath", f"extensions/{pid}")
+                # installPath 可能是絕對路徑，load.paths 用相對路徑
+                rel_lp = f"extensions/{pid}"
+                for candidate in (lp, rel_lp):
+                    if candidate in paths:
+                        paths.remove(candidate)
                 uninstalled.append(pid)
                 self._fire(pid, "done", "Uninstalled")
             except Exception as exc:

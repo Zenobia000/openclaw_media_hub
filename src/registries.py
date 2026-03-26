@@ -1,16 +1,57 @@
 """Registries — Provider / Channel / Tool 註冊表。
 
-純資料定義模組，供 Bridge API 回傳前端渲染 Config Step 2。
-Plugin JSON (openclaw/extensions/) 缺少 display metadata（標籤、placeholder、
-品牌色、credential 欄位），因此以 hardcode 方式定義 spec §4.3 明確要求的項目。
+純資料定義模組，供 Bridge API 回傳前端渲染設定畫面。
+Plugin JSON 缺少顯示用 metadata（標籤、placeholder、品牌色、憑證欄位），
+因此以 hardcode 方式定義。
 """
 
 from __future__ import annotations
 
-# ── Model Providers ───────────────────────────────────────
+from typing import TypedDict
+
+
+class ProviderEntry(TypedDict, total=False):
+    """Model Provider 定義。"""
+
+    name: str
+    label: str
+    env_var: str | None
+    placeholder: str | None
+    primary: bool
+
+
+class ChannelField(TypedDict):
+    """Channel 憑證欄位。"""
+
+    key: str
+    label: str
+
+
+class ChannelEntry(TypedDict, total=False):
+    """Messaging Channel 定義。"""
+
+    name: str
+    label: str
+    icon: str
+    icon_color: str
+    fields: list[ChannelField]
+    info_note: str
+    primary: bool
+
+
+class ToolEntry(TypedDict, total=False):
+    """Tool API Key 定義。"""
+
+    name: str
+    label: str
+    env_var: str | None
+    placeholder: str | None
+
+
+# ── AI 模型供應商 ────────────────────────────────────────
 # primary=True → 主要清單；False → "More..." 收合區
 
-PROVIDER_REGISTRY: list[dict] = [
+PROVIDER_REGISTRY: list[ProviderEntry] = [
     # ── Primary ──
     {
         "name": "openai",
@@ -155,9 +196,9 @@ PROVIDER_REGISTRY: list[dict] = [
     },
 ]
 
-# ── Messaging Channels ────────────────────────────────────
+# ── 訊息頻道 ─────────────────────────────────────────────
 
-CHANNEL_REGISTRY: list[dict] = [
+CHANNEL_REGISTRY: list[ChannelEntry] = [
     # ── Primary ──
     {
         "name": "line",
@@ -341,9 +382,9 @@ CHANNEL_REGISTRY: list[dict] = [
     },
 ]
 
-# ── Tool API Keys ─────────────────────────────────────────
+# ── 工具 API 金鑰 ────────────────────────────────────────
 
-TOOL_REGISTRY: list[dict] = [
+TOOL_REGISTRY: list[ToolEntry] = [
     {
         "name": "brave",
         "label": "Brave Search",

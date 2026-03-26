@@ -128,12 +128,12 @@ class Bridge:
         self._ssh_connection: SSHConnection | None = None
         self._remote_executor: RemoteExecutor | None = None
 
-        # 進度回呼捷徑
-        self._notify_init_progress = lambda s, st, m: self._notify_progress("updateInitProgress", s, st, m)
-        self._notify_deploy_progress = lambda n, st, m: self._notify_progress("updateDeployProgress", n, st, m)
-        self._notify_plugin_progress = lambda n, st, m: self._notify_progress("updatePluginProgress", n, st, m)
-        self._notify_fix_progress = lambda n, st, m: self._notify_progress("updateFixProgress", n, st, m)
-        self._notify_connection_status = lambda st, m: self._notify_progress("updateConnectionStatus", st, m)
+        # 進度回呼捷徑（functools.partial 取代 lambda，更清晰）
+        self._notify_init_progress = functools.partial(self._notify_progress, "updateInitProgress")
+        self._notify_deploy_progress = functools.partial(self._notify_progress, "updateDeployProgress")
+        self._notify_plugin_progress = functools.partial(self._notify_progress, "updatePluginProgress")
+        self._notify_fix_progress = functools.partial(self._notify_progress, "updateFixProgress")
+        self._notify_connection_status = functools.partial(self._notify_progress, "updateConnectionStatus")
 
     # ── 基礎設施 ────────────────────────────────────────
 
@@ -530,8 +530,6 @@ class Bridge:
             executor = RemoteExecutor(conn)
             server_info = self._run_async(self._get_server_info(executor))
             return _ok({"server_info": server_info})
-        except paramiko.AuthenticationException as exc:
-            return _err(ErrorType.AUTH_FAILED, str(exc))
         finally:
             self._run_async(conn.disconnect())
 

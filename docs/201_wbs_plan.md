@@ -2,8 +2,8 @@
 
 ---
 
-**版本:** `v3.0`
-**更新:** `2026-03-24`
+**版本:** `v3.2`
+**更新:** `2026-03-26`
 **作者:** `[專案經理 / 開發人員]`
 **審核:** `[TL / 審核人員]`
 **狀態:** `規劃中`
@@ -154,13 +154,13 @@
 
 | 週次 | 日期 | 主要工作 |
 | :--- | :--- | :--- |
-| Week 1 | 03/22 - 03/28 | Phase 1 ✅ + Phase 2 設計（架構✅、Mockup🔄、前端規格書✅、API Spec、QA 計劃） |
-| Week 2 | 03/29 - 04/04 | **3.15.1 Executor Protocol + 3.15.2 LocalExecutor** + 3.2 前端 UI 元件(含 Sidebar 連線指示燈) + 3.3.1~3.3.3 後端基礎 + 3.4 環境檢查後端 |
-| Week 3 | 04/05 - 04/11 | Track A: 3.5 Config Manager + 3.4 環境檢查前端 ‖ Track B: **3.15.3 RemoteExecutor + 3.15.4 ssh_connection** |
-| Week 4 | 04/12 - 04/18 | 3.15.5 transfer_service + 3.3.4 bridge SSH APIs + 3.6 Config Step 1(含 SSH 表單) + 3.16.3 SSH Bridge 整合 + 3.7 Config Step 2 |
-| Week 5 | 04/19 - 04/25 | 3.8 Initializer (後端+前端 Step 3) + 3.9 Dashboard 後端 + 3.10 技能部署後端 |
-| Week 6 | 04/26 - 05/01 | 3.10 前端 + 3.9 Dashboard 前端 + 3.11 外掛安裝 + 3.12 外掛修復 + 3.13 PyInstaller (部分) |
-| Week 7 | 05/02 - 05/08 | 3.13 打包測試 + 3.17 SSH 整合測試 + 3.14 QA 驗證 + Phase 4 發佈上線 |
+| Week 1 | 03/22 - 03/28 | Phase 1 ✅ + Phase 2 設計🔄 + **3.1~3.8 全部提前完成✅** + **3.9 Dashboard✅ + 3.10 Deploy Skills✅ + 3.11 Install Plugins✅ + 3.12a Gateway✅**（213 tests） |
+| Week 2 | 03/29 - 04/04 | 3.12 外掛修復 + 3.13 PyInstaller 打包 + Phase 2 收尾（API Spec、QA 計劃） |
+| Week 3 | 04/05 - 04/11 | 3.17 SSH 整合測試 + 3.14 QA 功能驗證 |
+| Week 4 | 04/12 - 04/18 | Phase 4 發佈上線（封閉測試 + Bug 修復 + 文件 + 正式發佈） |
+| ~~Week 5~~ | ~~04/19 - 04/25~~ | ~~已無排程~~ |
+| ~~Week 6~~ | ~~04/26 - 05/01~~ | ~~已無排程~~ |
+| ~~Week 7~~ | ~~05/02 - 05/08~~ | ~~已無排程~~ |
 
 ### 工作包統計
 
@@ -178,11 +178,11 @@
 | 3.16.3 SSH Bridge  | 1.5h     | 2026-04-15 | 2026-03-25 | ✅ 完成   | 隨 3.6 整合 |
 | 3.7 Config Step 2  | 10h      | 2026-04-16 | 2026-03-25 | ✅ 完成   | registries.py + 前端 + 19 項測試 |
 | 3.8 Initializer    | 16h      | 2026-04-19 | 2026-03-25 | ✅ 完成   | 11 步 + Bridge + 前端 + 30 項測試 |
-| 3.9 Dashboard      | 12h      | 2026-04-23 | 2026-04-28 | ⬜ 未開始 | |
-| 3.10 技能部署      | 10h      | 2026-04-24 | 2026-04-27 | ⬜ 未開始 | |
-| 3.11 外掛安裝      | 10h      | 2026-04-28 | 2026-04-30 | ⬜ 未開始 | |
+| 3.9 Dashboard      | 12h      | 2026-03-25 | 2026-03-26 | ✅ 完成   | 提前完成，28 項測試 |
+| 3.10 技能部署      | 10h      | 2026-03-25 | 2026-03-25 | ✅ 完成   | 提前完成，21 項測試 |
+| 3.11 外掛安裝      | 10h      | 2026-03-25 | 2026-03-26 | ✅ 完成   | 提前完成，21 項測試 |
 | 3.12 外掛修復      | 6h       | 2026-04-30 | 2026-05-01 | ⬜ 未開始 | |
-| 3.12a Gateway 控制  | 8h       | 2026-05-01 | 2026-05-02 | ⬜ 未開始 | Origin 存取控制 + 裝置管理 (ADR-006) |
+| 3.12a Gateway 控制  | 8h       | 2026-03-25 | 2026-03-25 | ✅ 完成   | 提前完成，Origin + Device + Info |
 | 3.13 PyInstaller   | 8h       | 2026-04-30 | 2026-05-03 | ⬜ 未開始 | |
 | 3.14 QA 驗證       | 10h      | 2026-05-03 | 2026-05-06 | ⬜ 未開始 | |
 | 3.17 SSH 整合測試  | 6h       | 2026-05-02 | 2026-05-04 | ⬜ 未開始 | |
@@ -273,19 +273,19 @@
 | 3.5.6 | config_manager 單元測試（keyring mock、JSON deep merge、.env upsert 邊界情況）                              | DEV    | 1h   | ✅ 完成 | 04/08  | 03/25  | 25 項測試全通過                            |
 | 3.5.7 | config_manager.py：SSH 連線設定管理 — `gui-settings.json` 新增 `ssh_host`, `ssh_port`, `ssh_username`, `ssh_key_path` 欄位讀寫 + SSH 私鑰路徑驗證 | DEV | 1h | ✅ 完成 | 04/08 | 03/25 | 與 3.5.1 合併實作 |
 
-#### 3.6 Configuration Step 1 — 環境與目錄設定 (9.5h, 含合併 3.16.1)
+#### 3.6 Configuration Step 1 — 環境與目錄設定 (9.5h, 含合併 3.16.1) ✅
 
-> **排程變更說明**：移至 Week 4，在 3.15.1~3.15.4 + 3.5 Config Manager 完成後開發。SSH Radio Card (原 3.16.1) 合併入 3.6.3，4 張 Radio Card 一起做。
+> **排程變更說明**：原定 Week 4，實際於 03/25 提前完成（commit `6193757`）。SSH Radio Card (原 3.16.1) 合併入 3.6.3，4 張 Radio Card 一起做。
 
 | ID    | 任務                                                                                                         | 負責人 | 工時  | 狀態      | 開始日 | 完成日 | 備註                            |
 | :---- | :----------------------------------------------------------------------------------------------------------- | :----- | :---- | :-------- | :----- | :----- | :------------------------------ |
-| 3.6.1 | Bridge API `detect_platform()`：回傳 `{os, env_type, suggested_mode, current_mode}`                          | DEV    | 1h    | ⬜ 未開始 | 04/12  | 04/12  | 依賴 3.3.1 + 3.5.1             |
-| 3.6.2 | 前端 StepIndicator 整合（3 步驟：Active 紅底/Completed 綠底勾/Pending 灰色邊框，2px 橫線連接）               | DEV    | 1h    | ⬜ 未開始 | 04/12  | 04/13  | 208 §4.2                       |
-| 3.6.3 | 前端 Deployment Mode 區塊：4 張 Radio Card (Docker Windows/Docker Linux/Native Linux/**Remote Server SSH**) + 點擊即時 `save_config()` 持久化 + Sidebar footer 環境文字更新 | DEV | 3.5h | ⬜ 未開始 | 04/13 | 04/14 | **合併原 3.16.1** SSH Radio Card + 連線表單，4 張卡一起做 |
-| 3.6.4 | 前端 Gateway & Directory 區塊：3×2 表單 Grid (config_dir/workspace_dir/bind/mode/port/bridge_port) + 進階設定收合區 (timezone/docker_image/sandbox toggle) | DEV | 1.5h | ⬜ 未開始 | 04/14 | 04/14 | 預設值從 Bridge 或硬編碼 |
-| 3.6.5 | 前端 Action Bar："Step 1 of 3" 文字 + "Next" Button/Primary (arrow-right icon) + 必填欄位驗證               | DEV    | 0.5h  | ⬜ 未開始 | 04/14  | 04/15  |                                 |
-| 3.6.6 | 前端 SSH Connection 區塊（條件顯示）：選擇「Remote Server (SSH)」後展開 SSH 連線表單（SectionPanel: host/port/username/key file path 4 欄位 + Test Connection 按鈕 + 連線狀態回饋） | DEV | 1.5h | ⬜ 未開始 | 04/15 | 04/15 | ADR-004，僅 remote-ssh 模式顯示 |
-| 3.6.7 | 前端 SSH Connection 連線驗證：點擊 Test Connection 呼叫 `test_connection()` API + 成功/失敗狀態顯示 + Next 按鈕需連線成功才啟用 | DEV | 0.5h | ⬜ 未開始 | 04/15 | 04/15 | |
+| 3.6.1 | Bridge API `detect_platform()`：回傳 `{os, env_type, suggested_mode, current_mode}`                          | DEV    | 1h    | ✅ 完成 | 04/12  | 03/25  | 依賴 3.3.1 + 3.5.1，提前完成   |
+| 3.6.2 | 前端 StepIndicator 整合（3 步驟：Active 紅底/Completed 綠底勾/Pending 灰色邊框，2px 橫線連接）               | DEV    | 1h    | ✅ 完成 | 04/12  | 03/25  | 208 §4.2，提前完成             |
+| 3.6.3 | 前端 Deployment Mode 區塊：4 張 Radio Card (Docker Windows/Docker Linux/Native Linux/**Remote Server SSH**) + 點擊即時 `save_config()` 持久化 + Sidebar footer 環境文字更新 | DEV | 3.5h | ✅ 完成 | 04/13 | 03/25 | **合併原 3.16.1** SSH Radio Card + 連線表單，提前完成 |
+| 3.6.4 | 前端 Gateway & Directory 區塊：3×2 表單 Grid (config_dir/workspace_dir/bind/mode/port/bridge_port) + 進階設定收合區 (timezone/docker_image/sandbox toggle) | DEV | 1.5h | ✅ 完成 | 04/14 | 03/25 | 預設值從 Bridge 或硬編碼，提前完成 |
+| 3.6.5 | 前端 Action Bar："Step 1 of 3" 文字 + "Next" Button/Primary (arrow-right icon) + 必填欄位驗證               | DEV    | 0.5h  | ✅ 完成 | 04/14  | 03/25  | 提前完成                       |
+| 3.6.6 | 前端 SSH Connection 區塊（條件顯示）：選擇「Remote Server (SSH)」後展開 SSH 連線表單（SectionPanel: host/port/username/key file path 4 欄位 + Test Connection 按鈕 + 連線狀態回饋） | DEV | 1.5h | ✅ 完成 | 04/15 | 03/25 | ADR-004，僅 remote-ssh 模式顯示，提前完成 |
+| 3.6.7 | 前端 SSH Connection 連線驗證：點擊 Test Connection 呼叫 `test_connection()` API + 成功/失敗狀態顯示 + Next 按鈕需連線成功才啟用 | DEV | 0.5h | ✅ 完成 | 04/15 | 03/25 | 提前完成 |
 
 #### 3.7 Configuration Step 2 — API 金鑰與服務設定 (10h)
 
@@ -321,59 +321,61 @@
 | 3.8.14 | 前端 Step 3：Dashboard Info 面板（Dashboard URL 唯讀 + Access Token 遮罩/複製 + Device Pairing 區塊）— Gateway ready 前 disabled | DEV | 1h | ✅ 完成 | 03/25 | 03/25 | 固定寬度 340px |
 | 3.8.15 | 前端 Step 3：Action Bar (Back + Initialize) + Initialize 按鈕 loading 狀態 + 失敗 Retry                     | DEV    | 0.5h  | ✅ 完成 | 03/25  | 03/25  |                                   |
 
-#### 3.12a Gateway 控制頁面 — ADR-006 (8h)
+#### 3.12a Gateway 控制頁面 — ADR-006 (8h) ✅
 
-> Origin 存取控制（allowedOrigins 全域/白名單切換）與裝置配對管理（list/approve/reject/remove/備註）。
+> Origin 存取控制（allowedOrigins 全域/白名單切換）與裝置配對管理（list/approve/reject/remove/備註）。提前於 2026-03-25 完成。
 
 | ID      | 任務                                                                                                          | 負責人 | 工時  | 狀態      | 開始日 | 完成日 | 備註                                   |
 | :------ | :------------------------------------------------------------------------------------------------------------ | :----- | :---- | :-------- | :----- | :----- | :------------------------------------- |
-| 3.12a.1 | Bridge API：`get_allowed_origins()`, `save_allowed_origins()` — 讀寫 openclaw.json `gateway.controlUi.allowedOrigins` | DEV | 1h | ⬜ 未開始 | 05/01 | 05/01 | 透過 config_manager |
-| 3.12a.2 | Bridge API：`list_devices()`, `reject_device()`, `remove_device()` — 透過 `_build_openclaw_cmd()` 執行 CLI | DEV | 1.5h | ⬜ 未開始 | 05/01 | 05/01 | 複用已有 approve_device |
-| 3.12a.3 | Bridge API：`save_device_note()`, `get_device_notes()` — gui-settings.json `device_notes` 映射 | DEV | 0.5h | ⬜ 未開始 | 05/01 | 05/01 | 本地儲存 |
-| 3.12a.4 | 前端 Gateway 頁面：Sidebar 導航項 + 頁面結構 + `registerPage("gateway")` | DEV | 1h | ⬜ 未開始 | 05/01 | 05/02 | MAIN 區段，shield icon |
-| 3.12a.5 | 前端 Origin Access Control 區塊：Toggle 全域/白名單 + 白名單增刪 + 即時儲存 | DEV | 2h | ⬜ 未開始 | 05/02 | 05/02 | |
-| 3.12a.6 | 前端 Device Management 區塊：Pending（Approve/Reject）+ Paired（備註+Remove）+ Refresh | DEV | 2h | ⬜ 未開始 | 05/02 | 05/02 | |
+| 3.12a.1 | Bridge API：`get_allowed_origins()`, `save_allowed_origins()` — 讀寫 openclaw.json `gateway.controlUi.allowedOrigins` | DEV | 1h | ✅ 完成 | 03/25 | 03/25 | 透過 config_manager |
+| 3.12a.2 | Bridge API：`list_devices()`, `reject_device()`, `remove_device()` — 透過 `_build_openclaw_cmd()` 執行 CLI | DEV | 1.5h | ✅ 完成 | 03/25 | 03/25 | + approve_device + list_pending_devices |
+| 3.12a.3 | Bridge API：`save_device_note()`, `get_device_notes()` + `get_gateway_info()` — gui-settings.json `device_notes` 映射 | DEV | 0.5h | ✅ 完成 | 03/25 | 03/25 | + Gateway URL/Port/Token 資訊 |
+| 3.12a.4 | 前端 Gateway 頁面：Sidebar 導航項 + 頁面結構 + `registerPage("gateway")` | DEV | 1h | ✅ 完成 | 03/25 | 03/25 | MAIN 區段，shield icon |
+| 3.12a.5 | 前端 Origin Access Control 區塊：Toggle 全域/白名單 + 白名單增刪 + 即時儲存 | DEV | 2h | ✅ 完成 | 03/25 | 03/25 | |
+| 3.12a.6 | 前端 Device Management 區塊：Pending（Approve/Reject）+ Paired（備註+Remove）+ Refresh + Token 複製 | DEV | 2h | ✅ 完成 | 03/25 | 03/25 | + Gateway 連線資訊區塊 |
 
-#### 3.9 Dashboard 與服務控制 — US-003 (12h)
+#### 3.9 Dashboard 與服務控制 — US-003 (12h) ✅
 
-> **排程變更說明**：後端 (3.9.1~4) Week 5 與 Initializer 平行，前端 (3.9.5~9) Week 6。透過 Executor 介面操作服務控制。
+> 提前於 2026-03-25~03/26 完成。service_controller.py + Bridge API + 前端 Dashboard 頁面 + 28 項測試。
 
 | ID    | 任務                                                                                                          | 負責人 | 工時  | 狀態      | 開始日 | 完成日 | 備註                                   |
 | :---- | :------------------------------------------------------------------------------------------------------------ | :----- | :---- | :-------- | :----- | :----- | :------------------------------------- |
-| 3.9.1 | service_controller.py：Docker 模式 — `docker compose up -d` / `down` / `restart` + `docker compose ps` 狀態查詢 | DEV | 2h | ⬜ 未開始 | 04/23 | 04/23 | 透過 Executor.run_command() |
-| 3.9.2 | service_controller.py：Native Linux 模式 — `systemctl start/stop/restart/is-active openclaw-gateway`          | DEV    | 1h    | ⬜ 未開始 | 04/23  | 04/24  |                                        |
-| 3.9.3 | Bridge API：`get_service_status()`, `start_service()`, `stop_service()`, `restart_service()`                  | DEV    | 1h    | ⬜ 未開始 | 04/24  | 04/24  | 回傳 `{running, services, uptime, skills_count, plugins_count}` |
-| 3.9.4 | service_controller 單元測試                                                                                   | DEV    | 1h    | ⬜ 未開始 | 04/24  | 04/24  |                                        |
-| 3.9.5 | 前端 Dashboard：Header (標題+副標題) + 服務狀態 StatusBadge（Running 綠 / Stopped 紅 動態切換）               | DEV    | 1h    | ⬜ 未開始 | 04/26  | 04/26  | 208 §4.5，Week 6                       |
-| 3.9.6 | 前端 Dashboard：4 張 StatCards（Services X/1 + Uptime Xh Xm + Skills 數量 + Plugins 數量）水平等寬排列       | DEV    | 1.5h  | ⬜ 未開始 | 04/26  | 04/27  | bg-card + radius-md + 邊框             |
-| 3.9.7 | 前端 Dashboard：Service Control 區塊（服務列表 + StatusBadge + Start/Restart/Stop 按鈕組 + 操作中 disabled + loading 動畫） | DEV | 2h | ⬜ 未開始 | 04/27 | 04/27 | 按鈕依服務狀態動態切換 |
-| 3.9.8 | 前端 Dashboard：Quick Actions 區塊（3 張 Action Card: Environment Check / Deploy Skills / Install Plugins + 點擊導航） | DEV | 1h | ⬜ 未開始 | 04/27 | 04/28 | hover 邊框變 accent-primary |
-| 3.9.9 | 前端 Dashboard：狀態輪詢機制（每 10 秒 `get_service_status()` + 離開頁面停止輪詢）                            | DEV    | 0.5h  | ⬜ 未開始 | 04/28  | 04/28  | setInterval / clearInterval            |
+| 3.9.1 | service_controller.py：Docker 模式 — `docker compose up -d` / `down` / `restart` + `docker compose ps` 狀態查詢 | DEV | 2h | ✅ 完成 | 03/25 | 03/25 | 透過 Executor.run_command() |
+| 3.9.2 | service_controller.py：Native Linux 模式 — `systemctl start/stop/restart/is-active openclaw-gateway`          | DEV    | 1h    | ✅ 完成 | 03/25  | 03/25  | remote-ssh 走 Docker 指令             |
+| 3.9.3 | Bridge API：`get_service_status()`, `start_service()`, `stop_service()`, `restart_service()`                  | DEV    | 1h    | ✅ 完成 | 03/25  | 03/25  | 回傳 `{running, services, uptime, skills_count, plugins_count}` |
+| 3.9.4 | service_controller 單元測試                                                                                   | DEV    | 1h    | ✅ 完成 | 03/25  | 03/25  | 28 項測試全通過                        |
+| 3.9.5 | 前端 Dashboard：Header (標題+副標題) + 服務狀態 StatusBadge（Running 綠 / Stopped 紅 動態切換）               | DEV    | 1h    | ✅ 完成 | 03/25  | 03/26  | 208 §4.5                               |
+| 3.9.6 | 前端 Dashboard：4 張 StatCards（Services X/1 + Uptime Xh Xm + Skills 數量 + Plugins 數量）水平等寬排列       | DEV    | 1.5h  | ✅ 完成 | 03/25  | 03/26  | bg-card + radius-md + 邊框             |
+| 3.9.7 | 前端 Dashboard：Service Control 區塊（服務列表 + StatusBadge + Start/Restart/Stop 按鈕組 + 操作中 disabled + loading 動畫） | DEV | 2h | ✅ 完成 | 03/25 | 03/26 | 按鈕依服務狀態動態切換 |
+| 3.9.8 | 前端 Dashboard：Quick Actions 區塊（3 張 Action Card: Environment Check / Deploy Skills / Install Plugins + 點擊導航） | DEV | 1h | ✅ 完成 | 03/25 | 03/26 | hover 邊框變 accent-primary |
+| 3.9.9 | 前端 Dashboard：狀態輪詢機制（每 10 秒 `get_service_status()` + 離開頁面停止輪詢）                            | DEV    | 0.5h  | ✅ 完成 | 03/25  | 03/26  | setInterval / clearInterval            |
 
-#### 3.10 技能部署 — US-005 (10h)
+#### 3.10 技能部署 — US-005 (10h) ✅
 
-> **排程變更說明**：後端 (3.10.1~4) Week 5 與 Dashboard 後端平行，前端 (3.10.5~7) Week 6。透過 Executor.copy_tree()/remove_tree() 操作，遠端模式使用 transfer_service (3.15.5，已在 Week 4 完成)。
+> 提前於 2026-03-25 完成。skill_manager.py + Bridge API + 前端 Deploy Skills 頁面 + 21 項測試。custom nested 二層掃描 + community flat 一層掃描 + 遠端模式用 transfer_service。
 
 | ID     | 任務                                                                                                         | 負責人 | 工時  | 狀態      | 開始日 | 完成日 | 備註                                   |
 | :----- | :----------------------------------------------------------------------------------------------------------- | :----- | :---- | :-------- | :----- | :----- | :------------------------------------- |
-| 3.10.1 | skill_manager.py：掃描 `module_pack/`（自訂業務模組）+ `openclaw/skills/`（55+ 社群技能）目錄                 | DEV    | 1.5h  | ⬜ 未開始 | 04/24  | 04/25  | 透過 Executor.list_dir() 遞迴掃描      |
-| 3.10.2 | skill_manager.py：SKILL.md YAML frontmatter 解析（name, description, homepage, metadata.openclaw.emoji/requires） | DEV | 1.5h | ⬜ 未開始 | 04/25 | 04/25 | PyYAML 解析 |
-| 3.10.3 | skill_manager.py：部署邏輯 (Executor.copy_tree → `~/.openclaw/workspace/skills/`) + 移除邏輯 (Executor.remove_tree) + 已部署偵測 | DEV | 1h | ⬜ 未開始 | 04/25 | 04/25 | 遠端模式用 transfer_service |
-| 3.10.4 | Bridge API：`list_skills()`, `deploy_skills(names)`, `remove_skills(names)` + 進度回呼 (`window.updateDeployProgress`) + 單元測試 | DEV | 1.5h | ⬜ 未開始 | 04/25 | 04/26 | |
-| 3.10.5 | 前端 Deploy Skills：Header + Summary Banner (X of Y deployed / No skills yet) + deployed badge               | DEV    | 1h    | ⬜ 未開始 | 04/26  | 04/26  | 208 §4.6，Week 6                       |
-| 3.10.6 | 前端 Deploy Skills：Tab 切換 (Custom Modules / Community Skills) + Select All checkbox + 技能勾選清單（checkbox + emoji + name + description + Deployed/Available badge + hover） | DEV | 1.5h | ⬜ 未開始 | 04/26 | 04/27 | 已部署預設勾選 |
-| 3.10.7 | 前端 Deploy Skills：Progress Overlay（逐項 ProgressItem 狀態更新）+ Action Bar (已選數量 + Deploy/Remove 按鈕 + disabled 邏輯) | DEV | 1.5h | ⬜ 未開始 | 04/27 | 04/27 | Remove 需確認提示 |
+| 3.10.1 | skill_manager.py：掃描 `module_pack/`（自訂業務模組）+ `openclaw/skills/`（55+ 社群技能）目錄                 | DEV    | 1.5h  | ✅ 完成 | 03/25  | 03/25  | custom nested 二層 + community flat 一層 |
+| 3.10.2 | skill_manager.py：SKILL.md YAML frontmatter 解析（name, description, homepage, metadata.openclaw.emoji/requires） | DEV | 1.5h | ✅ 完成 | 03/25 | 03/25 | PyYAML 解析 |
+| 3.10.3 | skill_manager.py：部署邏輯 (Executor.copy_tree → `~/.openclaw/workspace/skills/`) + 移除邏輯 (Executor.remove_tree) + 已部署偵測 | DEV | 1h | ✅ 完成 | 03/25 | 03/25 | 遠端模式用 transfer_service |
+| 3.10.4 | Bridge API：`list_skills()`, `deploy_skills(names)`, `remove_skills(names)` + 進度回呼 (`window.updateDeployProgress`) + 單元測試 | DEV | 1.5h | ✅ 完成 | 03/25 | 03/25 | 21 項測試全通過 |
+| 3.10.5 | 前端 Deploy Skills：Header + Summary Banner (X of Y deployed / No skills yet) + deployed badge               | DEV    | 1h    | ✅ 完成 | 03/25  | 03/25  | 208 §4.6                               |
+| 3.10.6 | 前端 Deploy Skills：Tab 切換 (Custom Modules / Community Skills) + Select All checkbox + 技能勾選清單（checkbox + emoji + name + description + Deployed/Available badge + hover） | DEV | 1.5h | ✅ 完成 | 03/25 | 03/25 | 已部署預設勾選，部分重渲染策略 |
+| 3.10.7 | 前端 Deploy Skills：Progress Overlay（逐項 ProgressItem 狀態更新）+ Action Bar (已選數量 + Deploy/Remove 按鈕 + disabled 邏輯) | DEV | 1.5h | ✅ 完成 | 03/25 | 03/25 | Remove 需 confirm() 確認 |
 
-#### 3.11 外掛安裝 — US-006 (10h)
+#### 3.11 外掛安裝 — US-006 (10h) ✅
+
+> 提前於 2026-03-25~03/26 完成。plugin_manager.py 全面重寫（_categorize 分類 + _scan_extensions 掃描 75 外掛 + install/uninstall config-driven）+ Bridge API + 前端 Install Plugins 頁面 + 21 項測試。
 
 | ID     | 任務                                                                                                          | 負責人 | 工時  | 狀態      | 開始日 | 完成日 | 備註                                   |
 | :----- | :------------------------------------------------------------------------------------------------------------ | :----- | :---- | :-------- | :----- | :----- | :------------------------------------- |
-| 3.11.1 | plugin_manager.py：掃描 `openclaw/extensions/` + 讀取 `openclaw.plugin.json`（id, channels[], providers[], providerAuthEnvVars, configSchema） | DEV | 2h | ⬜ 未開始 | 04/28 | 04/28 | 透過 Executor.read_file() |
-| 3.11.2 | plugin_manager.py：外掛分類邏輯（Providers / Channels / Tools / Infrastructure）+ 安裝邏輯（修改 `openclaw.json` 的 `plugins.load.paths[]` + `plugins.installs`） | DEV | 2h | ⬜ 未開始 | 04/28 | 04/29 | config-driven，非檔案複製 |
-| 3.11.3 | plugin_manager.py：解除安裝邏輯（反向修改 openclaw.json）+ Bridge API (`list_plugins()`, `install_plugins()`, `uninstall_plugins()`) + 進度回呼 + 單元測試 | DEV | 1.5h | ⬜ 未開始 | 04/29 | 04/29 | |
-| 3.11.4 | 前端 Install Plugins：Header + Summary Banner (X of Y installed / No plugins yet) + installed badge           | DEV    | 1h    | ⬜ 未開始 | 04/29  | 04/30  | 208 §4.7                               |
-| 3.11.5 | 前端 Install Plugins：4 分類 Tab (Providers/Channels/Tools/Infrastructure) + Select All + 外掛勾選清單（品牌色圓形 icon + name + description + Installed/Available badge + hover） | DEV | 2h | ⬜ 未開始 | 04/30 | 04/30 | 已安裝預設勾選 |
-| 3.11.6 | 前端 Install Plugins：Progress Overlay + Action Bar (已選數量 + Install/Uninstall 按鈕 + disabled 邏輯)       | DEV    | 1.5h  | ⬜ 未開始 | 04/30  | 04/30  | Uninstall 需確認提示                    |
+| 3.11.1 | plugin_manager.py：掃描 `openclaw/extensions/` + 讀取 `openclaw.plugin.json`（id, channels[], providers[], providerAuthEnvVars, configSchema） | DEV | 2h | ✅ 完成 | 03/25 | 03/25 | _scan_extensions() + _cached_plugins 快取 |
+| 3.11.2 | plugin_manager.py：外掛分類邏輯（Providers / Channels / Tools / Infrastructure）+ 安裝邏輯（修改 `openclaw.json` 的 `plugins.load.paths[]` + `plugins.installs`） | DEV | 2h | ✅ 完成 | 03/25 | 03/25 | _categorize() + config-driven 安裝 |
+| 3.11.3 | plugin_manager.py：解除安裝邏輯（反向修改 openclaw.json）+ Bridge API (`list_plugins()`, `install_plugins()`, `uninstall_plugins()`) + 進度回呼 + 單元測試 | DEV | 1.5h | ✅ 完成 | 03/25 | 03/25 | 21 項測試全通過 |
+| 3.11.4 | 前端 Install Plugins：Header + Summary Banner (X of Y installed / No plugins yet) + installed badge           | DEV    | 1h    | ✅ 完成 | 03/25  | 03/26  | badge 容器 + renderPluginsPage()        |
+| 3.11.5 | 前端 Install Plugins：4 分類 Tab (Providers/Channels/Tools/Infrastructure) + Select All + 外掛勾選清單（品牌色圓形 icon + name + description + Installed/Available badge + hover） | DEV | 2h | ✅ 完成 | 03/25 | 03/26 | PLUGIN_CATEGORIES + PLUGIN_COLORS，部分重渲染 |
+| 3.11.6 | 前端 Install Plugins：Progress Overlay + Action Bar (已選數量 + Install/Uninstall 按鈕 + disabled 邏輯)       | DEV    | 1.5h  | ✅ 完成 | 03/25  | 03/26  | Uninstall 需 confirm() 確認             |
 
 #### 3.12 外掛修復 (6h)
 
@@ -429,7 +431,7 @@
 | :----- | :------------------------------------------------------------------------------------------------------------ | :----- | :---- | :-------- | :----- | :----- | :------------------------------------- |
 | 3.16.1 | ~~前端：Configuration Step 1 第 4 張 Radio Card~~ | — | 1.5h | 已合併 | — | — | → 合併入 3.6.3 |
 | 3.16.2 | ~~前端：Sidebar footer 連線狀態指示燈~~ | — | 1h | 已合併 | — | — | → 合併入 3.2.3 |
-| 3.16.3 | Bridge API 整合：前端呼叫 `connect_remote()` / `disconnect_remote()` / `get_connection_status()` / `test_connection()` + 連線狀態變更回呼 `window.updateConnectionStatus(status)` | DEV | 1.5h | ⬜ 未開始 | 04/15 | 04/16 | 隨 3.6 Config Step 1 整合 |
+| 3.16.3 | Bridge API 整合：前端呼叫 `connect_remote()` / `disconnect_remote()` / `get_connection_status()` / `test_connection()` + 連線狀態變更回呼 `window.updateConnectionStatus(status)` | DEV | 1.5h | ✅ 完成 | 04/15 | 03/25 | 隨 3.6 Config Step 1 整合，提前完成 |
 
 #### 3.17 SSH 整合測試 (6h)
 
@@ -454,9 +456,9 @@
 
 ### 整體進度
 
-階段 1 (Inception & Planning) 已完成。階段 2 (Design & Architecture) 進行中，架構設計與 ADR 已完成（含 ADR-003 廢棄 Shell 腳本、ADR-004 SSH 遠端管理 Transport Layer），前端規格書已完成，正進行 UI Mockup 設計。階段 3 (Construction) 的 3.1 專案環境初始化已完成，**3.15 Transport Layer 已於 2026-03-25 提前完成**（executor.py, local_executor.py, remote_executor.py, ssh_connection.py, transfer_service.py，含 17 項單元測試全數通過）。
+階段 1 (Inception & Planning) 已完成。階段 2 (Design & Architecture) 進行中（UI Mockup 設計中）。階段 3 (Construction) **大幅提前**：3.1~3.8（基礎設施 + Configuration 3 步驟）於 03/25 完成，3.9~3.11 + 3.12a（Dashboard + 技能部署 + 外掛安裝 + Gateway 控制）於 03/25~03/26 完成。**累計 213 項測試全數通過，零回歸**。
 
-**v3.0 排程重構重點**：修正依賴倒置問題 — Executor Protocol (3.15.1) + LocalExecutor (3.15.2) 提前至 Week 2 第一天作為所有後端模組的基礎；3.16 SSH 前端整合拆散合併至對應功能模組；所有後端模組從第一天就透過 Executor 介面開發，避免後期重構。
+**v3.2 進度摘要**：原定 Week 5~6 的核心功能（3.9 Dashboard、3.10 Deploy Skills、3.11 Install Plugins、3.12a Gateway）全部提前至 Week 1 完成。3.6 Config Step 1（含 SSH 表單）與 3.16.3 SSH Bridge API 整合亦已於 03/25 提前完成（WBS 狀態補正）。剩餘工作：3.12 外掛修復（6h）、3.13 PyInstaller 打包（8h）、3.14 QA 驗證（10h）、3.17 SSH 整合測試（6h）、4.0 發佈上線（16h），合計約 54h（含 2.4/2.5 設計收尾 8h）。
 
 ### 週度進度
 
@@ -484,6 +486,16 @@
   - `3.15.5` transfer_service.py：跨機器檔案傳輸（upload_tree/download_tree + ProgressCallback）。
   - `pyproject.toml` PEP 621 專案設定 + paramiko 依賴。
   - 17 項單元測試全數通過（Protocol 合規性 + LocalExecutor 功能測試）。
+- **已完成 (03/25 — 3.9 Dashboard + 3.10 Deploy Skills + 3.12a Gateway 提前實作)**:
+  - `3.9.1~4` service_controller.py：Docker/Native 模式服務啟停 + Bridge API（get_service_status/start/stop/restart）+ 28 項測試。
+  - `3.10.1~7` skill_manager.py：module_pack/ + openclaw/skills/ 掃描 + SKILL.md frontmatter 解析 + deploy/remove 邏輯 + Bridge API + 前端 Deploy Skills 頁面（Tab 切換 + Select All + Progress Overlay）+ 21 項測試。
+  - `3.12a.1~6` Gateway 控制頁面：get_allowed_origins/save_allowed_origins + list_devices/approve/reject/remove + save_device_note/get_device_notes + get_gateway_info + 前端 Gateway 頁面（Origin Access Control + Device Management + Token 複製）。
+  - `ADR-005` keyring → .env 遷移（config_manager.py 重寫金鑰儲存邏輯）。
+- **已完成 (03/25~03/26 — 3.9 前端 + 3.11 外掛安裝)**:
+  - `3.9.5~9` 前端 Dashboard：Header + StatusBadge + 4 StatCards + Service Control 區塊 + Quick Actions + 10 秒狀態輪詢。
+  - `3.11.1~6` plugin_manager.py 全面重寫：_categorize() 4 分類 + _scan_extensions() 掃描 75 外掛 + install/uninstall config-driven + Bridge API + 前端 Install Plugins 頁面（4 Tab + 品牌色圓形 icon + Progress Overlay）+ 21 項測試。
+  - `94ebb1d` Bridge API + Frontend State Management 重構。
+  - **累計測試**：213 passed, 2 skipped，零回歸。
 - **計劃中**:
   - Bridge API Spec 設計 (2.4)。
   - QA 測試案例撰寫 (2.5)。

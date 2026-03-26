@@ -9,15 +9,13 @@ from __future__ import annotations
 import asyncio
 import enum
 import logging
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 
 import paramiko
 
 logger = logging.getLogger(__name__)
-
-_MAX_RECONNECT_ATTEMPTS = 3
-_KEEPALIVE_INTERVAL = 30
 
 
 class ConnectionState(enum.Enum):
@@ -46,6 +44,9 @@ class SSHConnection:
     支援 key auth（優先）與 password auth，
     提供自動重連（最多 3 次）與 keepalive 心跳（30 秒）。
     """
+
+    MAX_RECONNECT_ATTEMPTS = 3
+    KEEPALIVE_INTERVAL = 30
 
     def __init__(
         self,
@@ -98,7 +99,7 @@ class SSHConnection:
 
             transport = client.get_transport()
             if transport:
-                transport.set_keepalive(_KEEPALIVE_INTERVAL)
+                transport.set_keepalive(self.KEEPALIVE_INTERVAL)
 
             self._client = client
             self._sftp = None  # lazy init
@@ -118,14 +119,14 @@ class SSHConnection:
             try:
                 self._sftp.close()
             except Exception:
-                pass
+                logger.debug("SFTP close error", exc_info=True)
             self._sftp = None
 
         if self._client:
             try:
                 self._client.close()
             except Exception:
-                pass
+                logger.debug("SSH client close error", exc_info=True)
             self._client = None
 
         self._set_state(ConnectionState.DISCONNECTED)
@@ -139,19 +140,18 @@ class SSHConnection:
         self._disconnect_sync()
         last_error: Exception | None = None
 
-        for attempt in range(1, _MAX_RECONNECT_ATTEMPTS + 1):
+        for attempt in range(1, self.MAX_RECONNECT_ATTEMPTS + 1):
             try:
-                logger.info("SSH reconnect attempt %d/%d", attempt, _MAX_RECONNECT_ATTEMPTS)
+                logger.info("SSH reconnect attempt %d/%d", attempt, self.MAX_RECONNECT_ATTEMPTS)
                 self._connect_sync()
                 return
             except Exception as exc:
                 last_error = exc
-                if attempt < _MAX_RECONNECT_ATTEMPTS:
-                    import time
+                if attempt < self.MAX_RECONNECT_ATTEMPTS:
                     time.sleep(min(2 ** attempt, 8))
 
         self._set_state(ConnectionState.ERROR)
-        msg = f"SSH reconnect failed after {_MAX_RECONNECT_ATTEMPTS} attempts"
+        msg = f"SSH reconnect failed after {self.MAX_RECONNECT_ATTEMPTS} attempts"
         raise ConnectionError(msg) from last_error
 
     def _ensure_connected(self) -> paramiko.SSHClient:

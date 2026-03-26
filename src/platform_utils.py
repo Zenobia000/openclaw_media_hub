@@ -57,7 +57,8 @@ def _is_native_linux() -> bool:
 def suggest_deployment_mode(os_name: str, has_docker: bool) -> str:
     """根據 OS 與環境推薦部署模式。"""
     if os_name == "windows":
-        return DEPLOY_DOCKER_WINDOWS if has_docker else DEPLOY_DOCKER_WINDOWS
+        # Windows 僅支援 Docker 模式，無 Native 替代方案
+        return DEPLOY_DOCKER_WINDOWS
     if os_name == "linux":
         if _is_native_linux():
             return DEPLOY_NATIVE_LINUX

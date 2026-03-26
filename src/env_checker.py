@@ -12,37 +12,30 @@ from collections.abc import Callable
 from src.executor import Executor
 from src.platform_utils import DEPLOY_DOCKER_LINUX, DEPLOY_DOCKER_WINDOWS
 
-# ── Version Parsers ──────────────────────────────────────
+# ── 版本解析註冊表 ───────────────────────────────────────
+
+_VERSION_PATTERNS: dict[str, re.Pattern[str]] = {
+    "docker": re.compile(r"Docker version (\S+),?"),
+    "compose": re.compile(r"v?(\d+\.\d+\.\d+)"),
+    "node": re.compile(r"v(\d+\.\d+\.\d+)"),
+    "ngrok": re.compile(r"(\d+\.\d+\.\d+)"),
+    "jq": re.compile(r"jq-(\S+)"),
+}
 
 
-def _parse_docker_version(s: str) -> str | None:
-    m = re.search(r"Docker version (\S+),?", s)
+def _parse_version(key: str, text: str) -> str | None:
+    """通用版本解析 — 以 key 查找對應 regex。"""
+    pattern = _VERSION_PATTERNS.get(key)
+    if not pattern:
+        return None
+    m = pattern.search(text)
     return m.group(1).rstrip(",") if m else None
 
 
-def _parse_compose_version(s: str) -> str | None:
-    m = re.search(r"v?(\d+\.\d+\.\d+)", s)
-    return m.group(1) if m else None
-
-
-def _parse_node_version(s: str) -> str | None:
-    m = re.search(r"v(\d+\.\d+\.\d+)", s)
-    return m.group(1) if m else None
-
-
 def _parse_first_line(s: str) -> str | None:
+    """取輸出的第一行（VS Code 等工具適用）。"""
     lines = s.strip().splitlines()
     return lines[0].strip() if lines else None
-
-
-def _parse_ngrok_version(s: str) -> str | None:
-    m = re.search(r"(\d+\.\d+\.\d+)", s)
-    return m.group(1) if m else None
-
-
-def _parse_jq_version(s: str) -> str | None:
-    m = re.search(r"jq-(\S+)", s)
-    return m.group(1) if m else None
 
 
 # ── EnvChecker ───────────────────────────────────────────
@@ -54,7 +47,7 @@ class EnvChecker:
     def __init__(self, executor: Executor) -> None:
         self._executor = executor
 
-    # ── Public API ────────────────────────────────────
+    # ── 公開 API ─────────────────────────────────────
 
     async def check_all(self, mode: str) -> list[dict]:
         """依部署模式執行對應的環境檢查。
@@ -81,15 +74,17 @@ class EnvChecker:
             return {"exists": True, "message": "Copied from .env.example — ready for configuration"}
         return {"exists": False, "message": "Missing — copy from .env.example"}
 
-    # ── Docker Mode (5 checks) ────────────────────────
+    # ── Docker 模式（5 項檢查）────────────────────────
 
     async def _check_docker_mode(self, mode: str) -> list[dict]:
         docker = await self._check_binary(
-            "Docker", "docker", ["docker", "--version"], _parse_docker_version,
+            "Docker", "docker", ["docker", "--version"],
+            lambda s: _parse_version("docker", s),
             "Docker not found — install Docker Desktop",
         )
         compose = await self._check_command(
-            "Docker Compose", ["docker", "compose", "version"], _parse_compose_version,
+            "Docker Compose", ["docker", "compose", "version"],
+            lambda s: _parse_version("compose", s),
             "Docker Compose not available — update Docker Desktop",
         )
         daemon_name = "Docker Desktop" if mode == DEPLOY_DOCKER_WINDOWS else "Docker Running"
@@ -99,12 +94,13 @@ class EnvChecker:
             "VS Code not found — optional but recommended",
         )
         ngrok = await self._check_binary(
-            "ngrok", "ngrok", ["ngrok", "version"], _parse_ngrok_version,
+            "ngrok", "ngrok", ["ngrok", "version"],
+            lambda s: _parse_version("ngrok", s),
             "ngrok not found — optional, needed for tunnels",
         )
         return [docker, compose, daemon, vscode, ngrok]
 
-    # ── Native Linux Mode (6 checks) ─────────────────
+    # ── Native Linux 模式（6 項檢查）─────────────────
 
     async def _check_native_mode(self) -> list[dict]:
         node = await self._check_node()
@@ -113,7 +109,8 @@ class EnvChecker:
             "OpenClaw CLI not found — install via official guide",
         )
         jq = await self._check_binary(
-            "jq", "jq", ["jq", "--version"], _parse_jq_version,
+            "jq", "jq", ["jq", "--version"],
+            lambda s: _parse_version("jq", s),
             "jq not found — install via package manager",
         )
         vscode = await self._check_binary(
@@ -121,13 +118,14 @@ class EnvChecker:
             "VS Code not found — optional but recommended",
         )
         ngrok = await self._check_binary(
-            "ngrok", "ngrok", ["ngrok", "version"], _parse_ngrok_version,
+            "ngrok", "ngrok", ["ngrok", "version"],
+            lambda s: _parse_version("ngrok", s),
             "ngrok not found — optional, needed for tunnels",
         )
         systemd = await self._check_systemd()
         return [node, openclaw, jq, vscode, ngrok, systemd]
 
-    # ── Reusable Helpers ──────────────────────────────
+    # ── 可重用檢查工具 ─────────────────────────────────
 
     async def _check_binary(
         self,
@@ -184,7 +182,7 @@ class EnvChecker:
             return {"name": "Node.js", "installed": True, "version": None,
                     "message": "Could not determine Node.js version"}
 
-        version_str = _parse_node_version(result.stdout)
+        version_str = _parse_version("node", result.stdout)
         if not version_str:
             return {"name": "Node.js", "installed": True, "version": None,
                     "message": "Could not parse Node.js version"}

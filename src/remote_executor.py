@@ -9,9 +9,15 @@ from __future__ import annotations
 import asyncio
 import stat
 from collections.abc import Callable
+from pathlib import PurePosixPath
 
 from src.executor import CommandResult
 from src.ssh_connection import SSHConnection
+
+
+def _shell_quote(s: str) -> str:
+    """用單引號包裝 shell 引數，防止注入。"""
+    return "'" + s.replace("'", "'\"'\"'") + "'"
 
 
 class RemoteExecutor:
@@ -29,7 +35,6 @@ class RemoteExecutor:
     ) -> CommandResult:
         def _exec() -> CommandResult:
             client = self._conn.get_client()
-            # 將 args list 組成 shell 指令（每個 arg 用單引號包裝避免注入）
             cmd = " ".join(_shell_quote(a) for a in args)
 
             _, stdout_ch, stderr_ch = client.exec_command(cmd, timeout=timeout)
@@ -75,32 +80,31 @@ class RemoteExecutor:
         def _mkdir() -> None:
             sftp = self._conn.get_sftp()
             if parents:
-                _sftp_makedirs(sftp, path)
+                self._sftp_makedirs(sftp, path)
             else:
                 try:
                     sftp.mkdir(path)
                 except OSError:
-                    # 目錄已存在
-                    if not _sftp_isdir(sftp, path):
+                    if not self._sftp_isdir(sftp, path):
                         raise
 
         await asyncio.to_thread(_mkdir)
 
     async def copy_tree(self, src: str, dst: str) -> None:
-        """遞迴上傳目錄（SFTP 無原生 copytree）。
+        """遞迴複製遠端目錄（SFTP 無原生 copytree）。
 
         src 與 dst 皆為遠端路徑。若需跨機器傳輸請用 TransferService。
         """
         def _copy() -> None:
             sftp = self._conn.get_sftp()
-            _sftp_copytree(sftp, src, dst)
+            self._sftp_copytree(sftp, src, dst)
 
         await asyncio.to_thread(_copy)
 
     async def remove_tree(self, path: str) -> None:
         def _remove() -> None:
             sftp = self._conn.get_sftp()
-            _sftp_rmtree(sftp, path)
+            self._sftp_rmtree(sftp, path)
 
         await asyncio.to_thread(_remove)
 
@@ -128,60 +132,59 @@ class RemoteExecutor:
             return result.stdout.strip()
         return None
 
+    # ── SFTP 輔助操作 ────────────────────────────────────
 
-def _shell_quote(s: str) -> str:
-    """用單引號包裝 shell 引數，防止注入。"""
-    return "'" + s.replace("'", "'\"'\"'") + "'"
-
-
-def _sftp_isdir(sftp, path: str) -> bool:
-    try:
-        return stat.S_ISDIR(sftp.stat(path).st_mode)
-    except (FileNotFoundError, OSError):
-        return False
-
-
-def _sftp_makedirs(sftp, path: str) -> None:
-    """遞迴建立遠端目錄（模擬 mkdir -p）。"""
-    # 正規化路徑，由根往下逐層建立
-    parts: list[str] = []
-    current = path
-    while current and current != "/":
-        parts.append(current)
-        # 取 parent
-        parent = current.rsplit("/", 1)[0] if "/" in current else ""
-        if parent == current:
-            break
-        current = parent
-
-    for dir_path in reversed(parts):
+    @staticmethod
+    def _sftp_isdir(sftp, path: str) -> bool:
+        """判斷遠端路徑是否為目錄。"""
         try:
-            sftp.stat(dir_path)
-        except FileNotFoundError:
-            sftp.mkdir(dir_path)
+            return stat.S_ISDIR(sftp.stat(path).st_mode)
+        except (FileNotFoundError, OSError):
+            return False
 
+    @staticmethod
+    def _sftp_makedirs(sftp, path: str) -> None:
+        """遞迴建立遠端目錄（模擬 mkdir -p）。"""
+        parts: list[str] = []
+        current = path
+        while current and current != "/":
+            parts.append(current)
+            parent = str(PurePosixPath(current).parent)
+            if parent == current:
+                break
+            current = parent
 
-def _sftp_copytree(sftp, src: str, dst: str) -> None:
-    """遞迴複製遠端目錄。"""
-    _sftp_makedirs(sftp, dst)
-    for item in sftp.listdir_attr(src):
-        src_path = f"{src}/{item.filename}"
-        dst_path = f"{dst}/{item.filename}"
-        if stat.S_ISDIR(item.st_mode):
-            _sftp_copytree(sftp, src_path, dst_path)
-        else:
-            with sftp.open(src_path, "rb") as sf:
-                data = sf.read()
-            with sftp.open(dst_path, "wb") as df:
-                df.write(data)
+        for dir_path in reversed(parts):
+            try:
+                sftp.stat(dir_path)
+            except FileNotFoundError:
+                sftp.mkdir(dir_path)
 
+    @staticmethod
+    def _sftp_copytree(sftp, src: str, dst: str) -> None:
+        """遞迴複製遠端目錄。"""
+        RemoteExecutor._sftp_makedirs(sftp, dst)
+        for item in sftp.listdir_attr(src):
+            src_path = str(PurePosixPath(src) / item.filename)
+            dst_path = str(PurePosixPath(dst) / item.filename)
+            if stat.S_ISDIR(item.st_mode):
+                RemoteExecutor._sftp_copytree(sftp, src_path, dst_path)
+            else:
+                # 分塊串流複製，避免大檔案撐爆記憶體
+                with sftp.open(src_path, "rb") as sf, sftp.open(dst_path, "wb") as df:
+                    while True:
+                        chunk = sf.read(65536)  # 64 KB
+                        if not chunk:
+                            break
+                        df.write(chunk)
 
-def _sftp_rmtree(sftp, path: str) -> None:
-    """遞迴刪除遠端目錄（深度優先）。"""
-    for item in sftp.listdir_attr(path):
-        item_path = f"{path}/{item.filename}"
-        if stat.S_ISDIR(item.st_mode):
-            _sftp_rmtree(sftp, item_path)
-        else:
-            sftp.remove(item_path)
-    sftp.rmdir(path)
+    @staticmethod
+    def _sftp_rmtree(sftp, path: str) -> None:
+        """遞迴刪除遠端目錄（深度優先）。"""
+        for item in sftp.listdir_attr(path):
+            item_path = str(PurePosixPath(path) / item.filename)
+            if stat.S_ISDIR(item.st_mode):
+                RemoteExecutor._sftp_rmtree(sftp, item_path)
+            else:
+                sftp.remove(item_path)
+        sftp.rmdir(path)

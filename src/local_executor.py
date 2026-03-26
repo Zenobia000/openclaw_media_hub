@@ -45,25 +45,11 @@ class LocalExecutor:
         stdout_lines: list[str] = []
         stderr_lines: list[str] = []
 
-        async def _read_stream(
-            stream: asyncio.StreamReader,
-            buf: list[str],
-            callback: Callable[[str], None] | None,
-        ) -> None:
-            while True:
-                line_bytes = await stream.readline()
-                if not line_bytes:
-                    break
-                line = line_bytes.decode("utf-8", errors="replace")
-                buf.append(line)
-                if callback:
-                    callback(line.rstrip("\n"))
-
         try:
             await asyncio.wait_for(
                 asyncio.gather(
-                    _read_stream(proc.stdout, stdout_lines, on_output),  # type: ignore[arg-type]
-                    _read_stream(proc.stderr, stderr_lines, None),
+                    self._read_stream(proc.stdout, stdout_lines, on_output),  # type: ignore[arg-type]
+                    self._read_stream(proc.stderr, stderr_lines, None),
                 ),
                 timeout=timeout,
             )
@@ -78,10 +64,27 @@ class LocalExecutor:
             )
 
         return CommandResult(
-            exit_code=proc.returncode or 0,
+            # wait() 後 returncode 不應為 None，防禦性處理
+            exit_code=proc.returncode if proc.returncode is not None else -1,
             stdout="".join(stdout_lines),
             stderr="".join(stderr_lines),
         )
+
+    @staticmethod
+    async def _read_stream(
+        stream: asyncio.StreamReader,
+        buf: list[str],
+        callback: Callable[[str], None] | None,
+    ) -> None:
+        """逐行讀取 subprocess 輸出串流。"""
+        while True:
+            line_bytes = await stream.readline()
+            if not line_bytes:
+                break
+            line = line_bytes.decode("utf-8", errors="replace")
+            buf.append(line)
+            if callback:
+                callback(line.rstrip("\n"))
 
     async def read_file(self, path: str) -> bytes:
         return await asyncio.to_thread(self._resolve(path).read_bytes)
