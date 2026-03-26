@@ -31,7 +31,6 @@ def _make_params(**overrides) -> InitParams:
         "config_dir": "/home/test/.openclaw",
         "workspace_dir": "/home/test/.openclaw/workspace",
         "gateway_bind": "lan",
-        "gateway_mode": "local",
         "gateway_port": 18789,
         "bridge_port": 18790,
         "timezone": "Asia/Taipei",

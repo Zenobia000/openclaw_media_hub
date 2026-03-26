@@ -6,12 +6,8 @@ import pytest
 
 from src.env_checker import (
     EnvChecker,
-    _parse_compose_version,
-    _parse_docker_version,
     _parse_first_line,
-    _parse_jq_version,
-    _parse_ngrok_version,
-    _parse_node_version,
+    _parse_version,
 )
 from src.executor import CommandResult
 
@@ -80,32 +76,32 @@ def _fail(stderr: str = "error") -> CommandResult:
 
 class TestVersionParsers:
     def test_parse_docker_version(self):
-        assert _parse_docker_version("Docker version 24.0.5, build ced0996") == "24.0.5"
-        assert _parse_docker_version("Docker version 27.1.1, build 6312585") == "27.1.1"
-        assert _parse_docker_version("garbage") is None
+        assert _parse_version("docker", "Docker version 24.0.5, build ced0996") == "24.0.5"
+        assert _parse_version("docker", "Docker version 27.1.1, build 6312585") == "27.1.1"
+        assert _parse_version("docker", "garbage") is None
 
     def test_parse_compose_version(self):
-        assert _parse_compose_version("Docker Compose version v2.20.2") == "2.20.2"
-        assert _parse_compose_version("v2.5.0") == "2.5.0"
-        assert _parse_compose_version("no version") is None
+        assert _parse_version("compose", "Docker Compose version v2.20.2") == "2.20.2"
+        assert _parse_version("compose", "v2.5.0") == "2.5.0"
+        assert _parse_version("compose", "no version") is None
 
     def test_parse_node_version(self):
-        assert _parse_node_version("v20.11.0") == "20.11.0"
-        assert _parse_node_version("v16.20.2\n") == "16.20.2"
-        assert _parse_node_version("garbage") is None
+        assert _parse_version("node", "v20.11.0") == "20.11.0"
+        assert _parse_version("node", "v16.20.2\n") == "16.20.2"
+        assert _parse_version("node", "garbage") is None
 
     def test_parse_first_line(self):
         assert _parse_first_line("1.85.2\nabc123\nx64") == "1.85.2"
         assert _parse_first_line("") is None
 
     def test_parse_ngrok_version(self):
-        assert _parse_ngrok_version("ngrok version 3.5.0") == "3.5.0"
-        assert _parse_ngrok_version("no match") is None
+        assert _parse_version("ngrok", "ngrok version 3.5.0") == "3.5.0"
+        assert _parse_version("ngrok", "no match") is None
 
     def test_parse_jq_version(self):
-        assert _parse_jq_version("jq-1.7.1") == "1.7.1"
-        assert _parse_jq_version("jq-1.6") == "1.6"
-        assert _parse_jq_version("no match") is None
+        assert _parse_version("jq", "jq-1.7.1") == "1.7.1"
+        assert _parse_version("jq", "jq-1.6") == "1.6"
+        assert _parse_version("jq", "no match") is None
 
 
 # ── Docker Mode Tests ─────────────────────────────────
