@@ -5,6 +5,21 @@
  */
 
 /* =================================================================
+ * 0. 生產環境保護 — 停用 DevTools 快捷鍵與右鍵選單
+ * ================================================================= */
+
+document.addEventListener("keydown", (e) => {
+  // F12
+  if (e.key === "F12") { e.preventDefault(); return; }
+  // Ctrl+Shift+I / Ctrl+Shift+J / Ctrl+Shift+C (DevTools)
+  if (e.ctrlKey && e.shiftKey && ["I", "J", "C"].includes(e.key)) { e.preventDefault(); return; }
+  // Ctrl+U (view source)
+  if (e.ctrlKey && e.key === "u") { e.preventDefault(); return; }
+});
+
+document.addEventListener("contextmenu", (e) => e.preventDefault());
+
+/* =================================================================
  * 1. 工具函式
  * ================================================================= */
 

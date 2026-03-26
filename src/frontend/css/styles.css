@@ -4,6 +4,14 @@
 body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* 保留表單元素的文字選取能力 */
+input, textarea {
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 /* ============================================================
