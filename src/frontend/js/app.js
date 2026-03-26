@@ -130,8 +130,11 @@ const step2State = {
   cachedProviders: null,
   cachedChannels: null,
   cachedTools: null,
+  cachedModels: null,
   checkedProviders: new Set(),
   checkedChannels: new Set(),
+  checkedModels: {},
+  primaryModel: null,
   keyValues: {},
   toolsExpanded: false,
 };
@@ -1799,13 +1802,41 @@ function restoreStep2FormState() {
 
 /** 渲染 Provider 卡片 */
 function renderProviderCard(provider, checked) {
+  // 模型區塊
+  let modelSection = "";
+  const models = step2State.cachedModels?.[provider.name];
+  if (provider.dynamic) {
+    modelSection = `<div class="mt-3 flex items-center gap-1.5 text-xs text-text-muted italic">
+      <i data-lucide="info" class="w-3.5 h-3.5 flex-shrink-0"></i>
+      <span>Models are discovered at runtime</span>
+    </div>`;
+  } else if (models && models.length > 0) {
+    const checkedSet = step2State.checkedModels[provider.name] || new Set();
+    const pills = models.map(m => {
+      const isChecked = checkedSet.has(m.id);
+      return `<label class="model-pill inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border-default cursor-pointer select-none ${isChecked ? "model-pill-active" : ""}">
+        <input type="checkbox" class="checkbox-custom checkbox-sm" data-provider="${provider.name}" data-model="${m.id}"
+          ${isChecked ? "checked" : ""} onchange="toggleModelCheck('${provider.name}', '${m.id}')" />
+        <span class="text-sm text-text-secondary">${esc(m.name)}</span>
+      </label>`;
+    }).join("");
+    modelSection = `<div class="mt-3">
+      <div class="text-xs font-medium text-text-muted mb-2">Available Models</div>
+      <div class="flex flex-wrap gap-1.5">${pills}</div>
+    </div>`;
+  }
+
   const keyFields = provider.env_var
     ? `<div id="provider-fields-${provider.name}" class="collapsible-content ${checked ? "expanded" : ""}">
         <div class="mt-3">
           ${renderInput({ id: `key-${provider.env_var}`, label: provider.label + " API Key", icon: "lock", type: "password", placeholder: provider.placeholder || "", value: step2State.keyValues[`key-${provider.env_var}`] || "" })}
         </div>
+        ${modelSection}
       </div>`
-    : `<div class="mt-2 text-xs text-text-muted">No API key required — configure URL in settings</div>`;
+    : `<div id="provider-fields-${provider.name}" class="collapsible-content ${checked ? "expanded" : ""}">
+        <div class="mt-2 text-xs text-text-muted">No API key required — configure URL in settings</div>
+        ${modelSection}
+      </div>`;
 
   return `<div class="provider-card-wrap">
     <label class="flex items-center gap-3 cursor-pointer select-none py-2">
@@ -1815,6 +1846,65 @@ function renderProviderCard(provider, checked) {
     </label>
     ${keyFields}
   </div>`;
+}
+
+/** 收集所有已勾選供應商中被選取的模型選項 */
+function getAllCheckedModelOptions() {
+  const options = [];
+  for (const name of step2State.checkedProviders) {
+    const modelSet = step2State.checkedModels[name];
+    if (!modelSet) continue;
+    const catalog = step2State.cachedModels?.[name] || [];
+    for (const m of catalog) {
+      if (modelSet.has(m.id)) {
+        options.push({ value: `${name}/${m.id}`, label: `${name}/${m.id}` });
+      }
+    }
+  }
+  return options;
+}
+
+/** 渲染 Primary Model 下拉選單 */
+function renderPrimaryModelDropdown() {
+  const options = getAllCheckedModelOptions();
+  if (options.length === 0) return "";
+  const current = step2State.primaryModel || options[0]?.value || "";
+  if (!step2State.primaryModel) step2State.primaryModel = current;
+  const optionsHtml = options.map(o =>
+    `<option value="${esc(o.value)}" ${o.value === current ? "selected" : ""}>${esc(o.label)}</option>`
+  ).join("");
+  return `<div id="primary-model-container" class="border-t border-border-default mt-4 pt-4">
+    <div class="text-xs font-medium text-text-muted mb-2">Primary Model</div>
+    <select id="primary-model-select" class="w-full bg-bg-input border border-border-default rounded-md px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-primary cursor-pointer"
+      onchange="onPrimaryModelChange(this.value)">
+      ${optionsHtml}
+    </select>
+  </div>`;
+}
+
+/** 更新 Primary Model 下拉選單（不 re-render 全頁） */
+function updatePrimaryModelDropdown() {
+  const options = getAllCheckedModelOptions();
+  const container = document.getElementById("primary-model-container");
+  const select = document.getElementById("primary-model-select");
+
+  if (options.length === 0) {
+    if (container) container.style.display = "none";
+    step2State.primaryModel = null;
+    return;
+  }
+
+  if (container) container.style.display = "";
+
+  if (!options.some(o => o.value === step2State.primaryModel)) {
+    step2State.primaryModel = options[0].value;
+  }
+
+  if (select) {
+    select.innerHTML = options.map(o =>
+      `<option value="${esc(o.value)}" ${o.value === step2State.primaryModel ? "selected" : ""}>${esc(o.label)}</option>`
+    ).join("");
+  }
 }
 
 /** 渲染 Channel 卡片 */
@@ -1853,7 +1943,7 @@ function renderChannelCard(channel, checked) {
 }
 
 /** 渲染區段（primary / secondary 分組 + More 展開） */
-function renderGroupedSection({ icon, iconColor, title, description, items, checkedSet, renderCard, sectionKey }) {
+function renderGroupedSection({ icon, iconColor, title, description, items, checkedSet, renderCard, sectionKey, footer }) {
   const primary = items.filter(i => i.primary);
   const secondary = items.filter(i => !i.primary);
 
@@ -1869,7 +1959,8 @@ function renderGroupedSection({ icon, iconColor, title, description, items, chec
         <div class="mt-2 grid gap-1">${secondaryCards}</div>
       </div>` : "";
 
-  return renderSectionPanel({ icon, iconColor, title, description, children: `<div class="grid gap-1">${primaryCards}</div>${moreSection}` });
+  const footerHtml = footer || "";
+  return renderSectionPanel({ icon, iconColor, title, description, children: `<div class="grid gap-1">${primaryCards}</div>${moreSection}${footerHtml}` });
 }
 
 function renderToolsSection(tools) {
@@ -1909,18 +2000,21 @@ async function renderConfigStep2() {
   // 從 Bridge 取得資料（快取）
   if (!step2State.cachedProviders) {
     try {
-      const [pRes, cRes, tRes] = await Promise.all([
+      const [pRes, cRes, tRes, mRes] = await Promise.all([
         window.pywebview.api.get_available_providers(),
         window.pywebview.api.get_available_channels(),
         window.pywebview.api.get_available_tools(),
+        window.pywebview.api.get_provider_models(),
       ]);
       step2State.cachedProviders = pRes?.data || [];
       step2State.cachedChannels = cRes?.data || [];
       step2State.cachedTools = tRes?.data || [];
+      step2State.cachedModels = mRes?.data || {};
     } catch {
       step2State.cachedProviders = [];
       step2State.cachedChannels = [];
       step2State.cachedTools = [];
+      step2State.cachedModels = {};
     }
   }
 
@@ -1947,6 +2041,18 @@ async function renderConfigStep2() {
       for (const [envVar, val] of Object.entries(envKeys.tools || {})) {
         if (val) step2State.keyValues[`key-${envVar}`] = val;
       }
+      // 還原模型選擇
+      if (envKeys.models) {
+        step2State.primaryModel = envKeys.models.primary || null;
+        for (const fullId of (envKeys.models.selected || [])) {
+          const idx = fullId.indexOf("/");
+          if (idx < 0) continue;
+          const prov = fullId.slice(0, idx);
+          const modelId = fullId.slice(idx + 1);
+          if (!step2State.checkedModels[prov]) step2State.checkedModels[prov] = new Set();
+          step2State.checkedModels[prov].add(modelId);
+        }
+      }
     } catch { /* .env 讀取失敗 — 使用空白表單 */ }
   }
 
@@ -1957,6 +2063,7 @@ async function renderConfigStep2() {
       title: "Model Providers", description: "Select providers and enter API keys \u2014 stored in .env with restricted permissions",
       items: step2State.cachedProviders, checkedSet: step2State.checkedProviders,
       renderCard: renderProviderCard, sectionKey: "providers",
+      footer: renderPrimaryModelDropdown(),
     }),
     renderGroupedSection({
       icon: "message-circle", iconColor: "text-status-info",
@@ -1985,6 +2092,32 @@ function toggleProviderCheck(name) {
   chk.checked ? step2State.checkedProviders.add(name) : step2State.checkedProviders.delete(name);
   const fields = document.getElementById(`provider-fields-${name}`);
   if (fields) fields.classList.toggle("expanded", chk.checked);
+
+  // 模型預設全選 / 取消勾選時清除
+  const catalog = step2State.cachedModels?.[name];
+  if (chk.checked && catalog?.length > 0 && !step2State.checkedModels[name]) {
+    step2State.checkedModels[name] = new Set(catalog.map(m => m.id));
+  }
+  if (!chk.checked) {
+    delete step2State.checkedModels[name];
+  }
+  updatePrimaryModelDropdown();
+}
+
+function toggleModelCheck(providerName, modelId) {
+  if (!step2State.checkedModels[providerName]) {
+    step2State.checkedModels[providerName] = new Set();
+  }
+  const set = step2State.checkedModels[providerName];
+  const chk = document.querySelector(`input[data-provider="${providerName}"][data-model="${modelId}"]`);
+  if (chk?.checked) set.add(modelId); else set.delete(modelId);
+  const pill = chk?.closest(".model-pill");
+  if (pill) pill.classList.toggle("model-pill-active", !!chk?.checked);
+  updatePrimaryModelDropdown();
+}
+
+function onPrimaryModelChange(value) {
+  step2State.primaryModel = value;
 }
 
 function toggleChannelCheck(name) {
@@ -2047,6 +2180,20 @@ function collectStep2Keys() {
     const val = document.getElementById(`key-${tool.env_var}`)?.value?.trim();
     if (val) keys.tools[tool.env_var] = val;
   }
+
+  // 模型選擇
+  const models = {};
+  for (const [provName, modelSet] of Object.entries(step2State.checkedModels)) {
+    if (!step2State.checkedProviders.has(provName)) continue;
+    for (const modelId of modelSet) {
+      models[`${provName}/${modelId}`] = {};
+    }
+  }
+  keys.model_selection = {
+    primary: step2State.primaryModel,
+    models,
+  };
+
   return keys;
 }
 

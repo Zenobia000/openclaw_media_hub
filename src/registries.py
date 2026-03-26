@@ -10,6 +10,13 @@ from __future__ import annotations
 from typing import TypedDict
 
 
+class ModelEntry(TypedDict):
+    """Model 定義（供應商模型目錄項目）。"""
+
+    id: str
+    name: str
+
+
 class ProviderEntry(TypedDict, total=False):
     """Model Provider 定義。"""
 
@@ -18,6 +25,7 @@ class ProviderEntry(TypedDict, total=False):
     env_var: str | None
     placeholder: str | None
     primary: bool
+    dynamic: bool
 
 
 class ChannelField(TypedDict):
@@ -87,6 +95,7 @@ PROVIDER_REGISTRY: list[ProviderEntry] = [
         "env_var": "OLLAMA_API_KEY",
         "placeholder": None,
         "primary": True,
+        "dynamic": True,
     },
     {
         "name": "moonshot",
@@ -506,3 +515,30 @@ TOOL_REGISTRY: list[ToolEntry] = [
         "placeholder": "",
     },
 ]
+
+
+# ── 模型目錄 ─────────────────────────────────────────────────
+# 供應商 name → 可用模型清單。不在此 dict 中的供應商不顯示模型勾選區。
+
+MODEL_REGISTRY: dict[str, list[ModelEntry]] = {
+    "openai": [
+        {"id": "gpt-5.4", "name": "GPT-5.4"},
+        {"id": "gpt-5.4-pro", "name": "GPT-5.4 Pro"},
+        {"id": "gpt-5.4-mini", "name": "GPT-5.4 Mini"},
+        {"id": "gpt-5.4-nano", "name": "GPT-5.4 Nano"},
+        {"id": "gpt-5.2", "name": "GPT-5.2"},
+        {"id": "gpt-5.0", "name": "GPT-5.0"},
+    ],
+    "anthropic": [
+        {"id": "claude-opus-4-6", "name": "Claude Opus 4.6"},
+        {"id": "claude-sonnet-4-6", "name": "Claude Sonnet 4.6"},
+        {"id": "claude-opus-4-5", "name": "Claude Opus 4.5"},
+        {"id": "claude-sonnet-4-5", "name": "Claude Sonnet 4.5"},
+        {"id": "claude-haiku-4-5", "name": "Claude Haiku 4.5"},
+    ],
+    "google": [
+        {"id": "gemini-3.1-pro", "name": "Gemini 3.1 Pro"},
+        {"id": "gemini-3.1-flash", "name": "Gemini 3.1 Flash"},
+    ],
+    "ollama": [],
+}

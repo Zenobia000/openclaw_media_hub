@@ -224,6 +224,11 @@ class Bridge:
         from src.registries import TOOL_REGISTRY
         return _ok(TOOL_REGISTRY)
 
+    def get_provider_models(self) -> dict:
+        """回傳各供應商的可用模型目錄。"""
+        from src.registries import MODEL_REGISTRY
+        return _ok(MODEL_REGISTRY)
+
     # ── 設定管理 ────────────────────────────────────────
 
     @_bridge_api
@@ -247,21 +252,42 @@ class Bridge:
             env_data = self._config_manager.read_env(env_path)
 
         if not env_data:
-            return _ok({"providers": {}, "channels": {}, "tools": {}})
+            result: dict = {"providers": {}, "channels": {}, "tools": {}}
+        else:
+            # 建立各分類的已知環境變數集合
+            provider_vars = {p["env_var"] for p in PROVIDER_REGISTRY if p.get("env_var")}
+            channel_vars = {f["key"] for ch in CHANNEL_REGISTRY for f in ch.get("fields", [])}
+            tool_vars = {t["env_var"] for t in TOOL_REGISTRY if t.get("env_var")}
 
-        # 建立各分類的已知環境變數集合
-        provider_vars = {p["env_var"] for p in PROVIDER_REGISTRY if p.get("env_var")}
-        channel_vars = {f["key"] for ch in CHANNEL_REGISTRY for f in ch.get("fields", [])}
-        tool_vars = {t["env_var"] for t in TOOL_REGISTRY if t.get("env_var")}
+            result = {"providers": {}, "channels": {}, "tools": {}}
+            for key, value in env_data.items():
+                if key in provider_vars:
+                    result["providers"][key] = value
+                elif key in channel_vars:
+                    result["channels"][key] = value
+                elif key in tool_vars:
+                    result["tools"][key] = value
 
-        result: dict[str, dict[str, str]] = {"providers": {}, "channels": {}, "tools": {}}
-        for key, value in env_data.items():
-            if key in provider_vars:
-                result["providers"][key] = value
-            elif key in channel_vars:
-                result["channels"][key] = value
-            elif key in tool_vars:
-                result["tools"][key] = value
+        # 讀取 openclaw.json 中的模型選擇
+        import json as _json
+
+        try:
+            config_dir = self._get_config_dir()
+            if isinstance(self._executor, RemoteExecutor):
+                oc_path = f"{config_dir}/openclaw.json"
+                raw = self._run_async(self._executor.read_file(oc_path))
+                oc_text = raw if isinstance(raw, str) else raw.decode("utf-8")
+                oc_data = _json.loads(oc_text)
+            else:
+                oc_data = self._config_manager.read_openclaw_config(config_dir)
+
+            defaults = oc_data.get("agents", {}).get("defaults", {})
+            result["models"] = {
+                "primary": defaults.get("model", {}).get("primary"),
+                "selected": list(defaults.get("models", {}).keys()),
+            }
+        except Exception:
+            result["models"] = {"primary": None, "selected": []}
 
         return _ok(result)
 
@@ -279,7 +305,9 @@ class Bridge:
     @_bridge_api
     def save_keys(self, keys: dict) -> dict:
         """儲存 API 金鑰至目標機器 .env (ADR-005)。"""
-        from src.config_manager import ConfigManager
+        import json as _json
+
+        from src.config_manager import ConfigManager, _deep_merge
 
         flat: dict[str, str] = {}
         for category in ("providers", "channels", "tools"):
@@ -287,28 +315,55 @@ class Bridge:
                 if v:
                     flat[k] = v
 
-        if not flat:
-            return _ok({"saved_count": 0})
+        config_dir = self._get_config_dir()
+        env_path = f"{config_dir}/.env"
+        saved_count = 0
 
-        env_path = f"{self._get_config_dir()}/.env"
+        # ── .env 金鑰寫入 ──
+        if flat:
+            if isinstance(self._executor, RemoteExecutor):
+                try:
+                    raw = self._run_async(self._executor.read_file(env_path))
+                    text = raw if isinstance(raw, str) else raw.decode("utf-8")
+                except Exception:
+                    text = ""
+                existing = ConfigManager.parse_env_content(text)
+                existing.update(flat)
+                new_content = "\n".join(f"{k}={v}" for k, v in existing.items()) + "\n"
+                self._run_async(self._executor.write_file(env_path, new_content))
+                self._run_async(self._executor.run_command(["chmod", "600", env_path]))
+            else:
+                self._config_manager.write_env(env_path, flat)
+            saved_count = len(flat)
 
-        if isinstance(self._executor, RemoteExecutor):
-            # 讀取遠端既有 .env → 合併 → 寫回
-            try:
-                raw = self._run_async(self._executor.read_file(env_path))
-                text = raw if isinstance(raw, str) else raw.decode("utf-8")
-            except Exception:
-                text = ""
-            existing = ConfigManager.parse_env_content(text)
-            existing.update(flat)
-            new_content = "\n".join(f"{k}={v}" for k, v in existing.items()) + "\n"
-            self._run_async(self._executor.write_file(env_path, new_content))
-            # 遠端 chmod 600 (ADR-005)
-            self._run_async(self._executor.run_command(["chmod", "600", env_path]))
-        else:
-            self._config_manager.write_env(env_path, flat)
+        # ── 模型選擇寫入 openclaw.json ──
+        model_selection = keys.get("model_selection")
+        if model_selection:
+            agents_data = {
+                "defaults": {
+                    "model": {"primary": model_selection.get("primary")},
+                    "models": model_selection.get("models", {}),
+                },
+            }
+            if isinstance(self._executor, RemoteExecutor):
+                oc_path = f"{config_dir}/openclaw.json"
+                try:
+                    raw = self._run_async(self._executor.read_file(oc_path))
+                    oc_text = raw if isinstance(raw, str) else raw.decode("utf-8")
+                except Exception:
+                    oc_text = "{}"
+                oc_existing = _json.loads(oc_text)
+                oc_existing["agents"] = _deep_merge(
+                    oc_existing.get("agents", {}), agents_data,
+                )
+                new_oc = _json.dumps(oc_existing, indent=2, ensure_ascii=False)
+                self._run_async(self._executor.write_file(oc_path, new_oc))
+            else:
+                self._config_manager.write_openclaw_config(
+                    config_dir, agents_data, "agents",
+                )
 
-        return _ok({"saved_count": len(flat)})
+        return _ok({"saved_count": saved_count})
 
     @_bridge_api
     def get_openclaw_config(self, config_dir: str, section: str | None = None) -> dict:

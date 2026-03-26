@@ -259,3 +259,34 @@ input, textarea {
 .key-input {
   /* Applied via Tailwind + renderInput(), marker class for form state collection */
 }
+
+/* ============================================================
+ * Model Pill — Checkbox pill for model selection
+ * ============================================================ */
+
+.model-pill {
+  background: transparent;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.model-pill-active {
+  background-color: rgba(255, 92, 92, 0.08);
+  border-color: rgba(255, 92, 92, 0.3);
+}
+
+.model-pill:hover {
+  border-color: rgba(255, 92, 92, 0.4);
+}
+
+.checkbox-sm {
+  width: 13px !important;
+  height: 13px !important;
+}
+
+.checkbox-sm:checked::after {
+  top: 0px;
+  left: 3px;
+  width: 4px;
+  height: 8px;
+  border-width: 0 1.5px 1.5px 0;
+}
