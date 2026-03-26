@@ -226,8 +226,8 @@ class Initializer:
         """Step 8 (Docker): 執行 Onboarding（初次設定 agent/session）。"""
         result = await self._executor.run_command(
             [
-                "docker", "compose", "run", "--rm",
-                "openclaw-cli", "onboard",
+                "docker", "compose", "run", "--rm", "--no-deps",
+                "openclaw-gateway", "openclaw", "onboard",
                 "--mode", "local",
                 "--no-install-daemon",
             ],
@@ -331,7 +331,6 @@ class Initializer:
             (self._step_write_env, "Write environment file"),
             (self._step_docker_image, "Build/Pull Docker image"),
             (self._step_fix_permissions, "Fix directory permissions"),
-            (self._step_onboarding, "Run onboarding"),
             (self._step_sync_gateway, "Configure gateway"),
             (self._step_start_gateway_docker, "Start gateway"),
             (self._step_health_check, "Verify health"),

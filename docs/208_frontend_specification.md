@@ -526,7 +526,7 @@ await window.pywebview.api.save_keys({
    - **錯誤訊息顯示** (Failed 狀態時):
      - ProgressItem 下方展開錯誤區塊，背景 `bg-red-50 dark:bg-red-950`，圓角 `rounded-md`，`p-3 mt-2`
      - 錯誤文字: `text-sm text-red-700 dark:text-red-300`，`font-mono`，最多顯示 5 行，超出以 `overflow-y: auto max-h-[120px]` 捲動
-     - 右上角「複製」按鈕: icon `copy`（`16x16`），hover 顯示 tooltip "Copy error"，點擊後 icon 切換為 `check` 並顯示 "Copied!" 持續 2 秒後恢復
+     - 右上角「複製」按鈕: icon `copy`（`12x12`），hover 顯示 tooltip "Copy error"，點擊後 icon 切換為 `check` 持續 2 秒後恢復（不顯示文字）
      - 複製內容: 完整錯誤訊息文字（含步驟名稱前綴，例如 `[Build/Pull Docker image] error details...`）
 
 3. **Dashboard Info 面板** (右側，固定寬度 `340px`)
@@ -570,7 +570,7 @@ await window.pywebview.api.initialize({
 - [ ] 全部完成後 Dashboard Info 面板啟用，顯示 URL 與 Token
 - [ ] 任一步驟失敗時停止後續步驟，ProgressItem 顯示 Failed 狀態並展開錯誤區塊
 - [ ] 錯誤區塊顯示完整錯誤訊息，附「複製」按鈕可將錯誤訊息複製至剪貼簿
-- [ ] 複製成功後 icon 切換為 `check` + "Copied!" 回饋，2 秒後恢復
+- [ ] 複製成功後 icon 切換為 `check` 回饋，2 秒後恢復（不顯示文字）
 - [ ] 錯誤區塊下方顯示 "Retry" 按鈕，點擊後從失敗步驟重新執行
 
 ---

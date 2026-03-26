@@ -89,8 +89,9 @@ graph TD
 - **環境檢查資料流 (Check Env)**:
   - User 點擊「檢查環境」按鈕 → Frontend 呼叫 Bridge API `check_env()` → Backend `env_checker.py` 以 `shutil.which()` 偵測各軟體是否安裝、以 `subprocess.run()` 取得版本號 → 回傳結構化結果 `[{name, installed, version, message}]` → Frontend 渲染為狀態卡片列表（綠色通過/紅色缺失）。
 - **初始化資料流 (Init)**:
-  - User 於步驟精靈填寫金鑰與設定 → Frontend 呼叫 Bridge API `initialize()` → Backend `initializer.py` 依序執行 11 步流程（對齊 `openclaw/scripts/docker/setup.sh` 實際行為）：
-    > **前端顯示**：Docker 模式前端顯示 **11 個步驟**，Native 模式顯示 **8 個步驟**（詳見 208 §4.4）。
+  - User 於步驟精靈填寫金鑰與設定 → Frontend 呼叫 Bridge API `initialize()` → Backend `initializer.py` 依序執行 10 步流程（對齊 `openclaw/scripts/docker/setup.sh` 實際行為）：
+    > **前端顯示**：Docker 模式前端顯示 **10 個步驟**，Native 模式顯示 **8 個步驟**（詳見 208 §4.4）。
+    > **設計決策**：原始腳本的初始化流程不使用 `openclaw onboard`（互動式 CLI wizard，需 TTY 確認安全警告），而是由腳本直接建立目錄、寫入設定檔。GUI 沿用此模式，以 Python 原生步驟完成初始化，不依賴 `onboard` 指令。Gateway 設定（`openclaw.json`）在啟動 Gateway 之前寫入，確保容器啟動時已有完整設定，避免因缺少 `gateway.mode` 設定導致容器崩潰進入 restart 迴圈。
     1. 驗證 Docker + Docker Compose 可用性
     2. 驗證/設定環境變數（`OPENCLAW_CONFIG_DIR`, `OPENCLAW_WORKSPACE_DIR`, `OPENCLAW_GATEWAY_PORT`, `OPENCLAW_GATEWAY_BIND` 等）
     3. `pathlib` 建立目錄結構（`~/.openclaw/identity/`, `agents/main/agent/`, `agents/main/sessions/`, `workspace/`）
@@ -98,10 +99,9 @@ graph TD
     5. 寫入 `.env` 檔案（16+ 環境變數 upsert）
     6. Build 或 Pull Docker Image（最耗時步驟）
     7. 修正資料目錄權限（`docker-linux` / `remote-ssh` 模式執行 chown 1000:1000；`docker-windows` 模式跳過 — Windows Docker Desktop 的 NTFS bind mount 不支援 chown 且不需要）
-    8. 執行 Onboarding（`docker compose run --rm openclaw-cli onboard --mode local --no-install-daemon`）
-    9. 同步 Gateway 設定（`gateway.mode=local`, `gateway.bind`, `gateway.controlUi.allowedOrigins`）
-    10. 啟動 Gateway（`docker compose up -d openclaw-gateway`）
-    11. Health Check（`http://127.0.0.1:{port}/healthz`）
+    8. 同步 Gateway 設定（`gateway.mode=local`, `gateway.bind`, `gateway.controlUi.allowedOrigins`）— 必須在啟動 Gateway 之前完成
+    9. 啟動 Gateway（`docker compose up -d openclaw-gateway`）
+    10. Health Check（`http://127.0.0.1:{port}/healthz`）
   - 每步回傳結構化結果 → Frontend 逐步更新精靈步驟狀態。
 - **技能部署資料流 (Deploy Skills)**:
   - User 點擊「部署技能」→ Frontend 呼叫 Bridge API `list_skills()` → Backend `skill_manager.py` 掃描兩個來源：`module_pack/`（自訂業務模組）與 `openclaw/skills/`（社群技能），解析 SKILL.md YAML frontmatter（name, description, metadata.openclaw.emoji）→ 回傳可選技能清單 `[{name, emoji, description, installed, source}]` → Frontend 渲染分類勾選清單 → User 勾選後送出 → Backend 執行 `shutil.copytree` 部署至 `~/.openclaw/workspace/skills/` 或 `shutil.rmtree` 移除 → 回傳部署結果摘要。

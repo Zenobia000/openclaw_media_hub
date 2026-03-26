@@ -4491,6 +4491,16 @@
                                       "fontFamily": "Inter",
                                       "fontSize": 14,
                                       "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "icon_font",
+                                      "id": "WOeyi",
+                                      "name": "eyeIcon1",
+                                      "width": 14,
+                                      "height": 14,
+                                      "iconFontName": "eye",
+                                      "iconFontFamily": "lucide",
+                                      "fill": "$text-muted"
                                     }
                                   ]
                                 }
@@ -5002,6 +5012,16 @@
                                           "fontFamily": "Inter",
                                           "fontSize": 14,
                                           "fontWeight": "normal"
+                                        },
+                                        {
+                                          "type": "icon_font",
+                                          "id": "iL3hB",
+                                          "name": "eyeIcon2",
+                                          "width": 14,
+                                          "height": 14,
+                                          "iconFontName": "eye",
+                                          "iconFontFamily": "lucide",
+                                          "fill": "$text-muted"
                                         }
                                       ]
                                     }
@@ -5063,6 +5083,16 @@
                                           "fontFamily": "Inter",
                                           "fontSize": 14,
                                           "fontWeight": "normal"
+                                        },
+                                        {
+                                          "type": "icon_font",
+                                          "id": "FU3lA",
+                                          "name": "eyeIcon3",
+                                          "width": 14,
+                                          "height": 14,
+                                          "iconFontName": "eye",
+                                          "iconFontFamily": "lucide",
+                                          "fill": "$text-muted"
                                         }
                                       ]
                                     }
@@ -7298,6 +7328,26 @@
                               "fontFamily": "Inter",
                               "fontSize": 13,
                               "fontWeight": "normal"
+                            },
+                            {
+                              "type": "icon_font",
+                              "id": "1Y4PN",
+                              "name": "dEye",
+                              "width": 14,
+                              "height": 14,
+                              "iconFontName": "eye",
+                              "iconFontFamily": "lucide",
+                              "fill": "$text-muted"
+                            },
+                            {
+                              "type": "icon_font",
+                              "id": "KOz0f",
+                              "name": "dCopy",
+                              "width": 14,
+                              "height": 14,
+                              "iconFontName": "copy",
+                              "iconFontFamily": "lucide",
+                              "fill": "$text-muted"
                             }
                           ]
                         }
@@ -13126,87 +13176,71 @@
                   "id": "78oA6",
                   "name": "tokRow",
                   "width": "fill_container",
+                  "height": 40,
+                  "fill": "$bg-input",
+                  "cornerRadius": "$radius-sm",
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "$border-default"
+                  },
                   "gap": 8,
+                  "padding": [
+                    0,
+                    12
+                  ],
                   "alignItems": "center",
                   "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "X9Gbk",
+                      "name": "gwLock",
+                      "width": 16,
+                      "height": 16,
+                      "iconFontName": "lock",
+                      "iconFontFamily": "lucide",
+                      "fill": "$text-muted"
+                    },
                     {
                       "type": "frame",
                       "id": "Mc260",
                       "name": "tokVal",
                       "width": "fill_container",
-                      "fill": "$bg-input",
-                      "cornerRadius": "$radius-sm",
+                      "fill": "#00000000",
                       "stroke": {
-                        "thickness": 1,
-                        "fill": "$border-default"
+                        "thickness": 0,
+                        "fill": "#00000000"
                       },
-                      "padding": [
-                        8,
-                        12
-                      ],
                       "children": [
                         {
                           "type": "text",
                           "id": "RGN8d",
-                          "fill": "$text-primary",
-                          "content": "a1b2c3d4…",
+                          "fill": "$text-muted",
+                          "content": "••••••••••••••••",
                           "fontFamily": "Inter",
-                          "fontSize": 12,
+                          "fontSize": 14,
                           "fontWeight": "normal"
                         }
                       ]
                     },
                     {
-                      "type": "frame",
-                      "id": "9u8rC",
-                      "name": "tokEye",
-                      "width": 32,
-                      "height": 32,
-                      "fill": "$bg-card",
-                      "cornerRadius": "$radius-sm",
-                      "stroke": {
-                        "thickness": 1,
-                        "fill": "$border-default"
-                      },
-                      "justifyContent": "center",
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "icon_font",
-                          "id": "GjKQy",
-                          "width": 14,
-                          "height": 14,
-                          "iconFontName": "eye",
-                          "iconFontFamily": "lucide",
-                          "fill": "$text-muted"
-                        }
-                      ]
+                      "type": "icon_font",
+                      "id": "z8cuR",
+                      "name": "gwEye",
+                      "width": 14,
+                      "height": 14,
+                      "iconFontName": "eye",
+                      "iconFontFamily": "lucide",
+                      "fill": "$text-muted"
                     },
                     {
-                      "type": "frame",
-                      "id": "mHg9B",
-                      "name": "tokCopy",
-                      "width": 32,
-                      "height": 32,
-                      "fill": "$bg-card",
-                      "cornerRadius": "$radius-sm",
-                      "stroke": {
-                        "thickness": 1,
-                        "fill": "$border-default"
-                      },
-                      "justifyContent": "center",
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "icon_font",
-                          "id": "tPHbI",
-                          "width": 14,
-                          "height": 14,
-                          "iconFontName": "copy",
-                          "iconFontFamily": "lucide",
-                          "fill": "$text-muted"
-                        }
-                      ]
+                      "type": "icon_font",
+                      "id": "rPuR3",
+                      "name": "gwCopy",
+                      "width": 14,
+                      "height": 14,
+                      "iconFontName": "copy",
+                      "iconFontFamily": "lucide",
+                      "fill": "$text-muted"
                     }
                   ]
                 },
