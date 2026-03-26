@@ -522,6 +522,12 @@ await window.pywebview.api.save_keys({
      - Done: 綠底白勾圓圈 + "Done" 綠字
      - Running: 紅底白 loader 圓圈 + "Running..." 紅字
      - Pending: 灰色邊框數字圓圈 + "Pending" 灰字
+     - Failed: 紅底白 `x` 圓圈 + "Failed" 紅字
+   - **錯誤訊息顯示** (Failed 狀態時):
+     - ProgressItem 下方展開錯誤區塊，背景 `bg-red-50 dark:bg-red-950`，圓角 `rounded-md`，`p-3 mt-2`
+     - 錯誤文字: `text-sm text-red-700 dark:text-red-300`，`font-mono`，最多顯示 5 行，超出以 `overflow-y: auto max-h-[120px]` 捲動
+     - 右上角「複製」按鈕: icon `copy`（`16x16`），hover 顯示 tooltip "Copy error"，點擊後 icon 切換為 `check` 並顯示 "Copied!" 持續 2 秒後恢復
+     - 複製內容: 完整錯誤訊息文字（含步驟名稱前綴，例如 `[Build/Pull Docker image] error details...`）
 
 3. **Dashboard Info 面板** (右側，固定寬度 `340px`)
    - Icon: `layout-dashboard` (teal), 標題: "Dashboard Info"
@@ -552,15 +558,20 @@ await window.pywebview.api.initialize({
   timezone: "Asia/Taipei",             // OPENCLAW_TZ
   docker_image: "openclaw:local"       // OPENCLAW_IMAGE
 });
-// 進度更新透過 Bridge 回呼: window.updateInitProgress(step, status, message)
+// 進度更新透過 Bridge 回呼: window.updateInitProgress(step, status, message, error)
 // step: 1-11，對應 Initialization Progress 面板的 11 個步驟（Docker 模式）
+// status: "done" | "running" | "pending" | "failed"
+// error: (optional) 失敗時的完整錯誤訊息字串，供 Failed 狀態下顯示與複製
 ```
 
 **驗收標準**:
 - [ ] 點擊 "Initialize" 後逐步更新 ProgressItem 狀態
 - [ ] 進度更新不阻塞 UI（非同步回呼）
 - [ ] 全部完成後 Dashboard Info 面板啟用，顯示 URL 與 Token
-- [ ] 任一步驟失敗時停止後續步驟，顯示錯誤訊息與 "Retry" 按鈕
+- [ ] 任一步驟失敗時停止後續步驟，ProgressItem 顯示 Failed 狀態並展開錯誤區塊
+- [ ] 錯誤區塊顯示完整錯誤訊息，附「複製」按鈕可將錯誤訊息複製至剪貼簿
+- [ ] 複製成功後 icon 切換為 `check` + "Copied!" 回饋，2 秒後恢復
+- [ ] 錯誤區塊下方顯示 "Retry" 按鈕，點擊後從失敗步驟重新執行
 
 ---
 

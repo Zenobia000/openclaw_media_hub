@@ -142,6 +142,8 @@ const initState = {
   gatewayToken: null,
   tokenRevealed: false,
   deviceApprovalLoading: false,
+  failedStep: null,
+  failedError: null,
 };
 
 /** 儀表板 */
@@ -416,7 +418,7 @@ function renderStepIndicator({ steps, currentStep, completedSteps = [] }) {
 /* ---------- 5.8 進度項目 ---------- */
 
 /** 渲染進度項目（初始化 / 部署步驟） */
-function renderProgressItem({ name, description, status, icon }) {
+function renderProgressItem({ name, description, status, icon, error }) {
   const cfg = {
     done:    { circleClass: "bg-status-success", icon: "check",  iconClass: "text-white", textClass: "text-status-success", label: "Done" },
     running: { circleClass: "bg-accent-primary", icon: "loader", iconClass: "text-white animate-spin", textClass: "text-accent-primary", label: "Running..." },
@@ -427,14 +429,37 @@ function renderProgressItem({ name, description, status, icon }) {
   const circleContent = c.icon ? `<i data-lucide="${c.icon}" class="w-3.5 h-3.5 ${c.iconClass}"></i>` : "";
   const prefix = icon ? `<span class="text-base mr-2">${icon}</span>` : "";
 
-  return `<div class="flex items-center gap-3 py-3 border-b border-border-default last:border-b-0">
-    <div class="w-7 h-7 rounded-full ${c.circleClass} flex items-center justify-center flex-shrink-0">${circleContent}</div>
-    ${prefix}
-    <div class="flex-1 min-w-0">
-      <div class="text-sm font-medium">${esc(name)}</div>
-      ${description ? `<div class="text-xs text-text-secondary mt-0.5">${esc(description)}</div>` : ""}
-    </div>
-    <span class="text-xs font-medium ${c.textClass}">${c.label}</span>
+  const errorBlock = (status === "failed" && error) ? `
+    <div class="bg-red-500/10 rounded-lg p-3 mt-2" data-error-text="${esc(`[${name}] ${error}`)}">
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center gap-1.5">
+          <i data-lucide="triangle-alert" class="w-3.5 h-3.5 text-status-error"></i>
+          <span class="text-xs font-semibold text-status-error">Error Details</span>
+        </div>
+        <button onclick="copyProgressError(this)" class="flex items-center gap-1 px-2 py-1 rounded bg-red-500/15 hover:bg-red-500/25 transition-colors" title="Copy error">
+          <i data-lucide="copy" class="w-3 h-3 text-status-error"></i>
+          <span class="text-xs font-medium text-status-error copy-label">Copy</span>
+        </button>
+      </div>
+      <pre class="text-xs text-red-400 font-mono whitespace-pre-wrap max-h-[120px] overflow-y-auto leading-relaxed">${esc(error)}</pre>
+      <div class="flex items-center gap-2 mt-3">
+        <button onclick="retryFromFailedStep()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-status-error hover:bg-red-600 text-white text-xs font-medium transition-colors">
+          <i data-lucide="rotate-ccw" class="w-3 h-3"></i>Retry
+        </button>
+        <span class="text-xs text-text-muted">Retry from this step</span>
+      </div>
+    </div>` : "";
+
+  return `<div class="py-3 border-b border-border-default last:border-b-0">
+    <div class="flex items-center gap-3">
+      <div class="w-7 h-7 rounded-full ${c.circleClass} flex items-center justify-center flex-shrink-0">${circleContent}</div>
+      ${prefix}
+      <div class="flex-1 min-w-0">
+        <div class="text-sm font-medium">${esc(name)}</div>
+        ${description ? `<div class="text-xs text-text-secondary mt-0.5">${esc(description)}</div>` : ""}
+      </div>
+      <span class="text-xs font-medium ${c.textClass}">${c.label}</span>
+    </div>${errorBlock}
   </div>`;
 }
 
@@ -2171,24 +2196,32 @@ function renderConfigStep3() {
   initState.running = false;
 }
 
-/** Bridge 進度回呼 */
-window.updateInitProgress = function (step, status, message) {
+/** Bridge 進度回呼 — failed 時第 3 參數為步驟名、第 4 參數為錯誤訊息 */
+window.updateInitProgress = function (step, status, message, error) {
   const stepId = parseInt(step, 10);
   const container = document.querySelector(`[data-init-step="${stepId}"]`);
   if (!container) return;
   const steps = getInitSteps();
   const meta = steps.find(s => s.id === stepId);
+  const mapped = status === "done" ? "done" : status === "failed" ? "failed" : status === "running" ? "running" : "pending";
   container.innerHTML = renderProgressItem({
     name: meta?.label || `Step ${stepId}`,
     description: message || meta?.desc || "",
-    status: status === "done" ? "done" : status === "failed" ? "failed" : status === "running" ? "running" : "pending",
+    status: mapped,
+    error: mapped === "failed" ? (error || message) : undefined,
   });
+  if (mapped === "failed") {
+    initState.failedStep = stepId;
+    initState.failedError = error || message;
+  }
   refreshIcons();
 };
 
 async function startInitialization() {
   if (initState.running) return;
   initState.running = true;
+  initState.failedStep = null;
+  initState.failedError = null;
   renderConfigStep3ActionBar();
 
   // 重設所有步驟
@@ -2235,6 +2268,26 @@ async function startInitialization() {
     initState.running = false;
     renderConfigStep3ActionBar();
   }
+}
+
+/** 複製錯誤訊息至剪貼簿，顯示 "Copied!" 回饋 2 秒 */
+async function copyProgressError(btn) {
+  const block = btn.closest("[data-error-text]");
+  const text = block?.dataset?.errorText || "";
+  await clipboardWrite(text);
+  const icon = btn.querySelector("i");
+  const label = btn.querySelector(".copy-label");
+  if (icon) { icon.setAttribute("data-lucide", "check"); refreshIcons(); }
+  if (label) label.textContent = "Copied!";
+  setTimeout(() => {
+    if (icon) { icon.setAttribute("data-lucide", "copy"); refreshIcons(); }
+    if (label) label.textContent = "Copy";
+  }, 2000);
+}
+
+/** 從失敗步驟重新執行初始化（步驟為冪等，重跑安全） */
+function retryFromFailedStep() {
+  startInitialization();
 }
 
 /* ---------- 9.6.1 Dashboard Info 輔助 ---------- */

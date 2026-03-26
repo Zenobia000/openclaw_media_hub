@@ -97,7 +97,7 @@ graph TD
     4. 解析/產生 Gateway Token（讀 openclaw.json → 讀 .env → `secrets.token_hex(32)` 產生新 token）
     5. 寫入 `.env` 檔案（16+ 環境變數 upsert）
     6. Build 或 Pull Docker Image（最耗時步驟）
-    7. 修正資料目錄權限（chown container user）
+    7. 修正資料目錄權限（`docker-linux` / `remote-ssh` 模式執行 chown 1000:1000；`docker-windows` 模式跳過 — Windows Docker Desktop 的 NTFS bind mount 不支援 chown 且不需要）
     8. 執行 Onboarding（`docker compose run --rm openclaw-cli onboard --mode local --no-install-daemon`）
     9. 同步 Gateway 設定（`gateway.mode=local`, `gateway.bind`, `gateway.controlUi.allowedOrigins`）
     10. 啟動 Gateway（`docker compose up -d openclaw-gateway`）

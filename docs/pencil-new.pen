@@ -6370,7 +6370,7 @@
                               "name": "p4c",
                               "width": 24,
                               "height": 24,
-                              "fill": "$accent-primary",
+                              "fill": "$status-success",
                               "cornerRadius": 12,
                               "justifyContent": "center",
                               "alignItems": "center",
@@ -6381,7 +6381,7 @@
                                   "name": "p4ci",
                                   "width": 12,
                                   "height": 12,
-                                  "iconFontName": "loader",
+                                  "iconFontName": "check",
                                   "iconFontFamily": "lucide",
                                   "fill": "$text-on-accent"
                                 }
@@ -6421,8 +6421,8 @@
                               "type": "text",
                               "id": "vJYyg",
                               "name": "p4stat",
-                              "fill": "$accent-primary",
-                              "content": "Running...",
+                              "fill": "$status-success",
+                              "content": "Done",
                               "fontFamily": "Inter",
                               "fontSize": 12,
                               "fontWeight": "500"
@@ -6453,23 +6453,23 @@
                               "name": "p5c",
                               "width": 24,
                               "height": 24,
+                              "fill": "$status-success",
                               "cornerRadius": 12,
                               "stroke": {
-                                "thickness": 1,
-                                "fill": "$text-muted"
+                                "thickness": 0
                               },
                               "justifyContent": "center",
                               "alignItems": "center",
                               "children": [
                                 {
-                                  "type": "text",
-                                  "id": "krzjm",
-                                  "name": "p5cn",
-                                  "fill": "$text-muted",
-                                  "content": "5",
-                                  "fontFamily": "Inter",
-                                  "fontSize": 11,
-                                  "fontWeight": "500"
+                                  "type": "icon_font",
+                                  "id": "7bIsN",
+                                  "name": "xIcon",
+                                  "width": 12,
+                                  "height": 12,
+                                  "iconFontName": "check",
+                                  "iconFontFamily": "lucide",
+                                  "fill": "$text-on-accent"
                                 }
                               ]
                             },
@@ -6507,8 +6507,8 @@
                               "type": "text",
                               "id": "THyda",
                               "name": "p5stat",
-                              "fill": "$text-muted",
-                              "content": "Pending",
+                              "fill": "$status-success",
+                              "content": "Done",
                               "fontFamily": "Inter",
                               "fontSize": 12,
                               "fontWeight": "500"
@@ -6539,23 +6539,23 @@
                               "name": "p6c",
                               "width": 24,
                               "height": 24,
+                              "fill": "$status-success",
                               "cornerRadius": 12,
                               "stroke": {
-                                "thickness": 1,
-                                "fill": "$text-muted"
+                                "thickness": 0
                               },
                               "justifyContent": "center",
                               "alignItems": "center",
                               "children": [
                                 {
-                                  "type": "text",
-                                  "id": "NO6fZ",
-                                  "name": "p6cn",
-                                  "fill": "$text-muted",
-                                  "content": "6",
-                                  "fontFamily": "Inter",
-                                  "fontSize": 11,
-                                  "fontWeight": "500"
+                                  "type": "icon_font",
+                                  "id": "gfngp",
+                                  "name": "xIcon2",
+                                  "width": 12,
+                                  "height": 12,
+                                  "iconFontName": "check",
+                                  "iconFontFamily": "lucide",
+                                  "fill": "$text-on-accent"
                                 }
                               ]
                             },
@@ -6593,8 +6593,8 @@
                               "type": "text",
                               "id": "gqzVn",
                               "name": "p6stat",
-                              "fill": "$text-muted",
-                              "content": "Pending",
+                              "fill": "$status-success",
+                              "content": "Done",
                               "fontFamily": "Inter",
                               "fontSize": 12,
                               "fontWeight": "500"
@@ -6612,78 +6612,246 @@
                             },
                             "fill": "$border-default"
                           },
-                          "gap": 12,
+                          "layout": "vertical",
+                          "gap": 8,
                           "padding": [
                             12,
                             0
                           ],
-                          "alignItems": "center",
                           "children": [
                             {
                               "type": "frame",
-                              "id": "jS9mV",
-                              "name": "p7c",
-                              "width": 24,
-                              "height": 24,
-                              "cornerRadius": 12,
-                              "stroke": {
-                                "thickness": 1,
-                                "fill": "$text-muted"
-                              },
-                              "justifyContent": "center",
+                              "id": "T5Exp",
+                              "name": "p7row",
+                              "width": "fill_container",
+                              "gap": 12,
                               "alignItems": "center",
                               "children": [
                                 {
+                                  "type": "frame",
+                                  "id": "jS9mV",
+                                  "name": "p7c",
+                                  "width": 24,
+                                  "height": 24,
+                                  "fill": "$status-error",
+                                  "cornerRadius": 12,
+                                  "stroke": {
+                                    "thickness": 0
+                                  },
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "icon_font",
+                                      "id": "vXl7M",
+                                      "name": "failIcon",
+                                      "width": 12,
+                                      "height": 12,
+                                      "iconFontName": "x",
+                                      "iconFontFamily": "lucide",
+                                      "fill": "$text-on-accent"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "22NyN",
+                                  "name": "p7i",
+                                  "width": "fill_container",
+                                  "layout": "vertical",
+                                  "gap": 2,
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "JCk1L",
+                                      "name": "p7nm",
+                                      "fill": "$text-primary",
+                                      "content": "Run onboarding",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 13,
+                                      "fontWeight": "500"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "HDEUz",
+                                      "name": "p7ds",
+                                      "fill": "$text-muted",
+                                      "content": "openclaw onboard --mode local",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 11,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                },
+                                {
                                   "type": "text",
-                                  "id": "Esh2A",
-                                  "name": "p7n",
-                                  "fill": "$text-muted",
-                                  "content": "7",
+                                  "id": "6rQyw",
+                                  "name": "p7st",
+                                  "fill": "$status-error",
+                                  "content": "Failed",
                                   "fontFamily": "Inter",
-                                  "fontSize": 11,
-                                  "fontWeight": "600"
+                                  "fontSize": 12,
+                                  "fontWeight": "500"
                                 }
                               ]
                             },
                             {
                               "type": "frame",
-                              "id": "22NyN",
-                              "name": "p7i",
+                              "id": "WD3Rs",
+                              "name": "errorBlock",
                               "width": "fill_container",
+                              "fill": "$danger-subtle",
+                              "cornerRadius": "$radius-sm",
                               "layout": "vertical",
-                              "gap": 2,
+                              "gap": 8,
+                              "padding": [
+                                10,
+                                12
+                              ],
                               "children": [
                                 {
-                                  "type": "text",
-                                  "id": "JCk1L",
-                                  "name": "p7nm",
-                                  "fill": "$text-muted",
-                                  "content": "Run onboarding",
-                                  "fontFamily": "Inter",
-                                  "fontSize": 13,
-                                  "fontWeight": "500"
+                                  "type": "frame",
+                                  "id": "mcUFI",
+                                  "name": "errHeader",
+                                  "width": "fill_container",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "p4kHB",
+                                      "name": "errTitleWrap",
+                                      "width": "fill_container",
+                                      "gap": 6,
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "icon_font",
+                                          "id": "WI9Ut",
+                                          "name": "errIcon",
+                                          "width": 14,
+                                          "height": 14,
+                                          "iconFontName": "triangle-alert",
+                                          "iconFontFamily": "lucide",
+                                          "fill": "$status-error"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "Mm6dv",
+                                          "name": "errLabel",
+                                          "fill": "$status-error",
+                                          "content": "Error Details",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 12,
+                                          "fontWeight": "600"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "B4M7K",
+                                      "name": "copyBtn",
+                                      "fill": "#ef444420",
+                                      "cornerRadius": "$radius-sm",
+                                      "gap": 4,
+                                      "padding": [
+                                        4,
+                                        8
+                                      ],
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "icon_font",
+                                          "id": "GpDmk",
+                                          "name": "copyIcon",
+                                          "width": 12,
+                                          "height": 12,
+                                          "iconFontName": "copy",
+                                          "iconFontFamily": "lucide",
+                                          "fill": "$status-error"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "mh4yF",
+                                          "name": "copyText",
+                                          "fill": "$status-error",
+                                          "content": "Copy",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 11,
+                                          "fontWeight": "500"
+                                        }
+                                      ]
+                                    }
+                                  ]
                                 },
                                 {
                                   "type": "text",
-                                  "id": "HDEUz",
-                                  "name": "p7ds",
-                                  "fill": "$text-muted",
-                                  "content": "openclaw onboard --mode local",
+                                  "id": "Of3ds",
+                                  "name": "errMsg",
+                                  "fill": "$status-error",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "Invalid config at /home/node/.openclaw/openclaw.json:\n- plugins.installs.discord.source: Invalid input\n  (allowed: \"npm\", \"archive\", \"path\", \"clawhub\", \"marketplace\")\nConfig invalid",
+                                  "lineHeight": 1.5,
                                   "fontFamily": "Inter",
                                   "fontSize": 11,
                                   "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "jwFWs",
+                                  "name": "errActions",
+                                  "width": "fill_container",
+                                  "gap": 8,
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "Gs9qz",
+                                      "name": "retryBtn",
+                                      "fill": "$status-error",
+                                      "cornerRadius": "$radius-sm",
+                                      "gap": 6,
+                                      "padding": [
+                                        6,
+                                        12
+                                      ],
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "icon_font",
+                                          "id": "oUFFJ",
+                                          "name": "retryIcon",
+                                          "width": 12,
+                                          "height": 12,
+                                          "iconFontName": "rotate-ccw",
+                                          "iconFontFamily": "lucide",
+                                          "fill": "$text-on-accent"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "NY4ZT",
+                                          "name": "retryText",
+                                          "fill": "$text-on-accent",
+                                          "content": "Retry",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 12,
+                                          "fontWeight": "500"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "Yc5XT",
+                                      "name": "hintText",
+                                      "fill": "$text-muted",
+                                      "content": "Retry from this step",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 11,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
                                 }
                               ]
-                            },
-                            {
-                              "type": "text",
-                              "id": "6rQyw",
-                              "name": "p7st",
-                              "fill": "$text-muted",
-                              "content": "Pending",
-                              "fontFamily": "Inter",
-                              "fontSize": 12,
-                              "fontWeight": "500"
                             }
                           ]
                         },

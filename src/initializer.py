@@ -194,15 +194,21 @@ class Initializer:
                 timeout=600,
             )
         if not result.success:
-            return _step_result(False, f"Docker image failed: {result.stderr[:200]}")
+            err_tail = result.stderr.strip().splitlines()
+            err_msg = "\n".join(err_tail[-10:]) if err_tail else "(no output)"
+            return _step_result(False, f"Docker image failed:\n{err_msg}")
         return _step_result(True, f"Docker image ready ({params.docker_image})")
 
     async def _step_fix_permissions(self, params: InitParams) -> dict:
         """Step 7 (Docker only): 修正資料目錄權限。
 
-        使用 openclaw-gateway service 而非 openclaw-cli，因為 cli 的
-        network_mode: service:openclaw-gateway 要求 gateway 容器必須存在。
+        Windows Docker Desktop 的 NTFS bind mount 不支援 chown 且不需要
+        （Docker Desktop 已自動處理權限映射），直接跳過。
+        僅在 docker-linux / remote-ssh 模式下執行。
         """
+        if params.mode == "docker-windows":
+            return _step_result(True, "Skipped — not needed on Windows Docker Desktop")
+
         result = await self._executor.run_command(
             [
                 "docker", "compose", "run", "--rm", "--no-deps",
@@ -228,7 +234,10 @@ class Initializer:
             timeout=120,
         )
         if not result.success:
-            return _step_result(False, f"Onboarding failed: {result.stderr[:200]}")
+            # Docker Compose 進度訊息在 stderr 開頭，實際錯誤在尾部
+            err_tail = result.stderr.strip().splitlines()
+            err_msg = "\n".join(err_tail[-10:]) if err_tail else "(no output)"
+            return _step_result(False, f"Onboarding failed:\n{err_msg}")
         return _step_result(True, "Onboarding completed")
 
     async def _step_sync_gateway(self, params: InitParams) -> dict:
@@ -256,7 +265,9 @@ class Initializer:
             timeout=60,
         )
         if not result.success:
-            return _step_result(False, f"Gateway start failed: {result.stderr[:200]}")
+            err_tail = result.stderr.strip().splitlines()
+            err_msg = "\n".join(err_tail[-5:]) if err_tail else "(no output)"
+            return _step_result(False, f"Gateway start failed:\n{err_msg}")
         return _step_result(True, "Gateway started (docker compose)")
 
     async def _step_start_gateway_native(self, params: InitParams) -> dict:
@@ -266,7 +277,9 @@ class Initializer:
             timeout=30,
         )
         if not result.success:
-            return _step_result(False, f"Gateway start failed: {result.stderr[:200]}")
+            err_tail = result.stderr.strip().splitlines()
+            err_msg = "\n".join(err_tail[-5:]) if err_tail else "(no output)"
+            return _step_result(False, f"Gateway start failed:\n{err_msg}")
         return _step_result(True, "Gateway started (systemctl)")
 
     async def _step_health_check(self, params: InitParams) -> dict:
