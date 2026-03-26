@@ -1141,7 +1141,7 @@ window.updateConnectionStatus = function(status, message) {
 | :--- | :--- | :--- |
 | `check_env()` | `env_checker.py` | `{checks: [{name, installed, version, message}], env_file: {exists, message}}` |
 | `detect_platform()` | `platform_utils.py` | `{os, env_type, suggested_mode, current_mode}` |
-| `save_keys(keys)` | `config_manager.py` | `{success, saved_count}` |
+| `save_keys(keys)` | `config_manager.py` / `executor` (remote) | `{success, saved_count}` — 本機寫 .env，SSH 模式透過 executor 寫遠端 .env + chmod 600 (ADR-005) |
 | `save_config(config)` | `config_manager.py` | `{success}` |
 | `initialize(params)` | `initializer.py` | 透過回呼逐步回報，最終 `{success, dashboard_url, access_token}` |
 | `get_service_status()` | `service_controller.py` | `{running, services: [{name, status}], uptime, skills_count, plugins_count}` |

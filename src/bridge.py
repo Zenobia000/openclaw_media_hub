@@ -278,14 +278,36 @@ class Bridge:
 
     @_bridge_api
     def save_keys(self, keys: dict) -> dict:
-        """儲存 API 金鑰至目標機器 .env。"""
+        """儲存 API 金鑰至目標機器 .env (ADR-005)。"""
+        from src.config_manager import ConfigManager
+
         flat: dict[str, str] = {}
         for category in ("providers", "channels", "tools"):
             for k, v in keys.get(category, {}).items():
                 if v:
                     flat[k] = v
+
+        if not flat:
+            return _ok({"saved_count": 0})
+
         env_path = f"{self._get_config_dir()}/.env"
-        self._config_manager.write_env(env_path, flat)
+
+        if isinstance(self._executor, RemoteExecutor):
+            # 讀取遠端既有 .env → 合併 → 寫回
+            try:
+                raw = self._run_async(self._executor.read_file(env_path))
+                text = raw if isinstance(raw, str) else raw.decode("utf-8")
+            except Exception:
+                text = ""
+            existing = ConfigManager.parse_env_content(text)
+            existing.update(flat)
+            new_content = "\n".join(f"{k}={v}" for k, v in existing.items()) + "\n"
+            self._run_async(self._executor.write_file(env_path, new_content))
+            # 遠端 chmod 600 (ADR-005)
+            self._run_async(self._executor.run_command(["chmod", "600", env_path]))
+        else:
+            self._config_manager.write_env(env_path, flat)
+
         return _ok({"saved_count": len(flat)})
 
     @_bridge_api

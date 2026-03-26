@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import os
 import platform
+import stat
 from pathlib import Path
 
 
@@ -167,3 +168,7 @@ class ConfigManager:
 
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
+
+        # ADR-005: 設定檔案權限 600（僅 owner 可讀寫）
+        if platform.system() != "Windows":
+            path.chmod(stat.S_IRUSR | stat.S_IWUSR)

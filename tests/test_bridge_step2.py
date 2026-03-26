@@ -36,9 +36,9 @@ class TestProviderRegistry:
         primary = [p for p in PROVIDER_REGISTRY if p["primary"]]
         assert len(primary) == 6
 
-    def test_ollama_no_key(self):
+    def test_ollama_optional_key(self):
         ollama = next(p for p in PROVIDER_REGISTRY if p["name"] == "ollama")
-        assert ollama["env_var"] is None
+        assert ollama["env_var"] == "OLLAMA_API_KEY"
 
     def test_huggingface_env_var(self):
         hf = next(p for p in PROVIDER_REGISTRY if p["name"] == "huggingface")
@@ -96,19 +96,20 @@ class TestToolRegistry:
         assert len(env_vars) == len(set(env_vars))
 
     def test_count(self):
-        assert len(TOOL_REGISTRY) == 4
+        assert len(TOOL_REGISTRY) == 6
 
     def test_tavily_present(self):
         names = [t["name"] for t in TOOL_REGISTRY]
         assert "tavily" in names
 
-    def test_no_deepgram(self):
+    def test_elevenlabs_present(self):
         names = [t["name"] for t in TOOL_REGISTRY]
-        assert "deepgram" not in names
+        assert "elevenlabs" in names
 
-    def test_no_elevenlabs(self):
+    def test_deepgram_present(self):
         names = [t["name"] for t in TOOL_REGISTRY]
-        assert "elevenlabs" not in names
+        assert "deepgram" in names
+
 
 
 # ── Bridge API 回傳格式 ─────────────────────────────────
@@ -148,7 +149,7 @@ class TestBridgeRegistryAPIs:
         assert result["success"] is True
         data = result["data"]
         assert isinstance(data, list)
-        assert len(data) == 4
+        assert len(data) == 6
 
 
 # ── save_keys 整合 ───────────────────────────────────────
