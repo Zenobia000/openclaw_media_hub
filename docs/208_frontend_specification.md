@@ -1002,13 +1002,32 @@ const result = await window.pywebview.api.fix_all_plugins();
 1. **Section Panel**
    - Icon: `link` (`accent-secondary`), 標題: "Connection Info"
    - 說明: "Gateway endpoint and authentication for device pairing"
-   - **2×2 Info Grid**:
-     - Gateway URL（唯讀 code 顯示）
-     - Bind Mode（唯讀 code 顯示）
-     - Port（唯讀 code 顯示）
-     - Security（TLS + Auth StatusBadge）
-   - **Gateway Token**: 遮罩顯示（前 8 字元 + `…`）+ Show/Hide 按鈕 + Copy 按鈕
-   - **Pairing 提示**: info icon + 說明文字（如何分享 URL 與 Token 給裝置使用者）
+
+2. **Gateway URL**（唯讀）:
+   - Label: "Gateway URL"
+   - 顯示完整 HTTP 連結（例: `http://127.0.0.1:18789`）
+   - 右側 `copy` icon 按鈕，點擊複製完整 URL 至剪貼簿
+
+3. **Bind Mode**（下拉選單）:
+   - Label: "Bind Mode"
+   - `<select>` 下拉選單，選項:
+     - `loopback` — 說明: "Only accessible from this machine (127.0.0.1)"
+     - `lan` — 說明: "Accessible from all network interfaces (0.0.0.0)"
+   - 選擇後下方顯示對應說明文字（`text-muted`, fontSize 11）
+   - 變更後標記為 dirty，需點擊底部 Save 按鈕儲存
+
+4. **Gateway Token**（遮罩顯示）:
+   - Label: "Gateway Token"
+   - 遮罩顯示 `••••••••••••••••` + `eye` Show/Hide 按鈕 + `copy` 複製按鈕
+   - 左側 `lock` icon
+
+5. **Control UI**（Checkbox）:
+   - Label: "Control UI Enabled"
+   - Checkbox + 說明: "Serve the Gateway Control UI web interface"（`text-muted`, fontSize 11）
+   - 變更後標記為 dirty，需點擊底部 Save 按鈕儲存
+
+6. **Save Settings 按鈕**: Button/Primary "Save Settings"（`save` icon），點擊呼叫 `save_gateway_settings()`
+   - 僅在 Bind Mode 或 Control UI 有變更時 enabled
 
 #### 左欄：Origin Access Control
 
@@ -1052,10 +1071,20 @@ const result = await window.pywebview.api.fix_all_plugins();
 **Bridge API 呼叫**:
 
 ```javascript
-// 讀取 Gateway 連線資訊（URL, Bind, Port, Token, TLS, Auth）
+// 讀取 Gateway 連線資訊
 const info = await window.pywebview.api.get_gateway_info();
-// info.data = { url: "http://127.0.0.1:18789", bind: "lan", port: 18789,
-//   gateway_token: "...", tls: false, has_credential: true, auth_label: "Token" }
+// info.data = {
+//   url: "http://127.0.0.1:18789",
+//   bind: "loopback",                          // "loopback" | "lan"
+//   gateway_token: "...",
+//   control_ui_enabled: true
+// }
+
+// 儲存 Gateway 設定（Bind Mode + Control UI）
+await window.pywebview.api.save_gateway_settings({
+  bind: "lan",              // "loopback" | "lan"
+  control_ui_enabled: true
+});
 
 // 讀取 allowedOrigins
 const origins = await window.pywebview.api.get_allowed_origins();
@@ -1087,7 +1116,11 @@ const notes = await window.pywebview.api.get_device_notes();
 
 - [ ] Sidebar MAIN 區段顯示 Gateway 項目（`shield` icon）
 - [ ] 進入頁面時自動載入 Connection Info、allowedOrigins 和裝置列表
-- [ ] Connection Info 區塊顯示 Gateway URL/Bind/Port/Security/Token
+- [ ] Gateway URL 顯示完整 HTTP 連結，可複製至剪貼簿
+- [ ] Bind Mode 下拉選單切換 loopback/lan，選擇後顯示對應說明
+- [ ] Gateway Token 遮罩顯示，支援 Show/Hide 與 Copy
+- [ ] Control UI Enabled checkbox 控制是否啟用 Control UI
+- [ ] Bind Mode 或 Control UI 變更後，Save Settings 按鈕 enabled，儲存呼叫 save_gateway_settings()
 - [ ] Allow All Origins toggle 切換後更新 UI，點擊 Save Origins 儲存至 openclaw.json
 - [ ] 白名單可新增/刪除 origin，點擊 Save Origins 後儲存
 - [ ] Pending 裝置可 Approve / Reject，操作後自動刷新列表

@@ -459,26 +459,21 @@ class Bridge:
 
     @_bridge_api
     def get_gateway_info(self) -> dict:
-        """讀取 Gateway 連線資訊（URL + Auth + Token）。"""
+        """讀取 Gateway 連線資訊（URL + Bind + Token + RateLimit + ControlUI）。"""
         config_dir = self._get_config_dir()
         gateway = self._config_manager.read_openclaw_config(config_dir, "gateway")
 
         port = gateway.get("port", self._DEFAULT_GATEWAY_PORT)
         bind_mode = gateway.get("bind", "loopback")
         tls_enabled = gateway.get("tls", {}).get("enabled", False)
-        scheme = "wss" if tls_enabled else "ws"
+        scheme = "https" if tls_enabled else "http"
 
-        # 解析主機位址
+        # 解析主機位址（0.0.0.0 對瀏覽器無意義，一律轉為 loopback）
         host = (gateway.get("customBindHost", "0.0.0.0")
                 if bind_mode == "custom"
                 else self._BIND_HOSTS.get(bind_mode, "127.0.0.1"))
-
-        # 解析認證資訊
-        auth = gateway.get("auth", {})
-        auth_mode = auth.get("mode", "token")
-        auth_label, has_credential = self._AUTH_MODES.get(auth_mode, (auth_mode, False))
-        if not has_credential and auth_mode in ("token", "password"):
-            has_credential = bool(auth.get(auth_mode))
+        if host == "0.0.0.0":
+            host = "127.0.0.1"
 
         # 讀取 .env 中的 Gateway Token
         gateway_token = None
@@ -487,15 +482,36 @@ class Bridge:
             gateway_token = env_data.get("OPENCLAW_GATEWAY_TOKEN") or None
         except Exception:
             pass
-        if gateway_token:
-            has_credential = True
+
+        # Control UI 狀態
+        control_ui_enabled = gateway.get("controlUi", {}).get("enabled", True)
 
         return _ok({
             "url": f"{scheme}://{host}:{port}",
-            "port": port, "bind": bind_mode, "tls": tls_enabled,
-            "auth_mode": auth_mode, "auth_label": auth_label,
-            "has_credential": has_credential, "gateway_token": gateway_token,
+            "bind": bind_mode,
+            "gateway_token": gateway_token,
+            "control_ui_enabled": control_ui_enabled,
         })
+
+    @_bridge_api
+    def save_gateway_settings(self, params: dict) -> dict:
+        """儲存 Gateway 設定（Bind Mode + Control UI Enabled）。"""
+        config_dir = self._get_config_dir()
+        data: dict = {}
+
+        bind_mode = params.get("bind")
+        if bind_mode in ("loopback", "lan"):
+            data["bind"] = bind_mode
+
+        control_ui_enabled = params.get("control_ui_enabled")
+        if control_ui_enabled is not None:
+            data.setdefault("controlUi", {})["enabled"] = bool(control_ui_enabled)
+
+        if not data:
+            return _err(ErrorType.INTERNAL, "No valid settings provided")
+
+        self._config_manager.write_openclaw_config(config_dir, data, "gateway")
+        return _ok({"message": "Gateway settings saved"})
 
     @_bridge_api
     def get_allowed_origins(self) -> dict:

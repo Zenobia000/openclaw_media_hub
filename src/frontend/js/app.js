@@ -157,6 +157,9 @@ const gatewayState = {
   info: null,
   loading: false,
   tokenRevealed: false,
+  settingsDirty: false,
+  pendingBind: null,
+  pendingControlUi: null,
 };
 
 /* =================================================================
@@ -2418,6 +2421,9 @@ registerPage("configuration", {
 /** 載入所有 Gateway 資料 */
 async function loadGatewayData() {
   gatewayState.loading = true;
+  gatewayState.pendingBind = null;
+  gatewayState.pendingControlUi = null;
+  gatewayState.settingsDirty = false;
   renderGatewayPage();
 
   try {
@@ -2460,13 +2466,42 @@ function renderGatewayPairingInfoSection() {
   }
 
   const info = gatewayState.info;
-  const tlsBadge = info.tls ? renderStatusBadge({ status: "success", text: "TLS Enabled" }) : renderStatusBadge({ status: "warning", text: "No TLS" });
-  const authBadge = info.has_credential ? renderStatusBadge({ status: "success", text: info.auth_label }) : renderStatusBadge({ status: "error", text: "No Credential" });
+  const currentBind = gatewayState.pendingBind ?? info.bind;
+  const currentControlUi = gatewayState.pendingControlUi ?? info.control_ui_enabled;
+  const bindDescriptions = {
+    loopback: "Only accessible from this machine (127.0.0.1)",
+    lan: "Accessible from all network interfaces (0.0.0.0)",
+  };
 
+  // Gateway URL（唯讀 + Copy）
+  const urlSection = `
+    <div class="flex flex-col gap-1.5">
+      <span class="text-xs font-medium text-text-muted">Gateway URL</span>
+      <div class="flex gap-2 items-center">
+        <code class="flex-1 text-sm font-mono text-accent-secondary bg-bg-input border border-border-default rounded-sm px-3 py-2 select-all break-all">${esc(info.url)}</code>
+        <button type="button" class="flex items-center justify-center w-9 h-9 bg-bg-input border border-border-default rounded-sm text-text-muted hover:text-text-secondary transition-colors cursor-pointer flex-shrink-0" onclick="copyGatewayUrl()" title="Copy URL">
+          <i id="gateway-url-copy-icon" data-lucide="copy" class="w-3.5 h-3.5"></i></button>
+      </div>
+    </div>`;
+
+  // Bind Mode（下拉選單 + 說明）
+  const bindSection = `
+    <div class="flex flex-col gap-1.5">
+      <span class="text-xs font-medium text-text-muted">Bind Mode</span>
+      <select id="gateway-bind-select" onchange="onGatewayBindChange(this.value)"
+        class="w-full bg-bg-input border border-border-default rounded-sm text-sm text-text-primary px-3 py-2 outline-none focus:border-accent-primary transition-colors cursor-pointer appearance-none"
+        style="background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23838387%22 stroke-width=%222%22><polyline points=%226 9 12 15 18 9%22/></svg>');background-repeat:no-repeat;background-position:right 12px center;">
+        <option value="loopback" ${currentBind === "loopback" ? "selected" : ""}>loopback</option>
+        <option value="lan" ${currentBind === "lan" ? "selected" : ""}>lan</option>
+      </select>
+      <span class="text-xs text-text-muted">${esc(bindDescriptions[currentBind] || "")}</span>
+    </div>`;
+
+  // Gateway Token（遮罩 + Show/Hide + Copy）
   const token = info.gateway_token || "";
   const maskedToken = token ? token.slice(0, 8) + "\u2026" : "Not configured";
-  const tokenRow = `
-    <div class="flex flex-col gap-1">
+  const tokenSection = `
+    <div class="flex flex-col gap-1.5">
       <span class="text-xs font-medium text-text-muted">Gateway Token</span>
       <div class="relative">
         <i data-lucide="lock" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted"></i>
@@ -2482,27 +2517,27 @@ function renderGatewayPairingInfoSection() {
       </div>
     </div>`;
 
-  const infoRows = `
-    <div class="grid grid-cols-2 gap-4">
-      <div class="flex flex-col gap-1"><span class="text-xs font-medium text-text-muted">Gateway URL</span>
-        <code class="text-sm font-mono bg-bg-input border border-border-default rounded-sm px-3 py-2 select-all break-all">${esc(info.url)}</code></div>
-      <div class="flex flex-col gap-1"><span class="text-xs font-medium text-text-muted">Bind Mode</span>
-        <code class="text-sm font-mono bg-bg-input border border-border-default rounded-sm px-3 py-2">${esc(info.bind)}</code></div>
-      <div class="flex flex-col gap-1"><span class="text-xs font-medium text-text-muted">Port</span>
-        <code class="text-sm font-mono bg-bg-input border border-border-default rounded-sm px-3 py-2">${esc(String(info.port))}</code></div>
-      <div class="flex flex-col gap-1"><span class="text-xs font-medium text-text-muted">Security</span>
-        <div class="flex items-center gap-2 h-[38px]">${tlsBadge} ${authBadge}</div></div>
-      ${tokenRow}
-    </div>
-    <div class="mt-3 p-3 bg-bg-input border border-border-default rounded-sm">
-      <div class="flex items-start gap-2">
-        <i data-lucide="info" class="w-4 h-4 text-status-info flex-shrink-0 mt-0.5"></i>
-        <p class="text-xs text-text-secondary">Devices connect to this Gateway URL using the token above. Share the URL and token with device users to initiate pairing. Pending requests will appear in Device Management below.</p>
+  // Control UI Enabled（Checkbox）
+  const controlUiSection = `
+    <div class="flex items-center gap-3">
+      <input type="checkbox" id="gateway-control-ui-cb" ${currentControlUi ? "checked" : ""} onchange="onGatewayControlUiChange(this.checked)"
+        class="w-4.5 h-4.5 rounded accent-accent-primary cursor-pointer flex-shrink-0">
+      <div class="flex flex-col gap-0.5">
+        <label for="gateway-control-ui-cb" class="text-sm font-medium text-text-primary cursor-pointer">Control UI Enabled</label>
+        <span class="text-xs text-text-muted">Serve the Gateway Control UI web interface</span>
       </div>
     </div>`;
 
+  // Save Settings 按鈕
+  const saveSection = `
+    <div class="flex justify-end">
+      ${renderButton({ variant: "primary", icon: "save", label: "Save Settings", disabled: !gatewayState.settingsDirty, onclick: "saveGatewaySettings()" })}
+    </div>`;
+
+  const children = [urlSection, bindSection, tokenSection, controlUiSection, saveSection].join('<div class=""></div>');
+
   return renderSectionPanel({ icon: "link", iconColor: "text-accent-secondary", title: "Connection Info",
-    description: "Gateway endpoint and authentication for device pairing", children: infoRows, id: "gateway-info-panel" });
+    description: "Gateway endpoint and authentication for device pairing", children, id: "gateway-info-panel" });
 }
 
 function renderOriginControlSection() {
@@ -2631,6 +2666,51 @@ async function copyGatewayToken() {
     if (icon) { icon.setAttribute("data-lucide", "check"); refreshIcons(); }
     setTimeout(() => { if (icon) { icon.setAttribute("data-lucide", "copy"); refreshIcons(); } }, 1500);
   }
+}
+
+async function copyGatewayUrl() {
+  if (!gatewayState.info?.url) return;
+  await clipboardWrite(gatewayState.info.url);
+  const icon = document.getElementById("gateway-url-copy-icon");
+  if (icon) { icon.setAttribute("data-lucide", "check"); refreshIcons(); }
+  setTimeout(() => { if (icon) { icon.setAttribute("data-lucide", "copy"); refreshIcons(); } }, 1500);
+}
+
+function onGatewayBindChange(value) {
+  gatewayState.pendingBind = value;
+  gatewayState.settingsDirty = _isGatewaySettingsDirty();
+  renderGatewayPage();
+}
+
+function onGatewayControlUiChange(checked) {
+  gatewayState.pendingControlUi = checked;
+  gatewayState.settingsDirty = _isGatewaySettingsDirty();
+  renderGatewayPage();
+}
+
+function _isGatewaySettingsDirty() {
+  if (!gatewayState.info) return false;
+  const bindChanged = gatewayState.pendingBind != null && gatewayState.pendingBind !== gatewayState.info.bind;
+  const cuiChanged = gatewayState.pendingControlUi != null && gatewayState.pendingControlUi !== gatewayState.info.control_ui_enabled;
+  return bindChanged || cuiChanged;
+}
+
+async function saveGatewaySettings() {
+  if (!gatewayState.settingsDirty) return;
+  const params = {};
+  if (gatewayState.pendingBind != null) params.bind = gatewayState.pendingBind;
+  if (gatewayState.pendingControlUi != null) params.control_ui_enabled = gatewayState.pendingControlUi;
+  try {
+    const resp = await window.pywebview.api.save_gateway_settings(params);
+    if (resp?.success) {
+      gatewayState.pendingBind = null;
+      gatewayState.pendingControlUi = null;
+      gatewayState.settingsDirty = false;
+      await loadGatewayData();
+    } else {
+      alert(resp?.error?.message || "Failed to save gateway settings");
+    }
+  } catch { alert("Connection error while saving gateway settings"); }
 }
 
 function toggleAllowAllOrigins(checked) {
