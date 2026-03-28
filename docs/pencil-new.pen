@@ -9049,7 +9049,7 @@
                       "id": "isPpe",
                       "name": "h7s",
                       "fill": "$text-secondary",
-                      "content": "Select and install plugin modules for OpenClaw",
+                      "content": "Manage plugin modules for OpenClaw",
                       "fontFamily": "Inter",
                       "fontSize": 13.5,
                       "fontWeight": "normal",
@@ -9143,7 +9143,7 @@
                       "id": "xLwBv",
                       "name": "plBD",
                       "fill": "$text-secondary",
-                      "content": "Select plugins below to install or uninstall",
+                      "content": "Click Install or Uninstall on each plugin to manage",
                       "fontFamily": "Inter",
                       "fontSize": 12,
                       "fontWeight": "normal"
@@ -9352,48 +9352,6 @@
                 },
                 {
                   "type": "frame",
-                  "id": "ZsYw5",
-                  "name": "plSelAll",
-                  "width": "fill_container",
-                  "stroke": {
-                    "thickness": {
-                      "bottom": 1
-                    },
-                    "fill": "$border-default"
-                  },
-                  "gap": 10,
-                  "padding": [
-                    10,
-                    20
-                  ],
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "cieKc",
-                      "name": "plSelCb",
-                      "width": 16,
-                      "height": 16,
-                      "cornerRadius": 3,
-                      "stroke": {
-                        "thickness": 1.5,
-                        "fill": "$text-muted"
-                      }
-                    },
-                    {
-                      "type": "text",
-                      "id": "JtyM8",
-                      "name": "plSelTxt",
-                      "fill": "$text-secondary",
-                      "content": "Select All",
-                      "fontFamily": "Inter",
-                      "fontSize": 13,
-                      "fontWeight": "500"
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
                   "id": "vxoJH",
                   "name": "pl1",
                   "width": "fill_container",
@@ -9410,29 +9368,6 @@
                   ],
                   "alignItems": "center",
                   "children": [
-                    {
-                      "type": "frame",
-                      "id": "uDrVG",
-                      "name": "pl1cb",
-                      "width": 16,
-                      "height": 16,
-                      "fill": "$accent-primary",
-                      "cornerRadius": 3,
-                      "justifyContent": "center",
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "icon_font",
-                          "id": "cVueM",
-                          "name": "pl1cbi",
-                          "width": 10,
-                          "height": 10,
-                          "iconFontName": "check",
-                          "iconFontFamily": "lucide",
-                          "fill": "$text-on-accent"
-                        }
-                      ]
-                    },
                     {
                       "type": "frame",
                       "id": "pxNi8",
@@ -9518,6 +9453,29 @@
                           "fontWeight": "500"
                         }
                       ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ly3Oj",
+                      "name": "pl1UnBtn",
+                      "width": 28,
+                      "height": 28,
+                      "fill": "#00000000",
+                      "cornerRadius": "$radius-md",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon_font",
+                          "id": "uZYvZ",
+                          "name": "pl1UnIco",
+                          "width": 14,
+                          "height": 14,
+                          "iconFontName": "trash-2",
+                          "iconFontFamily": "lucide",
+                          "fill": "$text-muted"
+                        }
+                      ]
                     }
                   ]
                 },
@@ -9539,18 +9497,6 @@
                   ],
                   "alignItems": "center",
                   "children": [
-                    {
-                      "type": "frame",
-                      "id": "3ollx",
-                      "name": "pl2cb",
-                      "width": 16,
-                      "height": 16,
-                      "cornerRadius": 3,
-                      "stroke": {
-                        "thickness": 1.5,
-                        "fill": "$text-muted"
-                      }
-                    },
                     {
                       "type": "frame",
                       "id": "Y3b6T",
@@ -9606,26 +9552,36 @@
                     },
                     {
                       "type": "frame",
-                      "id": "91id5",
-                      "name": "pl2badge",
-                      "fill": "$bg-input",
-                      "cornerRadius": 10,
-                      "gap": 4,
+                      "id": "jJcV2",
+                      "name": "pl2InstBtn",
+                      "fill": "$accent-primary",
+                      "cornerRadius": "$radius-md",
+                      "gap": 6,
                       "padding": [
-                        2,
-                        8
+                        6,
+                        14
                       ],
                       "alignItems": "center",
                       "children": [
                         {
+                          "type": "icon_font",
+                          "id": "yI9GV",
+                          "name": "pl2InstIco",
+                          "width": 13,
+                          "height": 13,
+                          "iconFontName": "download",
+                          "iconFontFamily": "lucide",
+                          "fill": "$text-on-accent"
+                        },
+                        {
                           "type": "text",
-                          "id": "GBLVy",
-                          "name": "pl2txt",
-                          "fill": "$text-muted",
-                          "content": "Available",
+                          "id": "uQ5c8",
+                          "name": "pl2InstTxt",
+                          "fill": "$text-on-accent",
+                          "content": "Install",
                           "fontFamily": "Inter",
-                          "fontSize": 11,
-                          "fontWeight": "500"
+                          "fontSize": 12,
+                          "fontWeight": "600"
                         }
                       ]
                     }
@@ -9649,18 +9605,6 @@
                   ],
                   "alignItems": "center",
                   "children": [
-                    {
-                      "type": "frame",
-                      "id": "PueVa",
-                      "name": "pl3cb",
-                      "width": 16,
-                      "height": 16,
-                      "cornerRadius": 3,
-                      "stroke": {
-                        "thickness": 1.5,
-                        "fill": "$text-muted"
-                      }
-                    },
                     {
                       "type": "frame",
                       "id": "PzPRo",
@@ -9716,26 +9660,36 @@
                     },
                     {
                       "type": "frame",
-                      "id": "9WeOI",
-                      "name": "pl3badge",
-                      "fill": "$bg-input",
-                      "cornerRadius": 10,
-                      "gap": 4,
+                      "id": "6Didy",
+                      "name": "pl3InstBtn",
+                      "fill": "$accent-primary",
+                      "cornerRadius": "$radius-md",
+                      "gap": 6,
                       "padding": [
-                        2,
-                        8
+                        6,
+                        14
                       ],
                       "alignItems": "center",
                       "children": [
                         {
+                          "type": "icon_font",
+                          "id": "UthFS",
+                          "name": "pl3InstIco",
+                          "width": 13,
+                          "height": 13,
+                          "iconFontName": "download",
+                          "iconFontFamily": "lucide",
+                          "fill": "$text-on-accent"
+                        },
+                        {
                           "type": "text",
-                          "id": "RBRBz",
-                          "name": "pl3txt",
-                          "fill": "$text-muted",
-                          "content": "Available",
+                          "id": "19aN7",
+                          "name": "pl3InstTxt",
+                          "fill": "$text-on-accent",
+                          "content": "Install",
                           "fontFamily": "Inter",
-                          "fontSize": 11,
-                          "fontWeight": "500"
+                          "fontSize": 12,
+                          "fontWeight": "600"
                         }
                       ]
                     }
@@ -9759,18 +9713,6 @@
                   ],
                   "alignItems": "center",
                   "children": [
-                    {
-                      "type": "frame",
-                      "id": "IEQJG",
-                      "name": "pl4cb",
-                      "width": 16,
-                      "height": 16,
-                      "cornerRadius": 3,
-                      "stroke": {
-                        "thickness": 1.5,
-                        "fill": "$text-muted"
-                      }
-                    },
                     {
                       "type": "frame",
                       "id": "cGmZH",
@@ -9826,26 +9768,36 @@
                     },
                     {
                       "type": "frame",
-                      "id": "gD6k5",
-                      "name": "pl4badge",
-                      "fill": "$bg-input",
-                      "cornerRadius": 10,
-                      "gap": 4,
+                      "id": "vBMO8",
+                      "name": "pl4InstBtn",
+                      "fill": "$accent-primary",
+                      "cornerRadius": "$radius-md",
+                      "gap": 6,
                       "padding": [
-                        2,
-                        8
+                        6,
+                        14
                       ],
                       "alignItems": "center",
                       "children": [
                         {
+                          "type": "icon_font",
+                          "id": "gLUyK",
+                          "name": "pl4InstIco",
+                          "width": 13,
+                          "height": 13,
+                          "iconFontName": "download",
+                          "iconFontFamily": "lucide",
+                          "fill": "$text-on-accent"
+                        },
+                        {
                           "type": "text",
-                          "id": "A1CqU",
-                          "name": "pl4txt",
-                          "fill": "$text-muted",
-                          "content": "Available",
+                          "id": "xNZvX",
+                          "name": "pl4InstTxt",
+                          "fill": "$text-on-accent",
+                          "content": "Install",
                           "fontFamily": "Inter",
-                          "fontSize": 11,
-                          "fontWeight": "500"
+                          "fontSize": 12,
+                          "fontWeight": "600"
                         }
                       ]
                     }
@@ -9863,18 +9815,6 @@
                   ],
                   "alignItems": "center",
                   "children": [
-                    {
-                      "type": "frame",
-                      "id": "RF8KI",
-                      "name": "pl5cb",
-                      "width": 16,
-                      "height": 16,
-                      "cornerRadius": 3,
-                      "stroke": {
-                        "thickness": 1.5,
-                        "fill": "$text-muted"
-                      }
-                    },
                     {
                       "type": "frame",
                       "id": "1kW0D",
@@ -9930,143 +9870,38 @@
                     },
                     {
                       "type": "frame",
-                      "id": "jz0CY",
-                      "name": "pl5badge",
-                      "fill": "$bg-input",
-                      "cornerRadius": 10,
-                      "gap": 4,
+                      "id": "LTcW6",
+                      "name": "pl5InstBtn",
+                      "fill": "$accent-primary",
+                      "cornerRadius": "$radius-md",
+                      "gap": 6,
                       "padding": [
-                        2,
-                        8
+                        6,
+                        14
                       ],
                       "alignItems": "center",
                       "children": [
                         {
+                          "type": "icon_font",
+                          "id": "ST9sr",
+                          "name": "pl5InstIco",
+                          "width": 13,
+                          "height": 13,
+                          "iconFontName": "download",
+                          "iconFontFamily": "lucide",
+                          "fill": "$text-on-accent"
+                        },
+                        {
                           "type": "text",
-                          "id": "Gj2II",
-                          "name": "pl5txt",
-                          "fill": "$text-muted",
-                          "content": "Available",
+                          "id": "nX4Ch",
+                          "name": "pl5InstTxt",
+                          "fill": "$text-on-accent",
+                          "content": "Install",
                           "fontFamily": "Inter",
-                          "fontSize": 11,
-                          "fontWeight": "500"
+                          "fontSize": 12,
+                          "fontWeight": "600"
                         }
                       ]
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "HfwhO",
-              "name": "plAct",
-              "width": "fill_container",
-              "stroke": {
-                "thickness": {
-                  "top": 1
-                },
-                "fill": "$border-default"
-              },
-              "gap": 12,
-              "padding": [
-                16,
-                0,
-                0,
-                0
-              ],
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "text",
-                  "id": "7lUCq",
-                  "name": "plSelLabel",
-                  "fill": "$text-secondary",
-                  "content": "1 plugin selected",
-                  "fontFamily": "Inter",
-                  "fontSize": 13,
-                  "fontWeight": "normal",
-                  "letterSpacing": -0.1
-                },
-                {
-                  "type": "frame",
-                  "id": "pOw2Z",
-                  "name": "plActSp",
-                  "width": "fill_container",
-                  "height": 1
-                },
-                {
-                  "type": "frame",
-                  "id": "BoPt2",
-                  "name": "plUnBtn",
-                  "fill": "$bg-input",
-                  "cornerRadius": "$radius-md",
-                  "stroke": {
-                    "thickness": 1,
-                    "fill": "#ef444440"
-                  },
-                  "gap": 8,
-                  "padding": [
-                    9,
-                    14
-                  ],
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "icon_font",
-                      "id": "spX52",
-                      "name": "plUnIcon",
-                      "width": 14,
-                      "height": 14,
-                      "iconFontName": "trash-2",
-                      "iconFontFamily": "lucide",
-                      "fill": "$status-error"
-                    },
-                    {
-                      "type": "text",
-                      "id": "b90Mt",
-                      "name": "plUnTxt",
-                      "fill": "$status-error",
-                      "content": "Uninstall Selected",
-                      "fontFamily": "Inter",
-                      "fontSize": 14,
-                      "fontWeight": "500"
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "X7BTU",
-                  "name": "plInstBtn",
-                  "opacity": 0.5,
-                  "fill": "$accent-primary",
-                  "cornerRadius": "$radius-md",
-                  "gap": 8,
-                  "padding": [
-                    9,
-                    18
-                  ],
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "icon_font",
-                      "id": "IOCk3",
-                      "name": "plInstIcon",
-                      "width": 14,
-                      "height": 14,
-                      "iconFontName": "download",
-                      "iconFontFamily": "lucide",
-                      "fill": "$text-on-accent"
-                    },
-                    {
-                      "type": "text",
-                      "id": "t3uUS",
-                      "name": "plInstTxt",
-                      "fill": "$text-on-accent",
-                      "content": "Install Selected",
-                      "fontFamily": "Inter",
-                      "fontSize": 14,
-                      "fontWeight": "600"
                     }
                   ]
                 }

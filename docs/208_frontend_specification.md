@@ -63,7 +63,7 @@ Root (SPA - Single Page Application)
 | **Environment** | `view-environment` | Environment | 系統依賴檢查 | US-001 |
 | **Gateway** | `view-gateway` | Gateway | Origin 存取控制、裝置配對管理 | ADR-006 |
 | **Deploy Skills** | `view-deploy-skills` | Deploy Skills | 技能模組勾選部署 | US-005 |
-| **Install Plugins** | `view-install-plugins` | Install Plugins | 外掛模組勾選安裝 | US-006 |
+| **Install Plugins** | `view-install-plugins` | Install Plugins | 外掛模組逐項安裝/移除 | US-006 |
 | **Fix Plugins** | `view-fix-plugins` | Fix Plugins | 外掛診斷與修復 | — |
 
 ---
@@ -812,22 +812,24 @@ const result = await window.pywebview.api.remove_skills(["google-search"]);
 **User Story (US-006)**:
 > 身為使用者，我想要透過介面安裝外掛模組，以便不需手動在命令列操作。
 
+**互動模式**: 逐項操作（VS Code Extensions 風格）— 每個外掛列有獨立的 Install / Uninstall / Settings 按鈕，無 checkbox 批次選取。
+
 **UI 區域 (UI Zones)**:
 
 1. **Header**
    - 標題: "Install Plugins"（24px, 700）
-   - 副標題: "Select and install plugin modules for OpenClaw"（14px, 400）
+   - 副標題: "Manage plugin modules for OpenClaw"（14px, 400）
    - 右側: 已安裝數量 badge — "X installed" StatusBadge（`status-success` 色調）
 
 2. **Summary Banner**
    - 有已安裝外掛時: 綠色底 (`#4CAF5015`)，綠色邊框 (`#4CAF5040`)，`check-circle` icon
      - 標題: "X of Y plugins installed"
-     - 描述: "Select plugins below to install or uninstall"
+     - 描述: "Click Install or Uninstall on each plugin to manage"
    - 無已安裝外掛時: 藍色底 (`#3b82f610`)，藍色邊框 (`#3b82f630`)，`info` icon
      - 標題: "No plugins installed yet"
-     - 描述: "Select plugins below and click Install to get started"
+     - 描述: "Click Install on a plugin to get started"
 
-3. **Plugins Checklist 區塊** (SectionPanel) — `flex: 1; overflow-y: auto`（頁面內唯一可捲動區域）
+3. **Plugins List 區塊** (SectionPanel) — `flex: 1; overflow-y: auto`（頁面內唯一可捲動區域）
    - Icon: `puzzle`（`accent-secondary`）, 標題: "Available Plugins"
    - 描述: "Extensions from openclaw/extensions/ — install by modifying openclaw.json plugins config"
    - **分類 Tab 列**: 頂部，4 個 Tab:
@@ -836,37 +838,30 @@ const result = await window.pywebview.api.remove_skills(["google-search"]);
      - "Tools"（工具: brave, perplexity, firecrawl, elevenlabs, tavily 等）
      - "Infrastructure"（基礎設施: memory-core, memory-lancedb）
    - 當前 Tab 以 `accent-secondary` 底線高亮
-   - **Select All 列**: 頂部，checkbox + "Select All" 文字 + 底部 `1px` 分隔線
    - **外掛列表**: 垂直排列，每項以 `1px` 分隔線間隔，padding `14px 16px`
      - 每行結構（水平 Flexbox, align-items: center）:
-       - **Checkbox**: 16px 方框，勾選時紅底白勾（`accent-primary`），未勾選時 `border-default` 邊框
-       - **Plugin Icon**: 品牌色圓形圖示（24px 圓，帶品牌縮寫字母），margin-left `12px`
+       - **Plugin Icon**: 品牌色圓形圖示（24px 圓，帶品牌縮寫字母）
          - LINE: 綠底 "L" icon（`#06C755`）
          - Discord: 紫底 "D" icon（`#5865F2`）
          - 其他外掛: 灰底首字母
        - **Info 區塊**（flex: 1, margin-left `12px`）:
          - 外掛名稱（14px, 600, `text-primary`）
          - 外掛描述（12px, 400, `text-secondary`），單行截斷
-       - **Status Badge**:
-         - 已安裝: 綠底 "Installed" badge（`status-success`）
-         - 未安裝: 灰底 "Available" badge（`text-muted`）
+       - **Action 區塊**（flex-shrink: 0, 水平排列, gap: `8px`, align-items: center）:
+         - **未安裝時**:
+           - Button/Primary "Install"（`download` icon, size `sm`）— 點擊觸發安裝
+         - **已安裝時**:
+           - "Installed" badge（綠底 `#4CAF5015`，綠框 `#4CAF5040`，`status-success` 文字）
+           - Button/Ghost `settings` icon（28px 高）— 僅 Channel 外掛且在 `CHANNEL_INIT_REGISTRY` 中時顯示，點擊開啟 Channel Init Wizard
+           - Button/Ghost `trash-2` icon（28px 高，`text-muted`，hover 時 `text-status-error`）— 點擊觸發解除安裝確認
+         - **操作進行中時**（該列 busy）:
+           - 按鈕替換為 spinner（`loader` icon, 16px, `animate-spin`, `text-accent-primary`）+ 狀態文字（12px, `text-secondary`）："Installing..." / "Uninstalling..."
      - **Hover 效果**: 行背景變 `bg-input`
-     - 已安裝外掛預設勾選
+     - **操作鎖定**: 任一外掛操作進行中時，其他外掛的 Install / Uninstall 按鈕 disabled（防止併發）
 
-4. **Progress Overlay** — 條件顯示（安裝/解除安裝進行中時覆蓋外掛列表）
-   - 結構同 Deploy Skills 的 Progress Overlay
-   - 每項: plugin icon + 外掛名稱 + 狀態描述 + 狀態圖示
-     - Done: 綠底白勾 + "Installed" / "Uninstalled"
-     - Running: 紅底白 loader + "Installing..." / "Uninstalling..."
-     - Pending: 灰色邊框 + "Pending"
-     - Failed: 紅底白 `x` + "Failed: [error message]"
-
-5. **Action Bar** — 底部固定，上方 `1px` 分隔線
-   - 左側: 已選數量文字 "X plugins selected"（14px, `text-secondary`）
-   - 右側（水平排列, gap: 12px）:
-     - Button/Danger "Uninstall Selected"（`trash-2` icon）— 僅當已勾選的項目中有「已安裝」的外掛時 enabled
-     - Button/Primary "Install Selected"（`download` icon）— 僅當已勾選的項目中有「未安裝」的外掛時 enabled
-   - 操作進行中時: 兩個按鈕均 disabled
+4. **Uninstall 確認** — 點擊 `trash-2` 按鈕時顯示行內確認（inline confirm）:
+   - 該列展開確認區: "Uninstall `<plugin_name>`?" + Button/Danger "Confirm"（size `xs`）+ Button/Ghost "Cancel"（size `xs`）
+   - 確認後執行解除安裝，Cancel 恢復原狀
 
 **Bridge API 呼叫**:
 
@@ -884,25 +879,26 @@ const plugins = await window.pywebview.api.list_plugins();
 // category 由 openclaw.plugin.json 的 providers[]/channels[] 欄位推導
 // 安裝方式: 修改 openclaw.json 的 plugins.entries[id]（啟用狀態）、plugins.installs[id]（安裝紀錄）與 plugins.load.paths[]（載入路徑）
 
-// 安裝選取的外掛（非同步，透過回呼更新進度）
-const result = await window.pywebview.api.install_plugins(["discord-bot"]);
+// 安裝單一外掛（逐項操作，非同步）
+const result = await window.pywebview.api.install_plugins(["discord"]);
 // 進度回呼: window.updatePluginProgress(pluginName, status, message)
-// 最終回傳: { success: true, installed: ["discord-bot"], failed: [] }
+// 最終回傳: { success: true, installed: ["discord"], failed: [] }
 
-// 解除安裝選取的外掛
-const result = await window.pywebview.api.uninstall_plugins(["line-bot"]);
+// 解除安裝單一外掛（逐項操作，需使用者確認後呼叫）
+const result = await window.pywebview.api.uninstall_plugins(["line"]);
 // 進度回呼: window.updatePluginProgress(pluginName, status, message)
-// 最終回傳: { success: true, uninstalled: ["line-bot"], failed: [] }
+// 最終回傳: { success: true, uninstalled: ["line"], failed: [] }
 ```
 
 **驗收標準**:
-- [ ] 進入頁面時自動載入外掛清單，已安裝的預設勾選並顯示 "Installed" badge
-- [ ] "Select All" checkbox 正確切換全選/全不選
-- [ ] 勾選後 Action Bar 即時更新已選數量與按鈕啟用狀態
-- [ ] 點擊 "Install Selected" 顯示 Progress Overlay，逐項更新安裝狀態
-- [ ] 點擊 "Uninstall Selected" 顯示確認提示後執行解除安裝
+- [ ] 進入頁面時自動載入外掛清單，已安裝顯示 "Installed" badge + Uninstall 按鈕，未安裝顯示 Install 按鈕
+- [ ] 點擊 Install 按鈕後，該列顯示 spinner + "Installing..."，完成後刷新為 Installed 狀態
+- [ ] 點擊 Uninstall（trash-2）按鈕後，顯示行內確認，確認後執行解除安裝
+- [ ] 已安裝 Channel 外掛（在 CHANNEL_INIT_REGISTRY 中）顯示 Settings 齒輪按鈕
+- [ ] Channel 外掛安裝完成後自動開啟 Channel Init Wizard
+- [ ] 操作進行中時，其他外掛的操作按鈕 disabled
 - [ ] 安裝/解除安裝完成後自動刷新外掛清單狀態
-- [ ] 任一外掛安裝失敗時顯示錯誤訊息，其餘外掛繼續執行
+- [ ] 安裝失敗時該列顯示錯誤訊息，其餘外掛不受影響
 
 #### 4.7.1 Channel Init Wizard（Channel 初始化精靈）
 
@@ -911,8 +907,8 @@ const result = await window.pywebview.api.uninstall_plugins(["line-bot"]);
 
 **觸發方式**:
 
-1. **安裝後觸發**: Install Plugins 的 Progress Overlay 中，當 Channel 外掛安裝完成（allDone），在 "Done" 按鈕旁顯示 "Configure `<channel_label>`" Button/Primary（`settings` icon），點擊開啟該 Channel 的初始化精靈。僅對有定義初始化流程的 Channel 外掛顯示（由前端 `CHANNEL_INIT_REGISTRY` 判斷）。
-2. **Re-entry 觸發**: 外掛列表中，已安裝且有初始化定義的 Channel 外掛行，"Installed" badge 右側顯示 "Configure" Button/Ghost（`settings` icon, 28px 高），點擊可重新進入精靈修改設定。
+1. **安裝後自動觸發**: 當 Channel 外掛安裝完成（`updatePluginProgress` 回報 `done`），前端自動開啟該 Channel 的初始化精靈。僅對有定義初始化流程的 Channel 外掛觸發（由前端 `CHANNEL_INIT_REGISTRY` 判斷）。
+2. **Re-entry 觸發**: 外掛列表中，已安裝且有初始化定義的 Channel 外掛行，Action 區塊的 `settings` Button/Ghost（28px 高），點擊可重新進入精靈修改設定。
 
 **UI 結構 — Modal Overlay**:
 
@@ -1142,8 +1138,8 @@ window.setChannelInitDmPolicy = function(value) { /* 更新 channelInitState.dmP
 ```
 
 **驗收標準**:
-- [ ] Channel 外掛安裝完成後，Progress Overlay 顯示 "Configure `<label>`" 按鈕
-- [ ] 已安裝 Channel 外掛列表行顯示 "Configure" 齒輪按鈕
+- [ ] Channel 外掛安裝完成後，自動開啟 Channel Init Wizard
+- [ ] 已安裝 Channel 外掛列表行顯示 `settings` 齒輪按鈕（僅 CHANNEL_INIT_REGISTRY 中的外掛）
 - [ ] 點擊 Configure 開啟 Modal 精靈，Step Indicator 正確渲染 3 步驟
 - [ ] Step 1: 金鑰欄位正確驗證（全新: 必填；Re-entry: 可為空保留現有值）
 - [ ] Step 1: Eye toggle 正確切換密碼/明文顯示
