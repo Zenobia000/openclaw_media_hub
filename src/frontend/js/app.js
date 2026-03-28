@@ -389,10 +389,12 @@ function renderCheckCard({ icon, iconColor = "text-status-info", name, version, 
 /* ---------- 5.6 區段面板 ---------- */
 
 /** 渲染區段面板（圖示、標題、內容） */
-function renderSectionPanel({ icon, iconColor = "text-accent-primary", title, description, children = "", id }) {
+function renderSectionPanel({ icon, iconColor = "text-accent-primary", title, description, children = "", id, flexFill = false }) {
   const idAttr = id ? `id="${id}"` : "";
-  return `<div ${idAttr} class="bg-bg-card border border-border-default rounded-md">
-    <div class="px-5 pt-5 pb-4 flex items-start gap-3">
+  const outerFlex = flexFill ? " flex-1 min-h-0 flex flex-col" : "";
+  const innerFlex = flexFill ? " flex-1 min-h-0 flex flex-col" : "";
+  return `<div ${idAttr} class="bg-bg-card border border-border-default rounded-md${outerFlex}">
+    <div class="px-5 pt-5 pb-4 flex items-start gap-3 flex-shrink-0">
       <div class="w-9 h-9 rounded-sm bg-bg-input flex items-center justify-center flex-shrink-0 mt-0.5">
         <i data-lucide="${icon}" class="w-[18px] h-[18px] ${iconColor}"></i>
       </div>
@@ -401,7 +403,7 @@ function renderSectionPanel({ icon, iconColor = "text-accent-primary", title, de
         ${description ? `<p class="text-[13px] text-text-secondary mt-0.5">${esc(description)}</p>` : ""}
       </div>
     </div>
-    <div class="px-5 pb-5">${children}</div>
+    <div class="px-5 pb-5${innerFlex}">${children}</div>
   </div>`;
 }
 
@@ -585,10 +587,11 @@ function createChecklistPage(cfg) {
       title: cfg.panelTitle,
       description: cfg.panelDescription,
       id: cfg.panelId,
+      flexFill: true,
       children: renderTabs() + renderList(),
     });
 
-    renderInto(cfg.contentId, bannerHtml + checklistHtml);
+    renderInto(cfg.contentId, `<div class="flex-shrink-0">${bannerHtml}</div>` + checklistHtml);
     renderActionBar();
   }
 
@@ -603,7 +606,7 @@ function createChecklistPage(cfg) {
       return `<div class="${tabCls(ps.tab === t.key)}" onclick="${cfg.switchTabFn}('${t.key}')">${t.label} (${count})</div>`;
     }).join("");
 
-    return `<div class="flex border-b border-border-default mb-3">${tabs}</div>`;
+    return `<div class="flex border-b border-border-default mb-3 flex-shrink-0">${tabs}</div>`;
   }
 
   // 渲染清單
@@ -618,7 +621,7 @@ function createChecklistPage(cfg) {
     const allIds = filtered.map(getId);
     const allSelected = allIds.length > 0 && allIds.every(id => ps.selected.has(id));
 
-    const selectAllHtml = `<div class="flex items-center gap-3 px-4 py-2.5 border-b border-border-default">
+    const selectAllHtml = `<div class="flex items-center gap-3 px-4 py-2.5 border-b border-border-default flex-shrink-0">
       <input type="checkbox" ${allSelected ? "checked" : ""}
         class="w-4 h-4 rounded accent-accent-primary cursor-pointer"
         onchange="${cfg.toggleAllFn}()" id="${cfg.panelId}-select-all" />
@@ -626,7 +629,7 @@ function createChecklistPage(cfg) {
     </div>`;
 
     const rowsHtml = filtered.map(item => renderRow(item)).join("");
-    return selectAllHtml + `<div class="max-h-[420px] overflow-y-auto">${rowsHtml}</div>`;
+    return selectAllHtml + `<div class="flex-1 min-h-0 overflow-y-auto">${rowsHtml}</div>`;
   }
 
   // 渲染單列

@@ -88,7 +88,15 @@ Root (SPA - Single Page Application)
     ```
   - **Action Bar 固定規則**: Action Bar 不隨內容捲動，始終固定於主內容區底部，上方以 `1px solid border-default` 分隔線區隔
   - **捲動提示**: CSS 已定義 `.scroll-fade` class（`4px` 漸層淡出 `linear-gradient(transparent, bg-primary)`），可選擇性套用至 scroll-area 容器暗示可繼續捲動（目前未啟用）
-  - **不適用頁面**: Dashboard、Environment、Configuration Step 3 等內容未溢出的頁面維持現有非捲動佈局；Deploy Skills / Install Plugins / Fix Plugins 的列表面板以獨立 `overflow-y: auto` 處理內部捲動
+  - **不適用頁面**: Dashboard、Environment、Configuration Step 3 等內容未溢出的頁面維持現有非捲動佈局
+  - **列表頁面（Deploy Skills / Install Plugins / Fix Plugins）**: 這些頁面的 main-content 設定 `overflow: hidden`（不捲動），列表面板（skPanel / plPanel）以 `flex: 1; overflow-y: auto` 獨立處理內部捲動。在預設視窗尺寸 `1280 × 800` 下，頁面最外層不顯示捲軸：
+    ```
+    main-content (flex: 1, vertical, overflow: hidden)
+    ├── Header
+    ├── Summary Banner
+    ├── Checklist Panel (flex: 1, overflow-y: auto ← 僅此區域可捲動)
+    └── Action Bar (固定底部, border-top: 1px)
+    ```
 
 ### 3.2 Design Tokens
 
@@ -726,7 +734,7 @@ function stopPolling() {
      - 標題: "No skills deployed yet"
      - 描述: "Select skills below and click Deploy to get started"
 
-3. **Skills Checklist 區塊** (SectionPanel)
+3. **Skills Checklist 區塊** (SectionPanel) — `flex: 1; overflow-y: auto`（頁面內唯一可捲動區域）
    - Icon: `zap`（`accent-primary`）, 標題: "Available Skills"
    - 描述: "Scanned from module_pack/ (custom modules) and openclaw/skills/ (community skills)"
    - **Tab 切換列**: 頂部，2 個 Tab:
@@ -819,7 +827,7 @@ const result = await window.pywebview.api.remove_skills(["google-search"]);
      - 標題: "No plugins installed yet"
      - 描述: "Select plugins below and click Install to get started"
 
-3. **Plugins Checklist 區塊** (SectionPanel)
+3. **Plugins Checklist 區塊** (SectionPanel) — `flex: 1; overflow-y: auto`（頁面內唯一可捲動區域）
    - Icon: `puzzle`（`accent-secondary`）, 標題: "Available Plugins"
    - 描述: "Extensions from openclaw/extensions/ — install by modifying openclaw.json plugins config"
    - **分類 Tab 列**: 頂部，4 個 Tab:
