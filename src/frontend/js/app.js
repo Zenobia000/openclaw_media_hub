@@ -727,11 +727,29 @@ function createChecklistPage(cfg) {
     updatePanelContent(cfg.panelId, itemsHtml);
   }
 
+  // 取得清單滾動容器與位置
+  function getListScrollState() {
+    const panel = document.getElementById(cfg.panelId);
+    if (!panel) return null;
+    const scrollable = panel.querySelector(".overflow-y-auto");
+    return scrollable ? { el: scrollable, top: scrollable.scrollTop } : null;
+  }
+
+  // 更新面板內容並保留滾動位置
+  function updatePanelPreserveScroll() {
+    const scroll = getListScrollState();
+    updatePanelContent(cfg.panelId, renderTabs() + renderList());
+    if (scroll) {
+      const newScrollable = document.getElementById(cfg.panelId)?.querySelector(".overflow-y-auto");
+      if (newScrollable) newScrollable.scrollTop = scroll.top;
+    }
+  }
+
   // 切換選取
   function toggle(id) {
     if (ps.busy) return;
     ps.selected.has(id) ? ps.selected.delete(id) : ps.selected.add(id);
-    updatePanelContent(cfg.panelId, renderTabs() + renderList());
+    updatePanelPreserveScroll();
     renderActionBar();
   }
 
@@ -746,7 +764,7 @@ function createChecklistPage(cfg) {
     if (allSelected) allIds.forEach(id => ps.selected.delete(id));
     else allIds.forEach(id => ps.selected.add(id));
 
-    updatePanelContent(cfg.panelId, renderTabs() + renderList());
+    updatePanelPreserveScroll();
     renderActionBar();
   }
 
