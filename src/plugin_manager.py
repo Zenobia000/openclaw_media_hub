@@ -197,6 +197,7 @@ class PluginManager:
             try:
                 entries[pid] = {"enabled": True}
                 installs[pid] = {
+                    "source": "path",
                     "installedAt": datetime.now(timezone.utc).isoformat(),
                     "installPath": f"~/.openclaw/extensions/{pid}",
                 }

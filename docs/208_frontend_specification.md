@@ -896,6 +896,259 @@ const result = await window.pywebview.api.uninstall_plugins(["line-bot"]);
 - [ ] 安裝/解除安裝完成後自動刷新外掛清單狀態
 - [ ] 任一外掛安裝失敗時顯示錯誤訊息，其餘外掛繼續執行
 
+#### 4.7.1 Channel Init Wizard（Channel 初始化精靈）
+
+**User Story (US-006b)**:
+> 身為使用者，我想要在安裝 Channel 外掛後，透過引導式精靈完成該 Channel 的金鑰、Webhook 與存取政策設定，以便 Channel 能立即運作，不需手動編輯設定檔。
+
+**觸發方式**:
+
+1. **安裝後觸發**: Install Plugins 的 Progress Overlay 中，當 Channel 外掛安裝完成（allDone），在 "Done" 按鈕旁顯示 "Configure `<channel_label>`" Button/Primary（`settings` icon），點擊開啟該 Channel 的初始化精靈。僅對有定義初始化流程的 Channel 外掛顯示（由前端 `CHANNEL_INIT_REGISTRY` 判斷）。
+2. **Re-entry 觸發**: 外掛列表中，已安裝且有初始化定義的 Channel 外掛行，"Installed" badge 右側顯示 "Configure" Button/Ghost（`settings` icon, 28px 高），點擊可重新進入精靈修改設定。
+
+**UI 結構 — Modal Overlay**:
+
+Modal 為全螢幕半透明遮罩（`position: fixed`, `inset: 0`, `z-[9998]`, `bg-black/50`），內含居中卡片（`max-w-2xl`, `bg-bg-primary`, `rounded-xl`, `shadow-2xl`, `max-h-[90vh]`, `overflow-y: auto`）:
+
+```
++-----------------------------------------------------------+
+|  [X close]                                                |
+|                                                           |
+|  <icon> <Channel Label> Channel Setup     [Step X of Y]  |
+|                                                           |
+|  Step Indicator: (1)──(2)──(3)                            |
+|                                                           |
+|  +-------------------------------------------------------+|
+|  | SectionPanel: Step-specific content                   ||
+|  |                                                       ||
+|  +-------------------------------------------------------+|
+|                                                           |
+|  [Back]                              [Next / Save & Done] |
++-----------------------------------------------------------+
+```
+
+1. **Modal Header**
+   - 左側: Channel Icon（品牌色圓形，32px）+ Channel Label + "Channel Setup"（20px, 700, `text-primary`）
+   - 右側: "Step X of Y" 文字（14px, `text-muted`）+ 關閉按鈕（`x` icon, 20px, `text-muted`, hover `text-primary`）
+
+2. **Step Indicator**
+   - 水平排列，居中，與 Configuration 頁 Step Indicator 共用 `renderStepIndicator()` 元件
+   - 步驟名稱由 `CHANNEL_INIT_REGISTRY[channel].steps[]` 定義
+   - 完成步驟: 綠色圓 + 白色 `check` icon；當前步驟: `accent-primary` 圓 + 白色數字；未來步驟: `border-default` 圓 + `text-muted` 數字
+
+3. **Step Content Area** — SectionPanel, padding `24px`, 內容依步驟切換
+
+4. **Footer Action Bar**
+   - 左側: "Back" Button/Ghost — Step 1 時 hidden
+   - 右側:
+     - Step 1~(N-1): "Next" Button/Primary（`arrow-right` icon）— 驗證通過時 enabled
+     - Step N (最後): "Save & Complete" Button/Primary（`check` icon）— 儲存中顯示 spinner
+
+---
+
+**LINE 初始化精靈 — 步驟內容**:
+
+**Step 1: Credentials（金鑰輸入）**
+
+1. **Info Banner** — 藍色底 (`#3b82f610`)，藍色邊框 (`#3b82f630`)，`info` icon
+   - 標題: "LINE Messaging API Credentials"
+   - 描述: "You'll need a Channel Access Token and Channel Secret from the LINE Developers Console."
+   - 連結文字: "Open LINE Developers Console →"（外部連結至 `https://developers.line.biz/console/`）
+
+2. **Credential Fields** — 垂直排列, gap `16px`
+   - 每個 field 結構:
+     - Label（14px, 600, `text-primary`）
+     - Input（type `password`, `w-full`, `h-10`, `bg-bg-input`, `border-border-default`, `rounded-lg`, `px-3`）
+       - Placeholder: "Enter Channel Access Token" / "Enter Channel Secret"
+       - 右側: Eye toggle icon（`eye` / `eye-off`），點擊切換明文/密碼顯示
+     - **Re-entry 已有值時**: Input 顯示 masked preview（`••••••••...{後4碼}`），placeholder 改為 "Leave blank to keep current value"；該 field 不再 required
+
+3. **Help Accordion** — 可展開/收合, 預設收合
+   - Toggle 文字: "How to get these credentials?"（14px, `text-accent-secondary`, `chevron-down` icon）
+   - 展開內容（Numbered List, 14px, `text-secondary`）:
+     1. 前往 LINE Official Account Manager，在「聊天」設定中關閉自動回應訊息
+     2. 點擊「Message API」啟用 Messaging API
+     3. 前往 LINE Developers Console，選擇您的 Provider 與 Messaging API Channel
+     4. 在「Basic settings」複製 Channel Secret
+     5. 在「Messaging API」頁面點擊 Issue 產生 Channel Access Token
+
+4. **驗證邏輯**:
+   - 全新設定: 兩個 field 皆必填，任一為空時 "Next" disabled
+   - Re-entry（has_value = true）: 空值表示保留現有值，"Next" 始終 enabled
+
+---
+
+**Step 2: Webhook Setup（Webhook 設定指引）**
+
+1. **Webhook URL 卡片** — 綠色底 (`#4CAF5015`)，綠色邊框 (`#4CAF5040`)，`link` icon
+   - 標題: "Your Webhook URL"
+   - URL 顯示區: monospace 字型（`font-mono`, 14px, `bg-bg-tertiary`, `rounded-lg`, `p-3`），顯示後端回傳的 `template` URL（如 `https://<your-domain>/line/webhook`）
+   - 右側: "Copy" Button/Ghost（`copy` icon），點擊複製 URL 至剪貼簿並 Toast "Copied!"
+   - 下方附註（12px, `text-muted`）: "Replace `<your-domain>` with your public HTTPS domain or ngrok URL"
+   - 若後端回傳 `local_url`（如 `http://127.0.0.1:18789/line/webhook`），額外顯示:
+     - "Local URL (for testing): `http://127.0.0.1:18789/line/webhook`"（可複製）
+
+2. **Setup Instructions** — SectionPanel, `clipboard-list` icon
+   - 標題: "Setup Steps in LINE Console"
+   - Numbered List（14px, `text-secondary`, 每項 padding `8px 0`, 分隔線間隔）:
+     1. Open LINE Developers Console → select your Messaging API channel
+     2. Go to the **Messaging API** tab
+     3. Paste the Webhook URL above into the **Webhook URL** field
+     4. Click **Verify** to test the connection
+     5. Enable the **Use webhook** toggle
+     6. Go to **Chat settings** in LINE Official Account Manager → disable **Auto-reply messages**
+   - 每項可選配圖示（`external-link` for console links）
+
+3. **此步驟為指引性質，無使用者輸入，"Next" 始終 enabled**
+
+---
+
+**Step 3: DM Policy & Complete（存取政策 + 儲存）**
+
+1. **DM Policy Selector** — SectionPanel, `shield` icon
+   - 標題: "Direct Message Policy"
+   - 描述: "Control who can send direct messages to your LINE bot"（14px, `text-secondary`）
+   - **Radio Card 列表**: 垂直排列, gap `8px`
+     - 每張卡片結構（水平 Flexbox, `p-4`, `rounded-lg`, `border`, `cursor-pointer`）:
+       - Radio input（16px 圓形，選中時 `accent-primary` 填充）
+       - Info 區塊（flex: 1, margin-left `12px`）:
+         - Policy Label（14px, 600, `text-primary`）
+         - Policy Description（12px, 400, `text-secondary`）
+       - 選中卡片: `border-accent-primary`（2px）, `bg-[accent-primary/5]`
+       - 未選中: `border-border-default`（1px）, `bg-bg-primary`
+     - 選項:
+       - **Pairing (Recommended)**: "New users receive a pairing code. Messages are held until an admin approves them via `openclaw pairing approve line <CODE>`."
+       - **Allowlist**: "Only users whose LINE User ID is in the allowlist can send messages. Others are silently ignored."
+       - **Open**: "Any LINE user can send messages directly. No approval required."
+       - **Disabled**: "Direct messages are completely disabled for this channel."
+     - 預設選中: `pairing`
+
+2. **Summary 區塊** — 灰色底 (`bg-bg-secondary`), `rounded-lg`, `p-4`, margin-top `16px`
+   - 標題: "Configuration Summary"（14px, 600）
+   - 列表（12px, `text-secondary`）:
+     - "Channel: LINE"
+     - "Credentials: Channel Access Token + Channel Secret → `.env`"
+     - "DM Policy: `<selected_policy>`"
+     - "Webhook: `<webhook_path>` → configure in LINE Console"
+   - 每項前綴 `check-circle` icon（`text-status-success`）
+
+3. **"Save & Complete" 按鈕**: 點擊後:
+   - 按鈕變為 spinner + "Saving..."（disabled）
+   - 呼叫 `save_channel_config("line", credentials, {dmPolicy: selectedPolicy})`
+   - 成功: Toast "LINE channel configured successfully"（`status-success`）→ 關閉 Modal → 刷新 Install Plugins 列表
+   - 失敗: Toast 顯示錯誤訊息（`status-error`），按鈕恢復 enabled
+
+---
+
+**Bridge API 呼叫**:
+
+```javascript
+// 開啟精靈時載入既有設定
+const config = await window.pywebview.api.get_channel_config("line");
+// 回傳: {
+//   config: { enabled: true, dmPolicy: "pairing" },  // openclaw.json channels.line
+//   credentials: {
+//     LINE_CHANNEL_ACCESS_TOKEN: { has_value: true, preview: "...a1b2" },
+//     LINE_CHANNEL_SECRET: { has_value: true, preview: "...x9y0" },
+//   }
+// }
+// 全新設定時: { config: {}, credentials: { LINE_CHANNEL_ACCESS_TOKEN: { has_value: false, preview: "" }, ... } }
+
+// 取得 Webhook URL
+const webhook = await window.pywebview.api.get_webhook_url("line");
+// 回傳: {
+//   local_url: "http://127.0.0.1:18789/line/webhook",
+//   template: "https://<your-domain>/line/webhook",
+//   path: "/line/webhook",
+//   note: "Use your public HTTPS domain or ngrok URL for production webhook"
+// }
+
+// 儲存 Channel 設定（金鑰 → .env，config → openclaw.json channels.line）
+const result = await window.pywebview.api.save_channel_config("line",
+  { LINE_CHANNEL_ACCESS_TOKEN: "token_value", LINE_CHANNEL_SECRET: "secret_value" },
+  { dmPolicy: "pairing" }
+);
+// 回傳: { success: true, message: "Channel 'line' configured successfully" }
+// Re-entry 保留現有金鑰時: credentials 中該 key 傳空字串或不傳，Backend 跳過不覆寫
+```
+
+**前端狀態管理**:
+
+```javascript
+// Channel 初始化精靈狀態
+const channelInitState = {
+  active: false,         // Modal 是否開啟
+  channelName: null,     // "line", "discord", etc.
+  step: 1,               // 當前步驟 (1-based)
+  fieldValues: {},        // 金鑰欄位值 { "LINE_CHANNEL_ACCESS_TOKEN": "...", ... }
+  dmPolicy: "pairing",   // 選中的 DM Policy
+  saving: false,          // 儲存中
+  webhookUrl: null,       // get_webhook_url() 回傳結果
+  existingCredentials: {},// get_channel_config() 回傳的 credentials
+  existingConfig: {},     // get_channel_config() 回傳的 config
+};
+
+// Channel 初始化 Registry（資料驅動，新增 Channel 只需新增條目）
+const CHANNEL_INIT_REGISTRY = {
+  line: {
+    label: "LINE",
+    icon: "L",
+    iconColor: "#06C755",
+    steps: ["Credentials", "Webhook Setup", "DM Policy"],
+    fields: [
+      { id: "LINE_CHANNEL_ACCESS_TOKEN", label: "Channel Access Token", type: "password", required: true },
+      { id: "LINE_CHANNEL_SECRET", label: "Channel Secret", type: "password", required: true },
+    ],
+    webhookPath: "/line/webhook",
+    webhookInstructions: [
+      "Open LINE Developers Console and select your Messaging API channel",
+      "Go to the Messaging API tab",
+      "Paste the Webhook URL into the Webhook URL field",
+      "Click Verify to test the connection",
+      "Enable the Use webhook toggle",
+      "In LINE Official Account Manager, go to Chat settings and disable Auto-reply messages",
+    ],
+    dmPolicyOptions: [
+      { value: "pairing", label: "Pairing (Recommended)", desc: "New users receive a pairing code, must be approved before chatting" },
+      { value: "allowlist", label: "Allowlist", desc: "Only pre-approved LINE User IDs can send messages" },
+      { value: "open", label: "Open", desc: "Any LINE user can send messages directly" },
+      { value: "disabled", label: "Disabled", desc: "Direct messages are disabled for this channel" },
+    ],
+    defaultDmPolicy: "pairing",
+    consoleUrl: "https://developers.line.biz/console/",
+    docsUrl: "/channels/line",
+  },
+  // 未來擴展: discord: { ... }, telegram: { ... }
+};
+```
+
+**回呼函式**:
+
+```javascript
+// 全域函式綁定
+window.openChannelInitWizard = function(channelName) { /* 開啟 Modal + 載入設定 */ };
+window.closeChannelInitWizard = function() { /* 關閉 Modal + 重置 state */ };
+window.channelInitNav = function(direction) { /* step +1/-1, 含 Step 1 驗證 */ };
+window.saveChannelInit = function() { /* 收集資料 → save_channel_config → Toast → 關閉 */ };
+window.setChannelInitDmPolicy = function(value) { /* 更新 channelInitState.dmPolicy */ };
+```
+
+**驗收標準**:
+- [ ] Channel 外掛安裝完成後，Progress Overlay 顯示 "Configure `<label>`" 按鈕
+- [ ] 已安裝 Channel 外掛列表行顯示 "Configure" 齒輪按鈕
+- [ ] 點擊 Configure 開啟 Modal 精靈，Step Indicator 正確渲染 3 步驟
+- [ ] Step 1: 金鑰欄位正確驗證（全新: 必填；Re-entry: 可為空保留現有值）
+- [ ] Step 1: Eye toggle 正確切換密碼/明文顯示
+- [ ] Step 1: Re-entry 時顯示 masked preview（`...後4碼`）
+- [ ] Step 2: Webhook URL 正確顯示（依 gateway config 計算）
+- [ ] Step 2: Copy 按鈕複製 URL 至剪貼簿
+- [ ] Step 3: DM Policy Radio Cards 正確切換，預設 pairing
+- [ ] Step 3: Summary 正確顯示所有設定摘要
+- [ ] Save & Complete 成功: 金鑰寫入 `.env`、config 寫入 `openclaw.json` `channels.line`、Toast 成功訊息、Modal 關閉
+- [ ] Save & Complete 失敗: 顯示錯誤 Toast，按鈕恢復可用
+- [ ] 關閉 Modal（X 按鈕或遮罩點擊）正確重置狀態
+- [ ] Deep merge: 儲存時不覆蓋 `openclaw.json` 其他區段
+
 ---
 
 ### 4.8 Fix Plugins（外掛修復）
@@ -1256,6 +1509,9 @@ window.updateConnectionStatus = function(status, message) {
 | `get_provider_models()` | `registries.py` | `{provider_name: [{id, name}]}` — 各供應商的可用模型目錄 |
 | `load_env_keys()` | `config_manager.py` | `{providers, channels, models: {primary, selected}}` — 讀取 .env 金鑰 + openclaw.json 模型選擇 |
 | `get_available_channels()` | `plugin_manager.py` | `[{name, fields: [{key, label}], icon, icon_color}]` — 從 extensions 取得可用管道列表 |
+| `get_channel_config(channel_name)` | `bridge.py` / `config_manager.py` | `{config: {enabled, dmPolicy, ...}, credentials: {KEY: {has_value, preview}}}` — 讀取 Channel 既有設定（openclaw.json channels + .env 金鑰存在狀態），用於 Channel Init Wizard 回填 |
+| `save_channel_config(channel_name, credentials, config)` | `bridge.py` / `config_manager.py` | `{success, message}` — 金鑰寫入 .env（chmod 600）+ config 以 deep merge 寫入 openclaw.json channels 區段。空值 credentials 跳過不覆寫（Re-entry 保留現有值） |
+| `get_webhook_url(channel_name)` | `bridge.py` | `{local_url, template, path, note}` — 依 gateway config 計算 Channel Webhook URL |
 | `get_openclaw_config()` | `config_manager.py` | `{meta, agents, channels, gateway, plugins, ...}` — 讀取 openclaw.json |
 | `save_openclaw_config(section, data)` | `config_manager.py` | `{success}` — 寫入 openclaw.json 指定區段（deep merge） |
 | `connect_remote(params)` | `ssh_connection.py` | `{success, server_info: {os, cpu_cores, memory_gb, disk_gb}}` — 建立 SSH 連線並初始化 RemoteExecutor |

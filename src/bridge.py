@@ -229,27 +229,79 @@ class Bridge:
         from src.registries import MODEL_REGISTRY
         return _ok(MODEL_REGISTRY)
 
+    # ── 設定管理 — 共用 helpers ──────────────────────────
+
+    def _read_env(self, config_dir: str) -> dict[str, str]:
+        """讀取目標機器 .env（自動處理 local/remote 分支）。"""
+        env_path = f"{config_dir}/.env"
+        if isinstance(self._executor, RemoteExecutor):
+            try:
+                content = self._run_async(self._executor.read_file(env_path))
+                return ConfigManager.parse_env_content(
+                    content if isinstance(content, str) else content.decode("utf-8")
+                )
+            except Exception:
+                return {}
+        return self._config_manager.read_env(env_path)
+
+    def _write_env(self, config_dir: str, flat: dict[str, str]) -> None:
+        """寫入目標機器 .env（自動處理 local/remote + chmod 600）。"""
+        env_path = f"{config_dir}/.env"
+        if isinstance(self._executor, RemoteExecutor):
+            try:
+                raw = self._run_async(self._executor.read_file(env_path))
+                text = raw if isinstance(raw, str) else raw.decode("utf-8")
+            except Exception:
+                text = ""
+            existing = ConfigManager.parse_env_content(text)
+            existing.update(flat)
+            new_content = "\n".join(f"{k}={v}" for k, v in existing.items()) + "\n"
+            self._run_async(self._executor.write_file(env_path, new_content))
+            self._run_async(self._executor.run_command(["chmod", "600", env_path]))
+        else:
+            self._config_manager.write_env(env_path, flat)
+
+    def _read_openclaw_json(self, config_dir: str) -> dict:
+        """讀取目標機器 openclaw.json（自動處理 local/remote 分支）。"""
+        if isinstance(self._executor, RemoteExecutor):
+            oc_path = f"{config_dir}/openclaw.json"
+            try:
+                raw = self._run_async(self._executor.read_file(oc_path))
+                oc_text = raw if isinstance(raw, str) else raw.decode("utf-8")
+                return json.loads(oc_text)
+            except Exception:
+                return {}
+        return self._config_manager.read_openclaw_config(config_dir)
+
+    def _write_openclaw_section(self, config_dir: str, data: dict, section: str) -> None:
+        """寫入目標機器 openclaw.json 指定 section（deep merge, local/remote）。"""
+        from src.config_manager import _deep_merge
+
+        if isinstance(self._executor, RemoteExecutor):
+            oc_path = f"{config_dir}/openclaw.json"
+            try:
+                raw = self._run_async(self._executor.read_file(oc_path))
+                oc_text = raw if isinstance(raw, str) else raw.decode("utf-8")
+            except Exception:
+                oc_text = "{}"
+            oc_existing = json.loads(oc_text)
+            oc_existing[section] = _deep_merge(
+                oc_existing.get(section, {}), data,
+            )
+            new_oc = json.dumps(oc_existing, indent=2, ensure_ascii=False)
+            self._run_async(self._executor.write_file(oc_path, new_oc))
+        else:
+            self._config_manager.write_openclaw_config(config_dir, data, section)
+
     # ── 設定管理 ────────────────────────────────────────
 
     @_bridge_api
     def load_env_keys(self) -> dict:
         """從目標機器 .env 讀取 API 金鑰，依 registry 分類回傳。"""
-        from src.config_manager import ConfigManager
         from src.registries import CHANNEL_REGISTRY, PROVIDER_REGISTRY, TOOL_REGISTRY
 
-        env_path = f"{self._get_config_dir()}/.env"
-
-        # 依 Executor 類型讀取 .env
-        if isinstance(self._executor, RemoteExecutor):
-            try:
-                content = self._run_async(self._executor.read_file(env_path))
-                env_data = ConfigManager.parse_env_content(
-                    content if isinstance(content, str) else content.decode("utf-8")
-                )
-            except Exception:
-                env_data = {}
-        else:
-            env_data = self._config_manager.read_env(env_path)
+        config_dir = self._get_config_dir()
+        env_data = self._read_env(config_dir)
 
         if not env_data:
             result: dict = {"providers": {}, "channels": {}, "tools": {}}
@@ -269,18 +321,8 @@ class Bridge:
                     result["tools"][key] = value
 
         # 讀取 openclaw.json 中的模型選擇
-        import json as _json
-
         try:
-            config_dir = self._get_config_dir()
-            if isinstance(self._executor, RemoteExecutor):
-                oc_path = f"{config_dir}/openclaw.json"
-                raw = self._run_async(self._executor.read_file(oc_path))
-                oc_text = raw if isinstance(raw, str) else raw.decode("utf-8")
-                oc_data = _json.loads(oc_text)
-            else:
-                oc_data = self._config_manager.read_openclaw_config(config_dir)
-
+            oc_data = self._read_openclaw_json(config_dir)
             defaults = oc_data.get("agents", {}).get("defaults", {})
             result["models"] = {
                 "primary": defaults.get("model", {}).get("primary"),
@@ -305,10 +347,6 @@ class Bridge:
     @_bridge_api
     def save_keys(self, keys: dict) -> dict:
         """儲存 API 金鑰至目標機器 .env (ADR-005)。"""
-        import json as _json
-
-        from src.config_manager import ConfigManager, _deep_merge
-
         flat: dict[str, str] = {}
         for category in ("providers", "channels", "tools"):
             for k, v in keys.get(category, {}).items():
@@ -316,24 +354,11 @@ class Bridge:
                     flat[k] = v
 
         config_dir = self._get_config_dir()
-        env_path = f"{config_dir}/.env"
         saved_count = 0
 
         # ── .env 金鑰寫入 ──
         if flat:
-            if isinstance(self._executor, RemoteExecutor):
-                try:
-                    raw = self._run_async(self._executor.read_file(env_path))
-                    text = raw if isinstance(raw, str) else raw.decode("utf-8")
-                except Exception:
-                    text = ""
-                existing = ConfigManager.parse_env_content(text)
-                existing.update(flat)
-                new_content = "\n".join(f"{k}={v}" for k, v in existing.items()) + "\n"
-                self._run_async(self._executor.write_file(env_path, new_content))
-                self._run_async(self._executor.run_command(["chmod", "600", env_path]))
-            else:
-                self._config_manager.write_env(env_path, flat)
+            self._write_env(config_dir, flat)
             saved_count = len(flat)
 
         # ── 模型選擇寫入 openclaw.json ──
@@ -345,23 +370,7 @@ class Bridge:
                     "models": model_selection.get("models", {}),
                 },
             }
-            if isinstance(self._executor, RemoteExecutor):
-                oc_path = f"{config_dir}/openclaw.json"
-                try:
-                    raw = self._run_async(self._executor.read_file(oc_path))
-                    oc_text = raw if isinstance(raw, str) else raw.decode("utf-8")
-                except Exception:
-                    oc_text = "{}"
-                oc_existing = _json.loads(oc_text)
-                oc_existing["agents"] = _deep_merge(
-                    oc_existing.get("agents", {}), agents_data,
-                )
-                new_oc = _json.dumps(oc_existing, indent=2, ensure_ascii=False)
-                self._run_async(self._executor.write_file(oc_path, new_oc))
-            else:
-                self._config_manager.write_openclaw_config(
-                    config_dir, agents_data, "agents",
-                )
+            self._write_openclaw_section(config_dir, agents_data, "agents")
 
         return _ok({"saved_count": saved_count})
 
@@ -375,6 +384,88 @@ class Bridge:
         """更新 openclaw.json 指定 section（deep merge）。"""
         self._config_manager.write_openclaw_config(config_dir, data, section)
         return _ok({"message": f"Section '{section}' updated"})
+
+    # ── Channel 初始化 ─────────────────────────────────
+
+    @_bridge_api
+    def get_channel_config(self, channel_name: str) -> dict:
+        """讀取 Channel 既有設定（openclaw.json + .env 金鑰存在狀態）。"""
+        from src.registries import CHANNEL_REGISTRY
+
+        config_dir = self._get_config_dir()
+
+        # 讀取 openclaw.json channels.<name>
+        oc_data = self._read_openclaw_json(config_dir)
+        channel_config = oc_data.get("channels", {}).get(channel_name, {})
+
+        # 讀取 .env 中對應金鑰的存在狀態（僅 has_value + 末 4 碼 preview）
+        channel_def = next(
+            (c for c in CHANNEL_REGISTRY if c["name"] == channel_name), None,
+        )
+        credentials: dict[str, dict] = {}
+        if channel_def:
+            env_data = self._read_env(config_dir)
+            for field in channel_def.get("fields", []):
+                key = field["key"]
+                val = env_data.get(key, "")
+                credentials[key] = {
+                    "has_value": bool(val.strip()),
+                    "preview": f"...{val[-4:]}" if len(val) > 4 else ("****" if val else ""),
+                }
+
+        return _ok({"config": channel_config, "credentials": credentials})
+
+    @_bridge_api
+    def save_channel_config(
+        self, channel_name: str, credentials: dict, config: dict,
+    ) -> dict:
+        """儲存 Channel 金鑰至 .env + config 至 openclaw.json channels 區段。"""
+        config_dir = self._get_config_dir()
+
+        # 寫入 .env（僅非空值，空值表示保留現有）
+        flat = {k: v for k, v in credentials.items() if v}
+        if flat:
+            self._write_env(config_dir, flat)
+
+        # 寫入 openclaw.json channels.<name>（deep merge）
+        channel_data = {channel_name: {**config, "enabled": True}}
+        self._write_openclaw_section(config_dir, channel_data, "channels")
+
+        return _ok({"message": f"Channel '{channel_name}' configured successfully"})
+
+    @_bridge_api
+    def get_webhook_url(self, channel_name: str) -> dict:
+        """依 gateway config 計算 Channel Webhook URL。"""
+        config_dir = self._get_config_dir()
+        oc_data = self._read_openclaw_json(config_dir)
+        gateway = oc_data.get("gateway", {})
+
+        port = gateway.get("port", self._DEFAULT_GATEWAY_PORT)
+        bind_mode = gateway.get("bind", "loopback")
+        tls_enabled = gateway.get("tls", {}).get("enabled", False)
+        scheme = "https" if tls_enabled else "http"
+
+        host = (gateway.get("customBindHost", "0.0.0.0")
+                if bind_mode == "custom"
+                else self._BIND_HOSTS.get(bind_mode, "127.0.0.1"))
+        if host == "0.0.0.0":
+            host = "127.0.0.1"
+
+        webhook_paths = {
+            "line": "/line/webhook",
+            "discord": "/discord/interactions",
+            "telegram": "/telegram/webhook",
+            "slack": "/slack/events",
+            "whatsapp": "/whatsapp/webhook",
+        }
+        path = webhook_paths.get(channel_name, f"/{channel_name}/webhook")
+
+        return _ok({
+            "local_url": f"{scheme}://{host}:{port}{path}",
+            "template": f"https://<your-domain>{path}",
+            "path": path,
+            "note": "Use your public HTTPS domain or ngrok URL for production webhook",
+        })
 
     # ── 初始化 ──────────────────────────────────────────
 

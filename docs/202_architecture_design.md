@@ -107,6 +107,16 @@ graph TD
   - User 點擊「部署技能」→ Frontend 呼叫 Bridge API `list_skills()` → Backend `skill_manager.py` 掃描兩個來源：`module_pack/`（自訂業務模組）與 `openclaw/skills/`（社群技能），解析 SKILL.md YAML frontmatter（name, description, metadata.openclaw.emoji）→ 回傳可選技能清單 `[{name, emoji, description, installed, source}]` → Frontend 渲染分類勾選清單 → User 勾選後送出 → Backend 執行 `shutil.copytree` 部署至 `~/.openclaw/workspace/skills/` 或 `shutil.rmtree` 移除 → 回傳部署結果摘要。
 - **外掛安裝資料流 (Install Plugins)**:
   - User 點擊「安裝外掛」→ Frontend 呼叫 Bridge API `list_plugins()` → Backend `plugin_manager.py` 掃描 `openclaw/extensions/` 目錄並讀取每個 `openclaw.plugin.json`（取得 id, channels[], providers[], providerAuthEnvVars 分類資訊）→ 回傳可選外掛清單（按 Model Providers / Channels / Tools / Infrastructure 分類）→ Frontend 渲染分類勾選清單 → User 勾選後送出 → Backend 修改 `openclaw.json` 的 `plugins.entries[id]`（啟用狀態）、`plugins.installs[id]`（安裝紀錄）與 `plugins.load.paths[]`（載入路徑）區段 → 回傳安裝結果摘要。
+- **Channel 初始化資料流 (Channel Init Wizard)**:
+  - **觸發**：Channel 類型外掛安裝完成後，Progress Overlay 顯示「Configure」CTA 按鈕；或於外掛列表中已安裝 Channel 行的「Configure」按鈕觸發。
+  - **載入既有設定**：Frontend 呼叫 `get_channel_config(channel_name)` → Backend 讀取 `openclaw.json` 的 `channels.<name>` 區段 + `.env` 中對應金鑰的存在狀態（僅回傳 `has_value` + 末 4 碼 preview，不回傳完整值）→ Frontend 回填表單。
+  - **取得 Webhook URL**：Frontend 呼叫 `get_webhook_url(channel_name)` → Backend 依據 `openclaw.json` gateway 設定（port, tls, bind）組合本機 URL + 公開 URL 範本 → 回傳 `{local_url, template, path, note}`。
+  - **儲存設定**：User 於精靈中輸入金鑰與選擇 DM Policy → Frontend 呼叫 `save_channel_config(channel_name, credentials, config)` → Backend 將金鑰寫入 `.env`（chmod 600，本機模式透過 `ConfigManager.write_env()`，SSH 模式透過 `RemoteExecutor.write_file()`）+ 將 channel config（`enabled: true`, `dmPolicy` 等）以 deep merge 寫入 `openclaw.json` 的 `channels.<name>` 區段 → 回傳 `{success, message}`。
+  - **LINE 具體流程**（3 步驟）：
+    1. **Credentials**：輸入 `LINE_CHANNEL_ACCESS_TOKEN`（寫入 `.env`）+ `LINE_CHANNEL_SECRET`（寫入 `.env`）。
+    2. **Webhook Setup**：顯示計算後的 Webhook URL（`https://<domain>/line/webhook`）+ LINE Developers Console 設定指引（啟用 Messaging API、貼入 Webhook URL、開啟 Use webhook、關閉自動回應）。
+    3. **DM Policy**：選擇 `dmPolicy`（`pairing` | `allowlist` | `open` | `disabled`，預設 `pairing`）→ 寫入 `openclaw.json` `channels.line.dmPolicy`。
+  - **設計決策**：Channel 金鑰統一儲存於 `.env`（與 Configuration Step 2 一致，ADR-005），Channel 特定設定（`enabled`, `dmPolicy`）儲存於 `openclaw.json` `channels` 區段。精靈以 Modal Overlay 呈現，不離開 Install Plugins 頁面。每個 Channel 的步驟定義由前端 `CHANNEL_INIT_REGISTRY` 資料結構驅動，新增 Channel 只需增加 registry 條目。
 - **服務啟停資料流 (Start/Stop)**:
   - User 點擊啟動/停止按鈕 → Frontend 呼叫 Bridge API `start_service()` / `stop_service()` → Backend `service_controller.py` 透過 Executor 介面執行服務控制指令 — 本機模式由 `LocalExecutor` 呼叫 `subprocess`，遠端模式由 `RemoteExecutor` 透過 SSH 執行 → 回傳結構化結果 `{success, message}` → Frontend 更新服務狀態指示燈。
 - **金鑰儲存資料流** (ADR-005):
