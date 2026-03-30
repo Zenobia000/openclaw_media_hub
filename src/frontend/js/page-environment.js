@@ -22,15 +22,15 @@ function renderSummaryBanner(checks, envFile, lastChecked) {
   const passed = checks.filter(c => c.installed).length;
   const total = checks.length;
   const allPassed = passed === total && envFile.exists;
-  const envText = envFile.exists ? ".env file verified" : ".env file missing";
+  const envText = envFile.exists ? t("env.env_verified") : t("env.env_missing");
 
   if (allPassed) {
     return `<div class="flex items-center justify-between rounded-md p-4 border" style="background: #4CAF5015; border-color: #4CAF5040;">
       <div class="flex items-center gap-3">
         <i data-lucide="check-circle" class="w-5 h-5 text-status-success flex-shrink-0"></i>
         <div>
-          <div class="text-sm font-semibold text-status-success">All checks passed — environment is ready</div>
-          <div class="text-xs text-text-secondary mt-0.5">${passed} of ${total} software checks passed \u00b7 ${esc(envText)}</div>
+          <div class="text-sm font-semibold text-status-success">${t("env.all_passed")}</div>
+          <div class="text-xs text-text-secondary mt-0.5">${t("env.x_of_y_passed", { passed, total })} \u00b7 ${esc(envText)}</div>
         </div>
       </div>
       <span class="text-xs text-text-muted">${esc(lastChecked)}</span>
@@ -42,8 +42,8 @@ function renderSummaryBanner(checks, envFile, lastChecked) {
     <div class="flex items-center gap-3">
       <i data-lucide="alert-circle" class="w-5 h-5 text-status-error flex-shrink-0"></i>
       <div>
-        <div class="text-sm font-semibold text-status-error">${failCount} check${failCount > 1 ? "s" : ""} failed — action required</div>
-        <div class="text-xs text-text-secondary mt-0.5">${passed} of ${total} passed \u00b7 ${esc(envText)}</div>
+        <div class="text-sm font-semibold text-status-error">${t("env.checks_failed", { count: failCount })}</div>
+        <div class="text-xs text-text-secondary mt-0.5">${t("env.x_of_y_passed", { passed, total })} \u00b7 ${esc(envText)}</div>
       </div>
     </div>
     <span class="text-xs text-text-muted">${esc(lastChecked)}</span>
@@ -62,13 +62,13 @@ function renderChecksGrid(checks) {
 /** 渲染 .env 檔案檢查卡片 */
 function renderEnvFileCard(envFile) {
   const status = envFile.exists ? "success" : "error";
-  const badgeText = envFile.exists ? "Verified" : "Missing";
+  const badgeText = envFile.exists ? t("status.verified") : t("status.missing");
   return `<div class="bg-bg-card border border-border-default rounded-md p-4 flex items-center gap-3">
     <div class="w-9 h-9 rounded-sm bg-bg-input flex items-center justify-center flex-shrink-0">
       <i data-lucide="file-text" class="w-[18px] h-[18px] text-accent-secondary"></i>
     </div>
     <div class="flex-1 min-w-0">
-      <div class="text-sm font-semibold">.env Configuration File</div>
+      <div class="text-sm font-semibold">${t("env.env_file_title")}</div>
       <div class="text-xs text-text-muted mt-0.5">${esc(envFile.message)}</div>
     </div>
     ${renderStatusBadge({ status, text: badgeText })}
@@ -90,7 +90,7 @@ function renderErrorGuidance(checks) {
     <div class="flex items-start gap-3">
       <i data-lucide="alert-circle" class="w-5 h-5 text-status-error flex-shrink-0 mt-0.5"></i>
       <div>
-        <div class="text-sm font-semibold text-status-error">Action Required</div>
+        <div class="text-sm font-semibold text-status-error">${t("env.action_required")}</div>
         <ul class="mt-2 space-y-1.5 list-disc list-inside">${items}</ul>
       </div>
     </div>
@@ -99,12 +99,12 @@ function renderErrorGuidance(checks) {
 
 registerPage("environment", {
   onEnter: async () => {
-    renderInto("environment-content", renderLoading("Running environment checks..."));
+    renderInto("environment-content", renderLoading(t("loading.env_check")));
 
     // 注入模式標籤
     const badgeEl = document.getElementById("env-mode-badge");
     if (badgeEl && state.currentMode) {
-      badgeEl.innerHTML = renderStatusBadge({ status: "info", text: MODE_LABELS[state.currentMode] || state.currentMode });
+      badgeEl.innerHTML = renderStatusBadge({ status: "info", text: getModeLabel(state.currentMode) });
       refreshIcons();
     }
 
@@ -121,7 +121,7 @@ registerPage("environment", {
 
       const { checks, env_file } = result.data;
       renderInto("environment-content", [
-        renderSummaryBanner(checks, env_file, "Last checked: just now"),
+        renderSummaryBanner(checks, env_file, t("env.last_checked", { time: t("env.just_now") })),
         renderChecksGrid(checks),
         renderEnvFileCard(env_file),
         renderErrorGuidance(checks),

@@ -45,19 +45,25 @@ function registerPage(viewId, hooks) {
  * 側邊欄
  * ================================================================= */
 
-const MODE_LABELS = {
-  "docker-windows": "Docker \u00b7 Windows",
-  "docker-linux": "Docker \u00b7 Linux/WSL2",
-  "native-linux": "Native \u00b7 Linux (systemd)",
-  "remote-ssh": "Remote \u00b7 SSH",
+const MODE_LABEL_KEYS = {
+  "docker-windows": "mode.docker_windows",
+  "docker-linux":   "mode.docker_linux",
+  "native-linux":   "mode.native_linux",
+  "remote-ssh":     "mode.remote_ssh",
 };
+
+/** 取得模式顯示名稱 */
+function getModeLabel(mode) {
+  const key = MODE_LABEL_KEYS[mode];
+  return key ? t(key) : (mode || t("common.unknown"));
+}
 
 /** 更新側邊欄模式文字 */
 function updateSidebarMode(mode) {
   state.currentMode = mode;
   window.__currentMode = mode;
   const el = document.getElementById("sidebar-mode");
-  if (el) el.textContent = MODE_LABELS[mode] || mode || "Unknown";
+  if (el) el.textContent = getModeLabel(mode);
 
   const connEl = document.getElementById("sidebar-connection");
   if (connEl) connEl.classList.toggle("hidden", mode !== "remote-ssh");
@@ -70,10 +76,10 @@ function updateConnectionStatus(status) {
   if (!dot || !text) return;
 
   const cfg = {
-    connected:    { color: "bg-status-success",   label: "Connected",        pulse: false },
-    disconnected: { color: "bg-status-error",      label: "Disconnected",     pulse: false },
-    connecting:   { color: "bg-accent-secondary",  label: "Connecting...",     pulse: true },
-    error:        { color: "bg-status-error",      label: "Connection Error", pulse: true },
+    connected:    { color: "bg-status-success",   label: t("status.connected"),        pulse: false },
+    disconnected: { color: "bg-status-error",      label: t("status.disconnected"),     pulse: false },
+    connecting:   { color: "bg-accent-secondary",  label: t("status.connecting"),       pulse: true },
+    error:        { color: "bg-status-error",      label: t("status.connection_error"), pulse: true },
   };
   const c = cfg[status] || cfg.disconnected;
   dot.className = `w-2 h-2 rounded-full ${c.color}${c.pulse ? " animate-pulse" : ""}`;

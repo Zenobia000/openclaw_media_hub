@@ -6,50 +6,49 @@
  */
 
 /** 外掛分類與顏色 */
-const PLUGIN_CATEGORIES = [
-  { key: "providers", label: "Providers", color: "#8B5CF6" },
-  { key: "channels",  label: "Channels",  color: "#3B82F6" },
-  { key: "tools",     label: "Tools",     color: "#F59E0B" },
-  { key: "infrastructure", label: "Infrastructure", color: "#10B981" },
-];
+function getPluginCategories() {
+  return [
+    { key: "providers", label: t("plugins.cat_providers"), color: "#8B5CF6" },
+    { key: "channels",  label: t("plugins.cat_channels"),  color: "#3B82F6" },
+    { key: "tools",     label: t("plugins.cat_tools"),     color: "#F59E0B" },
+    { key: "infrastructure", label: t("plugins.cat_infrastructure"), color: "#10B981" },
+  ];
+}
+const PLUGIN_CATEGORIES = getPluginCategories();
 const PLUGIN_COLORS = Object.fromEntries(PLUGIN_CATEGORIES.map(c => [c.key, c.color]));
 
 /** Channel 初始化 Registry（資料驅動，新增 Channel 只需加條目） */
-const CHANNEL_INIT_REGISTRY = {
-  line: {
-    label: "LINE",
-    icon: "L",
-    iconColor: "#06C755",
-    steps: ["Credentials", "Webhook Setup", "DM Policy"],
-    fields: [
-      { id: "LINE_CHANNEL_ACCESS_TOKEN", label: "Channel Access Token", type: "password", required: true },
-      { id: "LINE_CHANNEL_SECRET", label: "Channel Secret", type: "password", required: true },
-    ],
-    webhookInstructions: [
-      "Open LINE Developers Console and select your Messaging API channel",
-      "Go to the Messaging API tab",
-      "Paste the Webhook URL into the Webhook URL field",
-      "Click Verify to test the connection",
-      "Enable the Use webhook toggle",
-      "In LINE Official Account Manager, go to Chat settings and disable Auto-reply messages",
-    ],
-    helpSteps: [
-      "Go to LINE Official Account Manager, disable Auto-reply messages in Chat settings",
-      "Click Message API to enable Messaging API",
-      "Go to LINE Developers Console, select your Provider and Messaging API Channel",
-      "In Basic settings, copy the Channel Secret",
-      "In Messaging API tab, click Issue to generate Channel Access Token",
-    ],
-    dmPolicyOptions: [
-      { value: "pairing", label: "Pairing (Recommended)", desc: "New users receive a pairing code, must be approved before chatting" },
-      { value: "allowlist", label: "Allowlist", desc: "Only pre-approved LINE User IDs can send messages" },
-      { value: "open", label: "Open", desc: "Any LINE user can send messages directly" },
-      { value: "disabled", label: "Disabled", desc: "Direct messages are disabled for this channel" },
-    ],
-    defaultDmPolicy: "pairing",
-    consoleUrl: "https://developers.line.biz/console/",
-  },
-};
+function getChannelInitRegistry() {
+  return {
+    line: {
+      label: "LINE",
+      icon: "L",
+      iconColor: "#06C755",
+      steps: [t("channel.step_credentials"), t("channel.step_webhook"), t("channel.step_dm_policy")],
+      fields: [
+        { id: "LINE_CHANNEL_ACCESS_TOKEN", label: t("channel.line.access_token"), type: "password", required: true },
+        { id: "LINE_CHANNEL_SECRET", label: t("channel.line.secret"), type: "password", required: true },
+      ],
+      webhookInstructions: [
+        t("channel.line.webhook_1"), t("channel.line.webhook_2"), t("channel.line.webhook_3"),
+        t("channel.line.webhook_4"), t("channel.line.webhook_5"), t("channel.line.webhook_6"),
+      ],
+      helpSteps: [
+        t("channel.line.help_1"), t("channel.line.help_2"), t("channel.line.help_3"),
+        t("channel.line.help_4"), t("channel.line.help_5"),
+      ],
+      dmPolicyOptions: [
+        { value: "pairing", label: t("channel.line.dm_pairing"), desc: t("channel.line.dm_pairing_desc") },
+        { value: "allowlist", label: t("channel.line.dm_allowlist"), desc: t("channel.line.dm_allowlist_desc") },
+        { value: "open", label: t("channel.line.dm_open"), desc: t("channel.line.dm_open_desc") },
+        { value: "disabled", label: t("channel.line.dm_disabled"), desc: t("channel.line.dm_disabled_desc") },
+      ],
+      defaultDmPolicy: "pairing",
+      consoleUrl: "https://developers.line.biz/console/",
+    },
+  };
+}
+let CHANNEL_INIT_REGISTRY = getChannelInitRegistry();
 
 /** Channel 初始化精靈狀態 */
 const channelInitState = {
@@ -77,25 +76,26 @@ function createItemListPage(cfg) {
   function renderPage() {
     const activeCount = ps.data.filter(d => d[cfg.installedField]).length;
 
+    const countLabel = typeof cfg.activeCountLabel === "function" ? cfg.activeCountLabel() : cfg.activeCountLabel;
     renderInto(cfg.badgeId,
       activeCount > 0
-        ? renderStatusBadge({ status: "success", text: `${activeCount} ${cfg.activeCountLabel}` })
-        : renderStatusBadge({ status: "info", text: `0 ${cfg.activeCountLabel}` })
+        ? renderStatusBadge({ status: "success", text: `${activeCount} ${countLabel}` })
+        : renderStatusBadge({ status: "info", text: `0 ${countLabel}` })
     );
 
     const bannerHtml = renderCountBanner({
       current: activeCount,
       total: ps.data.length,
-      entityName: `${cfg.entityNamePlural} ${cfg.activeCountLabel}`,
-      activeSubtitle: cfg.activeSubtitle,
-      emptySubtitle: cfg.emptySubtitle,
+      entityName: `${cfg.entityNamePlural} ${countLabel}`,
+      activeSubtitle: typeof cfg.activeSubtitle === "function" ? cfg.activeSubtitle() : cfg.activeSubtitle,
+      emptySubtitle: typeof cfg.emptySubtitle === "function" ? cfg.emptySubtitle() : cfg.emptySubtitle,
     });
 
     const listHtml = renderSectionPanel({
       icon: cfg.icon,
       iconColor: cfg.iconColor,
-      title: cfg.panelTitle,
-      description: cfg.panelDescription,
+      title: typeof cfg.panelTitle === "function" ? cfg.panelTitle() : cfg.panelTitle,
+      description: typeof cfg.panelDescription === "function" ? cfg.panelDescription() : cfg.panelDescription,
       id: cfg.panelId,
       flexFill: true,
       children: renderTabs() + renderList(),
@@ -109,9 +109,10 @@ function createItemListPage(cfg) {
       ? `px-4 py-2 text-sm font-semibold text-${cfg.tabAccentColor} border-b-2 border-${cfg.tabAccentColor} cursor-pointer`
       : "px-4 py-2 text-sm font-medium text-text-muted hover:text-text-primary cursor-pointer";
 
-    const tabs = cfg.tabs.map(t => {
-      const count = ps.data.filter(t.filterFn).length;
-      return `<div class="${tabCls(ps.tab === t.key)}" onclick="${cfg.switchTabFn}('${t.key}')">${t.label} (${count})</div>`;
+    const tabs = cfg.tabs.map(tb => {
+      const count = ps.data.filter(tb.filterFn).length;
+      const label = tb.labelKey ? t(tb.labelKey) : tb.label;
+      return `<div class="${tabCls(ps.tab === tb.key)}" onclick="${cfg.switchTabFn}('${tb.key}')">${label} (${count})</div>`;
     }).join("");
 
     return `<div class="flex border-b border-border-default mb-3 flex-shrink-0">${tabs}</div>`;
@@ -122,7 +123,7 @@ function createItemListPage(cfg) {
     const filtered = tabDef ? ps.data.filter(tabDef.filterFn) : [];
 
     if (filtered.length === 0) {
-      return `<div class="py-8 text-center text-sm text-text-muted">No items found in this category.</div>`;
+      return `<div class="py-8 text-center text-sm text-text-muted">${t("itemlist.no_items")}</div>`;
     }
 
     const rowsHtml = filtered.map(item => renderRow(item)).join("");
@@ -143,7 +144,9 @@ function createItemListPage(cfg) {
 
     let actionHtml = "";
     if (isBusy) {
-      const actionLabel = ps.busyAction === "install" ? cfg.busyInstallLabel : cfg.busyRemoveLabel;
+      const actionLabel = ps.busyAction === "install"
+        ? (typeof cfg.busyInstallLabel === "function" ? cfg.busyInstallLabel() : cfg.busyInstallLabel)
+        : (typeof cfg.busyRemoveLabel === "function" ? cfg.busyRemoveLabel() : cfg.busyRemoveLabel);
       actionHtml = `<div class="flex items-center gap-2 flex-shrink-0">
         <i data-lucide="loader" class="w-4 h-4 animate-spin text-accent-primary"></i>
         <span class="text-xs text-text-secondary">${actionLabel}</span>
@@ -155,7 +158,7 @@ function createItemListPage(cfg) {
         ${renderButton({ variant: "secondary", label: "Cancel", onclick: `${cfg.cancelRemoveFn}()`, size: "sm" })}
       </div>`;
     } else if (isInstalled) {
-      const badge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-xs font-medium bg-[#4CAF5015] text-status-success border border-[#4CAF5040]">${cfg.activeLabel}</span>`;
+      const badge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-xs font-medium bg-[#4CAF5015] text-status-success border border-[#4CAF5040]">${typeof cfg.activeLabel === "function" ? cfg.activeLabel() : cfg.activeLabel}</span>`;
       const extraActions = cfg.renderExtraActions ? cfg.renderExtraActions(item) : "";
       const removeBtn = `<button onclick="event.stopPropagation(); ${cfg.confirmRemoveFn}('${esc(itemId)}')"
         class="inline-flex items-center justify-center w-7 h-7 rounded text-text-muted hover:text-status-error hover:bg-[#ef444418] transition-colors${otherBusy ? " opacity-40 pointer-events-none" : ""}"
@@ -166,7 +169,7 @@ function createItemListPage(cfg) {
       actionHtml = `<div class="flex items-center gap-2 flex-shrink-0">${badge}${extraActions}${removeBtn}</div>`;
     } else {
       actionHtml = `<div class="flex-shrink-0">
-        ${renderButton({ variant: "primary", icon: cfg.installIcon, label: cfg.installLabel, onclick: `${cfg.installFn}('${esc(itemId)}')`, size: "sm", disabled: otherBusy })}
+        ${renderButton({ variant: "primary", icon: cfg.installIcon, label: typeof cfg.installLabel === "function" ? cfg.installLabel() : cfg.installLabel, onclick: `${cfg.installFn}('${esc(itemId)}')`, size: "sm", disabled: otherBusy })}
       </div>`;
     }
 
@@ -276,7 +279,7 @@ function createItemListPage(cfg) {
     onEnter: async () => {
       if (ps.rendered && !ps.busyId) { await reload(); return; }
 
-      if (!ps.rendered) renderInto(cfg.contentId, renderLoading(`Loading ${cfg.entityNamePlural}...`));
+      if (!ps.rendered) renderInto(cfg.contentId, renderLoading(cfg.loadingMessage ? cfg.loadingMessage() : undefined));
 
       try {
         const result = await window.pywebview.api[cfg.listApi]();
@@ -292,7 +295,7 @@ function createItemListPage(cfg) {
         }
       } catch {
         renderInto(cfg.contentId, `<div class="text-center py-16">
-          ${renderErrorBlock({ message: "Failed to load data", retryAction: cfg.reloadFn + "()" })}
+          ${renderErrorBlock({ message: t("common.failed_load"), retryAction: cfg.reloadFn + "()" })}
         </div>`);
       }
     },
@@ -307,24 +310,24 @@ function createItemListPage(cfg) {
 const skillsPage = createItemListPage({
   pageId: "deploy-skills", contentId: "deploy-skills-content", badgeId: "deploy-skills-badge",
   panelId: "skills-checklist-panel",
-  entityName: "skill", entityNamePlural: "skills", activeCountLabel: "deployed",
+  entityName: "skill", entityNamePlural: "skills", activeCountLabel: () => t("skills.active_label").toLowerCase(),
   icon: "zap", iconColor: "text-accent-primary",
-  panelTitle: "Available Skills",
-  panelDescription: "Scanned from module_pack/ (custom modules) and openclaw/skills/ (community skills)",
+  panelTitle: () => t("skills.panel_title"),
+  panelDescription: () => t("skills.panel_desc"),
   listApi: "list_skills", installApi: "deploy_skills", uninstallApi: "remove_skills",
   progressCallback: "updateDeployProgress",
   tabs: [
-    { key: "custom", label: "Custom Modules", filterFn: s => s.source === "module_pack" },
-    { key: "community", label: "Community Skills", filterFn: s => s.source === "community" },
+    { key: "custom", labelKey: "skills.tab_custom", filterFn: s => s.source === "module_pack" },
+    { key: "community", labelKey: "skills.tab_community", filterFn: s => s.source === "community" },
   ],
   idField: "name", installedField: "installed",
   tabAccentColor: "accent-primary",
-  activeSubtitle: "Click Deploy or Remove on each skill to manage",
-  emptySubtitle: "Click Deploy on a skill to get started",
-  activeLabel: "Deployed",
-  installLabel: "Deploy", installIcon: "upload",
-  busyInstallLabel: "Deploying...", busyRemoveLabel: "Removing...",
-  confirmRemoveMessage: name => `Remove ${name}?`,
+  activeSubtitle: () => t("skills.active_subtitle"),
+  emptySubtitle: () => t("skills.empty_subtitle"),
+  activeLabel: () => t("skills.active_label"),
+  installLabel: () => t("skills.deploy"), installIcon: "upload",
+  busyInstallLabel: () => t("skills.deploying"), busyRemoveLabel: () => t("skills.removing"),
+  confirmRemoveMessage: name => t("skills.confirm_remove", { name }),
   removeKeyword: "remov",
   installFn: "deploySkill", confirmRemoveFn: "confirmRemoveSkill",
   cancelRemoveFn: "cancelRemoveSkill", removeFn: "removeSkill",
@@ -333,6 +336,7 @@ const skillsPage = createItemListPage({
   getDisplayName: s => s.name,
   getDescription: s => s.description,
   defaultTab: data => data.some(s => s.source === "module_pack") ? "custom" : "community",
+  loadingMessage: () => t("skills.loading"),
 });
 
 window.switchSkillsTab = skillsPage.switchTab;
@@ -347,23 +351,23 @@ window.reloadSkillsPage = skillsPage.reload;
 const pluginsPage = createItemListPage({
   pageId: "install-plugins", contentId: "install-plugins-content", badgeId: "install-plugins-badge",
   panelId: "plugins-checklist-panel",
-  entityName: "plugin", entityNamePlural: "plugins", activeCountLabel: "installed",
+  entityName: "plugin", entityNamePlural: "plugins", activeCountLabel: () => t("plugins.active_label").toLowerCase(),
   icon: "puzzle", iconColor: "text-accent-secondary",
-  panelTitle: "Available Plugins",
-  panelDescription: "Extensions from openclaw/extensions/ — install by modifying openclaw.json plugins config",
+  panelTitle: () => t("plugins.panel_title"),
+  panelDescription: () => t("plugins.panel_desc"),
   listApi: "list_plugins", installApi: "install_plugins", uninstallApi: "uninstall_plugins",
   progressCallback: "updatePluginProgress",
   tabs: PLUGIN_CATEGORIES.map(c => ({
-    key: c.key, label: c.label, filterFn: p => p.category === c.key,
+    key: c.key, labelKey: `plugins.cat_${c.key}`, filterFn: p => p.category === c.key,
   })),
   idField: "id", installedField: "installed",
   tabAccentColor: "accent-secondary",
-  activeSubtitle: "Click Install or Uninstall on each plugin to manage",
-  emptySubtitle: "Click Install on a plugin to get started",
-  activeLabel: "Installed",
-  installLabel: "Install", installIcon: "download",
-  busyInstallLabel: "Installing...", busyRemoveLabel: "Uninstalling...",
-  confirmRemoveMessage: name => `Uninstall ${name}?`,
+  activeSubtitle: () => t("plugins.active_subtitle"),
+  emptySubtitle: () => t("plugins.empty_subtitle"),
+  activeLabel: () => t("plugins.active_label"),
+  installLabel: () => t("plugins.install"), installIcon: "download",
+  busyInstallLabel: () => t("plugins.installing"), busyRemoveLabel: () => t("plugins.uninstalling"),
+  confirmRemoveMessage: name => t("plugins.confirm_remove", { name }),
   removeKeyword: "uninstall",
   installFn: "installPlugin", confirmRemoveFn: "confirmUninstallPlugin",
   cancelRemoveFn: "cancelUninstallPlugin", removeFn: "uninstallPlugin",
@@ -375,12 +379,12 @@ const pluginsPage = createItemListPage({
   },
   getDisplayName: p => (p.category === "channels" && p.channel_label) ? p.channel_label : p.id,
   getDescription: p => (p.category === "channels" && p.channel_blurb) ? p.channel_blurb : p.description,
-  defaultTab: data => PLUGIN_CATEGORIES.map(c => c.key).find(k => data.some(p => p.category === k)) || "providers",
+  defaultTab: data => getPluginCategories().map(c => c.key).find(k => data.some(p => p.category === k)) || "providers",
   renderExtraActions: p => {
     if (p.category === "channels" && p.installed && CHANNEL_INIT_REGISTRY[p.id]) {
       return `<button onclick="event.stopPropagation(); openChannelInitWizard('${esc(p.id)}')"
         class="inline-flex items-center justify-center w-7 h-7 rounded text-text-muted hover:text-text-primary hover:bg-bg-secondary transition-colors"
-        title="Configure ${esc(CHANNEL_INIT_REGISTRY[p.id].label)} channel">
+        title="${t("plugins.configure_channel", { label: CHANNEL_INIT_REGISTRY[p.id].label })}">
         <i data-lucide="settings" class="w-3.5 h-3.5"></i>
       </button>`;
     }
@@ -391,6 +395,7 @@ const pluginsPage = createItemListPage({
       openChannelInitWizard(id);
     }
   },
+  loadingMessage: () => t("plugins.loading"),
 });
 
 window.switchPluginsTab = pluginsPage.switchTab;

@@ -100,7 +100,7 @@ function renderStatCard({ icon, iconColor = "text-accent-primary", value, label,
 function renderCheckCard({ icon, iconColor = "text-status-info", name, version, status }) {
   const isOk = status === "installed" || status === "running";
   const badgeStatus = isOk ? "success" : "error";
-  const badgeText = isOk ? (version || "Installed") : "Not Found";
+  const badgeText = isOk ? (version || t("status.installed")) : t("status.not_found");
   return `<div class="bg-bg-card border border-border-default rounded-md p-4 flex items-center gap-3 min-w-[200px] flex-1">
     <div class="w-9 h-9 rounded-sm bg-bg-input flex items-center justify-center flex-shrink-0">
       <i data-lucide="${icon}" class="w-[18px] h-[18px] ${iconColor}"></i>
@@ -174,10 +174,10 @@ function renderStepIndicator({ steps, currentStep, completedSteps = [] }) {
 /** 渲染進度項目（初始化 / 部署步驟） */
 function renderProgressItem({ name, description, status, icon, error }) {
   const cfg = {
-    done:    { circleClass: "bg-status-success", icon: "check",  iconClass: "text-white", textClass: "text-status-success", label: "Done" },
-    running: { circleClass: "bg-accent-primary", icon: "loader", iconClass: "text-white animate-spin", textClass: "text-accent-primary", label: "Running..." },
-    pending: { circleClass: "border-2 border-border-default bg-transparent", icon: null, iconClass: "", textClass: "text-text-muted", label: "Pending" },
-    failed:  { circleClass: "bg-status-error",   icon: "x",      iconClass: "text-white", textClass: "text-status-error", label: "Failed" },
+    done:    { circleClass: "bg-status-success", icon: "check",  iconClass: "text-white", textClass: "text-status-success", label: t("status.done") },
+    running: { circleClass: "bg-accent-primary", icon: "loader", iconClass: "text-white animate-spin", textClass: "text-accent-primary", label: t("status.running_progress") },
+    pending: { circleClass: "border-2 border-border-default bg-transparent", icon: null, iconClass: "", textClass: "text-text-muted", label: t("status.pending") },
+    failed:  { circleClass: "bg-status-error",   icon: "x",      iconClass: "text-white", textClass: "text-status-error", label: t("status.failed") },
   };
   const c = cfg[status] || cfg.pending;
   const circleContent = c.icon ? `<i data-lucide="${c.icon}" class="w-3.5 h-3.5 ${c.iconClass}"></i>` : "";
@@ -188,7 +188,7 @@ function renderProgressItem({ name, description, status, icon, error }) {
       <div class="flex items-center justify-between mb-2">
         <div class="flex items-center gap-1.5">
           <i data-lucide="triangle-alert" class="w-3.5 h-3.5 text-status-error"></i>
-          <span class="text-xs font-semibold text-status-error">Error Details</span>
+          <span class="text-xs font-semibold text-status-error">${t("common.error_details")}</span>
         </div>
         <button onclick="copyProgressError(this)" class="p-1 rounded bg-red-500/15 hover:bg-red-500/25 transition-colors" title="Copy error">
           <i data-lucide="copy" class="w-3 h-3 text-status-error"></i>
@@ -197,9 +197,9 @@ function renderProgressItem({ name, description, status, icon, error }) {
       <pre class="text-xs text-red-400 font-mono whitespace-pre-wrap max-h-[120px] overflow-y-auto leading-relaxed">${esc(error)}</pre>
       <div class="flex items-center gap-2 mt-3">
         <button onclick="retryFromFailedStep()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-status-error hover:bg-red-600 text-white text-xs font-medium transition-colors">
-          <i data-lucide="rotate-ccw" class="w-3 h-3"></i>Retry
+          <i data-lucide="rotate-ccw" class="w-3 h-3"></i>${t("common.retry")}
         </button>
-        <span class="text-xs text-text-muted">Retry from this step</span>
+        <span class="text-xs text-text-muted">${t("common.retry_from_step")}</span>
       </div>
     </div>` : "";
 

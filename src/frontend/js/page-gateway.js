@@ -46,7 +46,7 @@ async function loadGatewayData() {
 }
 
 function renderGatewayPage() {
-  if (gatewayState.loading) { renderInto("gateway-content", renderLoading("Loading gateway data...")); return; }
+  if (gatewayState.loading) { renderInto("gateway-content", renderLoading(t("loading.gateway"))); return; }
 
   renderInto("gateway-content", `
     ${renderGatewayPairingInfoSection()}
@@ -59,26 +59,26 @@ function renderGatewayPage() {
 
 function renderGatewayPairingInfoSection() {
   if (!gatewayState.info) {
-    return renderSectionPanel({ icon: "link", iconColor: "text-accent-secondary", title: "Connection Info",
-      description: "Gateway connection details could not be loaded",
-      children: '<p class="text-xs text-text-muted">Unable to read gateway configuration.</p>', id: "gateway-info-panel" });
+    return renderSectionPanel({ icon: "link", iconColor: "text-accent-secondary", title: t("gateway.connection_info"),
+      description: t("gateway.connection_error"),
+      children: `<p class="text-xs text-text-muted">${t("gateway.unable_read")}</p>`, id: "gateway-info-panel" });
   }
 
   const info = gatewayState.info;
   const currentBind = gatewayState.pendingBind ?? info.bind;
   const currentControlUi = gatewayState.pendingControlUi ?? info.control_ui_enabled;
   const bindDescriptions = {
-    loopback: "Only accessible from this machine (127.0.0.1)",
-    lan: "Accessible from all network interfaces (0.0.0.0)",
+    loopback: t("gateway.bind_loopback"),
+    lan: t("gateway.bind_lan"),
   };
 
   // Gateway URL（唯讀 + Copy）
   const urlSection = `
     <div class="flex flex-col gap-1.5">
-      <span class="text-xs font-medium text-text-muted">Gateway URL</span>
+      <span class="text-xs font-medium text-text-muted">${t("gateway.url_label")}</span>
       <div class="flex gap-2 items-center">
         <code class="flex-1 text-sm font-mono text-accent-secondary bg-bg-input border border-border-default rounded-sm px-3 py-2 select-all break-all">${esc(info.url)}</code>
-        <button type="button" class="flex items-center justify-center w-9 h-9 bg-bg-input border border-border-default rounded-sm text-text-muted hover:text-text-secondary transition-colors cursor-pointer flex-shrink-0" onclick="copyGatewayUrl()" title="Copy URL">
+        <button type="button" class="flex items-center justify-center w-9 h-9 bg-bg-input border border-border-default rounded-sm text-text-muted hover:text-text-secondary transition-colors cursor-pointer flex-shrink-0" onclick="copyGatewayUrl()" title="${t("gateway.copy_url")}">
           <i id="gateway-url-copy-icon" data-lucide="copy" class="w-3.5 h-3.5"></i></button>
       </div>
     </div>`;
@@ -86,7 +86,7 @@ function renderGatewayPairingInfoSection() {
   // Bind Mode（下拉選單 + 說明）
   const bindSection = `
     <div class="flex flex-col gap-1.5">
-      <span class="text-xs font-medium text-text-muted">Bind Mode</span>
+      <span class="text-xs font-medium text-text-muted">${t("gateway.bind_mode")}</span>
       <select id="gateway-bind-select" onchange="onGatewayBindChange(this.value)"
         class="w-full bg-bg-input border border-border-default rounded-sm text-sm text-text-primary px-3 py-2 outline-none focus:border-accent-primary transition-colors cursor-pointer appearance-none"
         style="background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23838387%22 stroke-width=%222%22><polyline points=%226 9 12 15 18 9%22/></svg>');background-repeat:no-repeat;background-position:right 12px center;">
@@ -98,18 +98,18 @@ function renderGatewayPairingInfoSection() {
 
   // Gateway Token（遮罩 + Show/Hide + Copy）
   const token = info.gateway_token || "";
-  const maskedToken = token ? token.slice(0, 8) + "\u2026" : "Not configured";
+  const maskedToken = token ? token.slice(0, 8) + "\u2026" : t("gateway.not_configured");
   const tokenSection = `
     <div class="flex flex-col gap-1.5">
-      <span class="text-xs font-medium text-text-muted">Gateway Token</span>
+      <span class="text-xs font-medium text-text-muted">${t("gateway.token_label")}</span>
       <div class="relative">
         <i data-lucide="lock" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted"></i>
         <code id="gateway-token-display" class="block text-sm font-mono bg-bg-input border border-border-default rounded-sm pl-10 ${token ? "pr-16" : "pr-3"} py-2 select-all break-all ${token ? "" : "text-text-muted"}">${esc(maskedToken)}</code>
         ${token ? `
           <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-            <button type="button" class="p-1 text-text-muted hover:text-text-secondary transition-colors cursor-pointer" onclick="toggleGatewayToken()" title="Show / Hide">
+            <button type="button" class="p-1 text-text-muted hover:text-text-secondary transition-colors cursor-pointer" onclick="toggleGatewayToken()" title="${t("gateway.show_hide")}">
               <i id="gateway-token-eye" data-lucide="eye" class="w-3.5 h-3.5"></i></button>
-            <button type="button" class="p-1 text-text-muted hover:text-text-secondary transition-colors cursor-pointer" onclick="copyGatewayToken()" title="Copy">
+            <button type="button" class="p-1 text-text-muted hover:text-text-secondary transition-colors cursor-pointer" onclick="copyGatewayToken()" title="${t("gateway.copy")}">
               <i data-lucide="copy" class="w-3.5 h-3.5"></i></button>
           </div>
         ` : ""}
@@ -122,29 +122,29 @@ function renderGatewayPairingInfoSection() {
       <input type="checkbox" id="gateway-control-ui-cb" ${currentControlUi ? "checked" : ""} onchange="onGatewayControlUiChange(this.checked)"
         class="w-4.5 h-4.5 rounded accent-accent-primary cursor-pointer flex-shrink-0">
       <div class="flex flex-col gap-0.5">
-        <label for="gateway-control-ui-cb" class="text-sm font-medium text-text-primary cursor-pointer">Control UI Enabled</label>
-        <span class="text-xs text-text-muted">Serve the Gateway Control UI web interface</span>
+        <label for="gateway-control-ui-cb" class="text-sm font-medium text-text-primary cursor-pointer">${t("gateway.control_ui")}</label>
+        <span class="text-xs text-text-muted">${t("gateway.control_ui_desc")}</span>
       </div>
     </div>`;
 
   // Save Settings 按鈕
   const saveSection = `
     <div class="flex justify-end">
-      ${renderButton({ variant: "primary", icon: "save", label: "Save Settings", disabled: !gatewayState.settingsDirty, onclick: "saveGatewaySettings()" })}
+      ${renderButton({ variant: "primary", icon: "save", label: t("gateway.save_settings"), disabled: !gatewayState.settingsDirty, onclick: "saveGatewaySettings()" })}
     </div>`;
 
   const children = [urlSection, bindSection, tokenSection, controlUiSection, saveSection].join('<div class=""></div>');
 
-  return renderSectionPanel({ icon: "link", iconColor: "text-accent-secondary", title: "Connection Info",
-    description: "Gateway endpoint and authentication for device pairing", children, id: "gateway-info-panel" });
+  return renderSectionPanel({ icon: "link", iconColor: "text-accent-secondary", title: t("gateway.connection_info"),
+    description: t("gateway.connection_desc"), children, id: "gateway-info-panel" });
 }
 
 function renderOriginControlSection() {
   const toggleRow = `
     <div class="flex items-center justify-between py-3">
       <div>
-        <div class="text-sm font-medium">Allow All Origins</div>
-        <div class="text-xs text-text-muted mt-0.5">Set allowedOrigins to ["*"] — allows any origin</div>
+        <div class="text-sm font-medium">${t("gateway.allow_all")}</div>
+        <div class="text-xs text-text-muted mt-0.5">${t("gateway.allow_all_desc")}</div>
       </div>
       <label class="relative inline-flex items-center cursor-pointer">
         <input type="checkbox" class="sr-only peer" ${gatewayState.allowAll ? "checked" : ""} onchange="toggleAllowAllOrigins(this.checked)">
@@ -162,22 +162,22 @@ function renderOriginControlSection() {
           <i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
       </div>`).join("");
 
-    const emptyMsg = gatewayState.origins.length === 0 ? '<p class="text-xs text-text-muted py-3">No origins configured. Add one below.</p>' : "";
+    const emptyMsg = gatewayState.origins.length === 0 ? `<p class="text-xs text-text-muted py-3">${t("gateway.no_origins")}</p>` : "";
     whitelistHtml = `
       <div class="mt-3 border-t border-border-default pt-3">
-        <div class="text-xs font-medium text-text-secondary mb-2">Whitelist</div>
+        <div class="text-xs font-medium text-text-secondary mb-2">${t("gateway.whitelist")}</div>
         ${emptyMsg}${originRows}
         <div class="flex gap-2 mt-3">
           <input id="gateway-new-origin" type="text" placeholder="https://example.com"
             class="flex-1 bg-bg-input border border-border-default rounded-sm text-sm text-text-primary placeholder:text-text-muted px-3 py-2 outline-none focus:border-accent-primary transition-colors">
-          ${renderButton({ variant: "secondary", icon: "plus", label: "Add", size: "sm", onclick: "addOrigin()" })}
+          ${renderButton({ variant: "secondary", icon: "plus", label: t("common.add"), size: "sm", onclick: "addOrigin()" })}
         </div>
       </div>`;
   }
 
-  const saveBtn = `<div class="mt-4">${renderButton({ variant: "primary", icon: "save", label: "Save Origins", onclick: "saveOrigins()" })}</div>`;
-  return renderSectionPanel({ icon: "globe", iconColor: "text-status-info", title: "Origin Access Control",
-    description: "Manage which origins can access the Gateway Control UI", children: toggleRow + whitelistHtml + saveBtn, id: "gateway-origin-panel" });
+  const saveBtn = `<div class="mt-4">${renderButton({ variant: "primary", icon: "save", label: t("gateway.save_origins"), onclick: "saveOrigins()" })}</div>`;
+  return renderSectionPanel({ icon: "globe", iconColor: "text-status-info", title: t("gateway.origin_control"),
+    description: t("gateway.origin_desc"), children: toggleRow + whitelistHtml + saveBtn, id: "gateway-origin-panel" });
 }
 
 function renderDeviceManagementSection() {
@@ -187,7 +187,7 @@ function renderDeviceManagementSection() {
   let pendingHtml = "";
   if (pending.length > 0) {
     pendingHtml = `<div class="mb-4">
-      <div class="text-xs font-medium text-text-secondary mb-2">Pending Requests (${pending.length})</div>
+      <div class="text-xs font-medium text-text-secondary mb-2">${t("gateway.pending_requests")} (${pending.length})</div>
       ${pending.map(renderPendingDeviceRow).join("")}
     </div>`;
   }
@@ -195,16 +195,16 @@ function renderDeviceManagementSection() {
   let pairedHtml = "";
   if (paired.length > 0) {
     pairedHtml = `<div class="${pending.length > 0 ? "border-t border-border-default pt-4" : ""}">
-      <div class="text-xs font-medium text-text-secondary mb-2">Paired Devices (${paired.length})</div>
+      <div class="text-xs font-medium text-text-secondary mb-2">${t("gateway.paired_devices")} (${paired.length})</div>
       ${paired.map(renderPairedDeviceRow).join("")}
     </div>`;
   }
 
-  const emptyMsg = pending.length === 0 && paired.length === 0 ? '<p class="text-xs text-text-muted py-3">No devices found.</p>' : "";
-  const refreshBtn = `<div class="mt-4">${renderButton({ variant: "secondary", icon: "refresh-cw", label: "Refresh", onclick: "refreshDeviceList()" })}</div>`;
+  const emptyMsg = pending.length === 0 && paired.length === 0 ? `<p class="text-xs text-text-muted py-3">${t("gateway.no_devices")}</p>` : "";
+  const refreshBtn = `<div class="mt-4">${renderButton({ variant: "secondary", icon: "refresh-cw", label: t("common.refresh"), onclick: "refreshDeviceList()" })}</div>`;
 
-  return renderSectionPanel({ icon: "smartphone", iconColor: "text-accent-primary", title: "Device Management",
-    description: "Approve, reject, or remove paired devices", children: pendingHtml + pairedHtml + emptyMsg + refreshBtn, id: "gateway-device-panel" });
+  return renderSectionPanel({ icon: "smartphone", iconColor: "text-accent-primary", title: t("gateway.device_mgmt"),
+    description: t("gateway.device_desc"), children: pendingHtml + pairedHtml + emptyMsg + refreshBtn, id: "gateway-device-panel" });
 }
 
 function renderPendingDeviceRow(device) {
@@ -219,8 +219,8 @@ function renderPendingDeviceRow(device) {
       <div class="text-xs text-text-muted mt-0.5">${esc(ip)}${roles ? " &middot; " + esc(roles) : ""}</div>
     </div>
     <div class="flex gap-1.5 flex-shrink-0">
-      ${renderButton({ variant: "primary", icon: "check", label: "Approve", size: "sm", onclick: `approveDeviceFromGateway('${esc(device.requestId)}')` })}
-      ${renderButton({ variant: "danger", icon: "x", label: "Reject", size: "sm", onclick: `rejectDevice('${esc(device.requestId)}')` })}
+      ${renderButton({ variant: "primary", icon: "check", label: t("gateway.approve"), size: "sm", onclick: `approveDeviceFromGateway('${esc(device.requestId)}')` })}
+      ${renderButton({ variant: "danger", icon: "x", label: t("gateway.reject"), size: "sm", onclick: `rejectDevice('${esc(device.requestId)}')` })}
     </div>
   </div>`;
 }
@@ -237,7 +237,7 @@ function renderPairedDeviceRow(device) {
       <div class="text-sm font-medium truncate">${esc(name)}</div>
       <div class="text-xs text-text-muted mt-0.5">${esc(ip)}</div>
     </div>
-    <input type="text" value="${esc(note)}" placeholder="Note..."
+    <input type="text" value="${esc(note)}" placeholder="${t("gateway.note_placeholder")}"
       class="w-[140px] bg-bg-input border border-border-default rounded-sm text-xs text-text-primary placeholder:text-text-muted px-2 py-1.5 outline-none focus:border-accent-primary transition-colors"
       onblur="saveDeviceNote('${esc(deviceId)}', this.value)">
     <button class="text-text-muted hover:text-status-error transition-colors cursor-pointer bg-transparent border-0 p-1 flex-shrink-0" onclick="removeDevice('${esc(deviceId)}')">
@@ -302,7 +302,7 @@ async function saveGatewaySettings() {
 
   // 進入 loading 狀態
   const btn = document.querySelector("#gateway-info-panel button[onclick*='saveGateway']");
-  if (btn) { btn.disabled = true; btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i><span>Saving &amp; Restarting...</span>`; refreshIcons(); }
+  if (btn) { btn.disabled = true; btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i><span>${t("gateway.saving_restarting")}</span>`; refreshIcons(); }
 
   try {
     const resp = await window.pywebview.api.save_gateway_settings(params);
@@ -312,16 +312,16 @@ async function saveGatewaySettings() {
       gatewayState.pendingControlUi = null;
       gatewayState.settingsDirty = false;
       if (d.restarted) {
-        showToast("Settings saved. Gateway restarted.", "success");
+        showToast(t("gateway.save_success"), "success");
       } else {
-        showToast("Settings saved but Gateway restart failed. Please restart manually.", "warning", 6000);
+        showToast(t("gateway.save_no_restart"), "warning", 6000);
       }
       await loadGatewayData();
     } else {
-      showToast(resp?.error?.message || "Failed to save gateway settings", "error");
+      showToast(resp?.error?.message || t("gateway.save_failed"), "error");
     }
   } catch {
-    showToast("Connection error while saving gateway settings", "error");
+    showToast(t("gateway.save_conn_error"), "error");
   }
 }
 

@@ -19,23 +19,23 @@ function renderDashboardPage(status) {
   const badgeEl = document.getElementById("dashboard-status-badge");
   if (badgeEl) {
     badgeEl.innerHTML = running
-      ? renderStatusBadge({ status: "success", text: "Running" })
-      : renderStatusBadge({ status: "error", text: "Stopped" });
+      ? renderStatusBadge({ status: "success", text: t("status.running") })
+      : renderStatusBadge({ status: "error", text: t("status.stopped") });
     refreshIcons();
   }
 
   // 統計卡片列
   const statsRow = `<div class="flex gap-3">
-    ${renderStatCard({ icon: "server", value: `${runningCount}/${services.length}`, label: "Services Running", status: running ? "success" : "error" })}
-    ${renderStatCard({ icon: "clock", iconColor: "text-accent-secondary", value: uptime, label: "Uptime", status: "info" })}
-    ${renderStatCard({ icon: "zap", iconColor: "text-status-info", value: String(skillsCount), label: "Skills Deployed", status: "info" })}
-    ${renderStatCard({ icon: "puzzle", iconColor: "text-accent-secondary", value: String(pluginsCount), label: "Plugins Installed", status: "info" })}
+    ${renderStatCard({ icon: "server", value: `${runningCount}/${services.length}`, label: t("dashboard.services_running"), status: running ? "success" : "error" })}
+    ${renderStatCard({ icon: "clock", iconColor: "text-accent-secondary", value: uptime, label: t("dashboard.uptime"), status: "info" })}
+    ${renderStatCard({ icon: "zap", iconColor: "text-status-info", value: String(skillsCount), label: t("dashboard.skills_deployed"), status: "info" })}
+    ${renderStatCard({ icon: "puzzle", iconColor: "text-accent-secondary", value: String(pluginsCount), label: t("dashboard.plugins_installed"), status: "info" })}
   </div>`;
 
   // 服務清單
   const serviceListHtml = services.map(svc => {
     const svcStatus = svc.status === "running" ? "success" : "error";
-    const svcLabel = svc.status === "running" ? "Running" : "Stopped";
+    const svcLabel = svc.status === "running" ? t("status.running") : t("status.stopped");
     return `<div class="flex items-center justify-between py-3 border-b border-border-default last:border-b-0">
       <div class="flex items-center gap-3">
         <i data-lucide="radio" class="w-4 h-4 text-accent-primary"></i>
@@ -49,31 +49,31 @@ function renderDashboardPage(status) {
   let btnHtml;
   if (dashboardState.actionPending) {
     btnHtml = `<div class="flex gap-3 mt-4">
-      ${renderButton({ variant: "secondary", icon: "loader", label: "Processing...", disabled: true, loading: true })}
+      ${renderButton({ variant: "secondary", icon: "loader", label: t("common.processing"), disabled: true, loading: true })}
     </div>`;
   } else if (running) {
     btnHtml = `<div class="flex gap-3 mt-4">
-      ${renderButton({ variant: "secondary", icon: "refresh-cw", label: "Restart Services", onclick: "handleServiceAction('restart')" })}
-      ${renderButton({ variant: "danger", icon: "square", label: "Stop Services", onclick: "handleServiceAction('stop')" })}
+      ${renderButton({ variant: "secondary", icon: "refresh-cw", label: t("dashboard.restart_services"), onclick: "handleServiceAction('restart')" })}
+      ${renderButton({ variant: "danger", icon: "square", label: t("dashboard.stop_services"), onclick: "handleServiceAction('stop')" })}
     </div>`;
   } else {
     btnHtml = `<div class="flex gap-3 mt-4">
-      ${renderButton({ variant: "primary", icon: "play", label: "Start Services", onclick: "handleServiceAction('start')" })}
+      ${renderButton({ variant: "primary", icon: "play", label: t("dashboard.start_services"), onclick: "handleServiceAction('start')" })}
     </div>`;
   }
 
   // 服務控制面板
   const serviceControlPanel = renderSectionPanel({
     icon: "activity", iconColor: "text-accent-primary",
-    title: "Service Control", description: "Start or stop the OpenClaw service stack",
+    title: t("dashboard.service_control"), description: t("dashboard.service_control_desc"),
     children: serviceListHtml + btnHtml, id: "dashboard-svc-panel",
   });
 
   // 快速操作
   const actionCards = [
-    { icon: "monitor", iconColor: "text-status-info", title: "Check Environment", desc: "Verify dependencies", view: "environment" },
-    { icon: "zap", iconColor: "text-accent-primary", title: "Deploy Skills", desc: "Manage skill modules", view: "deploy-skills" },
-    { icon: "puzzle", iconColor: "text-accent-secondary", title: "Install Plugins", desc: "Manage plugin modules", view: "install-plugins" },
+    { icon: "monitor", iconColor: "text-status-info", title: t("dashboard.action_check_env"), desc: t("dashboard.action_check_env_desc"), view: "environment" },
+    { icon: "zap", iconColor: "text-accent-primary", title: t("dashboard.action_deploy_skills"), desc: t("dashboard.action_deploy_skills_desc"), view: "deploy-skills" },
+    { icon: "puzzle", iconColor: "text-accent-secondary", title: t("dashboard.action_install_plugins"), desc: t("dashboard.action_install_plugins_desc"), view: "install-plugins" },
   ];
   const actionCardsHtml = actionCards.map(a =>
     `<div class="bg-bg-input border border-border-default rounded-sm p-4 flex items-center gap-3 cursor-pointer hover:border-accent-primary hover:bg-bg-card transition-colors flex-1 min-w-0"
@@ -90,7 +90,7 @@ function renderDashboardPage(status) {
 
   const quickActionsPanel = renderSectionPanel({
     icon: "compass", iconColor: "text-accent-secondary",
-    title: "Quick Actions", description: "Navigate to common tasks",
+    title: t("dashboard.quick_actions"), description: t("dashboard.quick_actions_desc"),
     children: `<div class="flex flex-col gap-2">${actionCardsHtml}</div>`,
     id: "dashboard-qa-panel",
   });
@@ -111,7 +111,7 @@ async function handleServiceAction(action) {
   if (svcPanel) {
     const btnContainer = svcPanel.querySelector(".flex.gap-3.mt-4");
     if (btnContainer) {
-      btnContainer.innerHTML = renderButton({ variant: "secondary", icon: "loader", label: "Processing...", disabled: true, loading: true });
+      btnContainer.innerHTML = renderButton({ variant: "secondary", icon: "loader", label: t("common.processing"), disabled: true, loading: true });
       refreshIcons();
     }
   }
@@ -148,7 +148,7 @@ function stopDashboardPolling() {
 
 registerPage("dashboard", {
   onEnter: async () => {
-    renderInto("dashboard-content", renderLoading("Loading dashboard..."));
+    renderInto("dashboard-content", renderLoading(t("loading.dashboard")));
     try {
       const resp = await window.pywebview.api.get_service_status();
       renderDashboardPage(resp?.success ? resp.data : {});

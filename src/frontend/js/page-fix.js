@@ -15,11 +15,11 @@ const fixState = {
 function formatTimeAgo(date) {
   if (!date) return "";
   const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
-  if (seconds < 10) return "just now";
-  if (seconds < 60) return `${seconds}s ago`;
+  if (seconds < 10) return t("fix.just_now");
+  if (seconds < 60) return t("fix.seconds_ago", { s: seconds });
   const mins = Math.floor(seconds / 60);
-  if (mins < 60) return `${mins}m ago`;
-  return `${Math.floor(mins / 60)}h ago`;
+  if (mins < 60) return t("fix.minutes_ago", { m: mins });
+  return t("fix.hours_ago", { h: Math.floor(mins / 60) });
 }
 
 function renderFixHeader() {
@@ -28,7 +28,7 @@ function renderFixHeader() {
   el.innerHTML = renderButton({
     variant: "secondary",
     icon: "scan",
-    label: "Run Diagnostics",
+    label: t("fix.run_diagnostics"),
     onclick: "runDiagnostics()",
     disabled: fixState.diagnosing || fixState.fixing,
     loading: fixState.diagnosing,
@@ -46,8 +46,8 @@ function renderFixBanner() {
     return `<div class="flex items-center gap-3 rounded-md px-5 py-3.5" style="background:#3b82f610;border:1px solid #3b82f630">
       <i data-lucide="loader" class="w-5 h-5 text-status-info animate-spin"></i>
       <div class="flex-1 min-w-0">
-        <div class="text-sm font-semibold text-status-info">Running diagnostics...</div>
-        <div class="text-xs text-text-secondary mt-0.5">Checking plugin health and configuration</div>
+        <div class="text-sm font-semibold text-status-info">${t("fix.running_diagnostics")}</div>
+        <div class="text-xs text-text-secondary mt-0.5">${t("fix.checking_health")}</div>
       </div>
     </div>`;
   }
@@ -55,35 +55,35 @@ function renderFixBanner() {
     return `<div class="flex items-center gap-3 rounded-md px-5 py-3.5" style="background:#3b82f610;border:1px solid #3b82f630">
       <i data-lucide="info" class="w-5 h-5 text-status-info"></i>
       <div class="flex-1 min-w-0">
-        <div class="text-sm font-semibold text-status-info">No installed plugins</div>
-        <div class="text-xs text-text-secondary mt-0.5">Install plugins first, then run diagnostics</div>
+        <div class="text-sm font-semibold text-status-info">${t("fix.no_installed")}</div>
+        <div class="text-xs text-text-secondary mt-0.5">${t("fix.install_first")}</div>
       </div>
-      ${timeStr ? `<span class="text-xs text-text-muted whitespace-nowrap">Last checked: ${esc(timeStr)}</span>` : ""}
+      ${timeStr ? `<span class="text-xs text-text-muted whitespace-nowrap">${t("fix.last_checked", { time: timeStr })}</span>` : ""}
     </div>`;
   }
   if (broken === 0) {
     return `<div class="flex items-center gap-3 rounded-md px-5 py-3.5" style="background:#4CAF5015;border:1px solid #4CAF5040">
       <i data-lucide="check-circle" class="w-5 h-5 text-status-success"></i>
       <div class="flex-1 min-w-0">
-        <div class="text-sm font-semibold text-status-success">All plugins are healthy</div>
-        <div class="text-xs text-text-secondary mt-0.5">${total} plugin${total > 1 ? "s" : ""} diagnosed — no issues found</div>
+        <div class="text-sm font-semibold text-status-success">${t("fix.all_healthy")}</div>
+        <div class="text-xs text-text-secondary mt-0.5">${t("fix.diagnosed_ok", { total })}</div>
       </div>
-      ${timeStr ? `<span class="text-xs text-text-muted whitespace-nowrap">Last checked: ${esc(timeStr)}</span>` : ""}
+      ${timeStr ? `<span class="text-xs text-text-muted whitespace-nowrap">${t("fix.last_checked", { time: timeStr })}</span>` : ""}
     </div>`;
   }
   return `<div class="flex items-center gap-3 rounded-md px-5 py-3.5" style="background:#F4433610;border:1px solid #F4433630">
     <i data-lucide="triangle-alert" class="w-5 h-5 text-status-error"></i>
     <div class="flex-1 min-w-0">
-      <div class="text-sm font-semibold text-status-error">${broken} plugin${broken > 1 ? "s" : ""} need${broken === 1 ? "s" : ""} attention</div>
-      <div class="text-xs text-text-secondary mt-0.5">Issues detected — click Fix All or fix individually</div>
+      <div class="text-sm font-semibold text-status-error">${t("fix.needs_attention", { broken })}</div>
+      <div class="text-xs text-text-secondary mt-0.5">${t("fix.issues_detected")}</div>
     </div>
-    ${timeStr ? `<span class="text-xs text-text-muted whitespace-nowrap">Last checked: ${esc(timeStr)}</span>` : ""}
+    ${timeStr ? `<span class="text-xs text-text-muted whitespace-nowrap">${t("fix.last_checked", { time: timeStr })}</span>` : ""}
   </div>`;
 }
 
 function renderFixPluginRow(item) {
   const badgeStatus = item.status === "healthy" ? "success" : "error";
-  const badgeText = item.status === "healthy" ? "Healthy" : "Broken";
+  const badgeText = item.status === "healthy" ? t("status.healthy") : t("status.broken");
 
   const issuesHtml = item.issues.length > 0 ? `
     <div class="mt-2.5 flex flex-col gap-2" style="padding-left:36px">
@@ -93,7 +93,7 @@ function renderFixPluginRow(item) {
           <span class="text-xs text-text-secondary">${esc(issue)}</span>
         </div>`).join("")}
       <div class="flex justify-end mt-1">
-        ${renderButton({ variant: "primary", icon: "wrench", label: "Fix", size: "sm", onclick: `fixSinglePlugin('${item.name}')`, disabled: fixState.fixing })}
+        ${renderButton({ variant: "primary", icon: "wrench", label: t("fix.fix"), size: "sm", onclick: `fixSinglePlugin('${item.name}')`, disabled: fixState.fixing })}
       </div>
     </div>` : "";
 
@@ -127,7 +127,7 @@ function renderFixProgressOverlay() {
   }).join("");
 
   if (allDone) {
-    itemsHtml += `<div class="mt-4">${renderButton({ variant: "secondary", icon: "refresh-cw", label: "Done", onclick: "finishFixAndRediagnose()" })}</div>`;
+    itemsHtml += `<div class="mt-4">${renderButton({ variant: "secondary", icon: "refresh-cw", label: t("fix.done"), onclick: "finishFixAndRediagnose()" })}</div>`;
   }
 
   const panelEl = document.getElementById("fix-diagnostic-panel");
@@ -144,13 +144,13 @@ function renderFixPage() {
   const reportRows = fixState.report.map(renderFixPluginRow).join("");
   const panelChildren = fixState.fixing
     ? "" // will be filled by progress overlay
-    : (reportRows || '<p class="text-sm text-text-muted py-4 px-5">No diagnostic data available.</p>');
+    : (reportRows || `<p class="text-sm text-text-muted py-4 px-5">${t("fix.no_data")}</p>`);
 
   content.innerHTML = renderFixBanner() + renderSectionPanel({
     icon: "stethoscope",
     iconColor: "text-accent-primary",
-    title: "Diagnostic Report",
-    description: "Health status of installed plugins",
+    title: t("fix.diagnostic_report"),
+    description: t("fix.diagnostic_report_desc"),
     children: panelChildren,
     id: "fix-diagnostic-panel",
   });
@@ -174,11 +174,11 @@ function renderFixActionBar() {
   }
   bar.classList.remove("hidden");
   bar.innerHTML = `<div class="flex items-center justify-between">
-    <span class="text-sm text-text-secondary">${healthy} healthy · ${broken} broken</span>
+    <span class="text-sm text-text-secondary">${t("fix.x_healthy_y_broken", { healthy, broken })}</span>
     ${renderButton({
       variant: "primary",
       icon: "wrench",
-      label: fixState.fixing ? "Fixing..." : "Fix All",
+      label: fixState.fixing ? t("fix.fixing") : t("fix.fix_all"),
       onclick: "fixAllPlugins()",
       disabled: broken === 0 || fixState.fixing,
       loading: fixState.fixing,
@@ -218,7 +218,7 @@ async function runDiagnostics() {
 
 async function fixSinglePlugin(id) {
   fixState.fixing = true;
-  fixState.progressMap = { [id]: { status: "pending", message: "Waiting..." } };
+  fixState.progressMap = { [id]: { status: "pending", message: t("status.waiting") } };
   renderFixPage();
 
   try { await window.pywebview.api.fix_plugins([id]); } catch { /* progress overlay shows status */ }
@@ -232,7 +232,7 @@ async function fixAllPlugins() {
 
   fixState.fixing = true;
   fixState.progressMap = {};
-  broken.forEach(r => { fixState.progressMap[r.name] = { status: "pending", message: "Waiting..." }; });
+  broken.forEach(r => { fixState.progressMap[r.name] = { status: "pending", message: t("status.waiting") }; });
   renderFixPage();
 
   try { await window.pywebview.api.fix_all_plugins(); } catch { /* progress overlay shows status */ }

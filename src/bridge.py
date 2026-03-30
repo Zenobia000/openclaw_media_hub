@@ -174,6 +174,20 @@ class Bridge:
         finally:
             loop.close()
 
+    # ── 語系偏好 ────────────────────────────────────────
+
+    @_bridge_api
+    def get_locale(self) -> dict:
+        """讀取 gui-settings.json 中的語系偏好。"""
+        locale = self._config_manager.read_gui_settings().get("locale")
+        return _ok({"locale": locale})
+
+    @_bridge_api
+    def save_locale(self, data: dict) -> dict:
+        """儲存語系偏好至 gui-settings.json。"""
+        self._config_manager.write_gui_settings({"locale": data.get("locale", "zh-TW")})
+        return _ok()
+
     # ── 連線測試 ────────────────────────────────────────
 
     def ping(self) -> dict:

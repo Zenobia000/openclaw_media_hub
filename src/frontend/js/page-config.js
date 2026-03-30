@@ -37,12 +37,14 @@ const initState = {
 
 /* ---------- 9.1 模式定義 ---------- */
 
-const DEPLOY_MODES = [
-  { id: "docker-windows", icon: "monitor",  iconColor: "text-accent-primary",    borderColor: "#ff5c5c", name: "Docker Windows",         description: "Run OpenClaw in Docker on Windows" },
-  { id: "docker-linux",   icon: "terminal", iconColor: "text-accent-secondary",  borderColor: "#14b8a6", name: "Docker Linux / WSL2",     description: "Run OpenClaw in Docker on Linux or WSL2" },
-  { id: "native-linux",   icon: "server",   iconColor: "text-text-muted",        borderColor: "#838387", name: "Native Linux (systemd)",  description: "Install directly on Linux with systemd" },
-  { id: "remote-ssh",     icon: "cloud",    iconColor: "text-[#8b5cf6]",         borderColor: "#8b5cf6", name: "Remote Server (SSH)",     description: "Connect to a remote server via SSH" },
-];
+function getDeployModes() {
+  return [
+    { id: "docker-windows", icon: "monitor",  iconColor: "text-accent-primary",    borderColor: "#ff5c5c", name: t("config.mode_docker_win_name"),   description: t("config.mode_docker_win_desc") },
+    { id: "docker-linux",   icon: "terminal", iconColor: "text-accent-secondary",  borderColor: "#14b8a6", name: t("config.mode_docker_linux_name"), description: t("config.mode_docker_linux_desc") },
+    { id: "native-linux",   icon: "server",   iconColor: "text-text-muted",        borderColor: "#838387", name: t("config.mode_native_name"),       description: t("config.mode_native_desc") },
+    { id: "remote-ssh",     icon: "cloud",    iconColor: "text-[#8b5cf6]",         borderColor: "#8b5cf6", name: t("config.mode_remote_name"),       description: t("config.mode_remote_desc") },
+  ];
+}
 
 const MODE_BASE = {
   config_dir: "~/.openclaw", workspace_dir: "~/.openclaw/workspace",
@@ -131,32 +133,32 @@ function renderRadioCard(mode, selected) {
 }
 
 function renderDeploymentModeSection() {
-  const cards = DEPLOY_MODES.map(m => renderRadioCard(m, m.id === configState.selectedMode)).join("");
-  return renderSectionPanel({ icon: "monitor", iconColor: "text-accent-primary", title: "Deployment Mode", children: `<div class="grid grid-cols-2 gap-3">${cards}</div>` });
+  const cards = getDeployModes().map(m => renderRadioCard(m, m.id === configState.selectedMode)).join("");
+  return renderSectionPanel({ icon: "monitor", iconColor: "text-accent-primary", title: t("config.deployment_mode"), children: `<div class="grid grid-cols-2 gap-3">${cards}</div>` });
 }
 
 function renderSSHSection() {
   const keyRowHidden = configState.sshAuthMethod === "password" ? "hidden" : "";
   const pwdRowHidden = configState.sshAuthMethod === "key" ? "hidden" : "";
-  const toggleText = configState.sshAuthMethod === "key" ? "Use password instead" : "Use SSH key instead";
+  const toggleText = configState.sshAuthMethod === "key" ? t("config.ssh_use_password") : t("config.ssh_use_key");
 
   const formGrid = `
     <div class="grid grid-cols-2 gap-4">
-      ${renderInput({ id: "input-ssh-host", label: "Host", icon: "globe", placeholder: "192.168.1.100", required: true })}
-      ${renderInput({ id: "input-ssh-port", label: "Port", placeholder: "22", type: "number", value: "22" })}
-      ${renderInput({ id: "input-ssh-username", label: "Username", icon: "user", placeholder: "ubuntu", required: true })}
+      ${renderInput({ id: "input-ssh-host", label: t("config.ssh_host"), icon: "globe", placeholder: "192.168.1.100", required: true })}
+      ${renderInput({ id: "input-ssh-port", label: t("config.ssh_port"), placeholder: "22", type: "number", value: "22" })}
+      ${renderInput({ id: "input-ssh-username", label: t("config.ssh_username"), icon: "user", placeholder: "ubuntu", required: true })}
       <div id="ssh-key-row" class="${keyRowHidden}">
         <div class="flex flex-col gap-1.5">
-          <label class="text-xs font-medium text-text-secondary">SSH Key File</label>
+          <label class="text-xs font-medium text-text-secondary">${t("config.ssh_key_file")}</label>
           <div class="flex gap-2">
             <input id="input-ssh-key-file" type="text" placeholder="~/.ssh/id_rsa" readonly
               class="flex-1 bg-bg-input border border-border-default focus-within:border-accent-primary rounded-sm text-sm text-text-primary placeholder:text-text-muted pl-3 pr-3 py-2.5 outline-none transition-colors" />
-            ${renderButton({ variant: "secondary", icon: "folder-open", label: "Browse", size: "sm", onclick: "browseSSHKey()" })}
+            ${renderButton({ variant: "secondary", icon: "folder-open", label: t("config.ssh_browse"), size: "sm", onclick: "browseSSHKey()" })}
           </div>
         </div>
       </div>
       <div id="ssh-password-row" class="${pwdRowHidden}">
-        ${renderInput({ id: "input-ssh-password", label: "Password", type: "password", placeholder: "Enter password" })}
+        ${renderInput({ id: "input-ssh-password", label: t("config.ssh_password"), type: "password", placeholder: "Enter password" })}
       </div>
     </div>
     <div class="mt-3 flex items-center justify-between">
@@ -165,11 +167,11 @@ function renderSSHSection() {
       </button>
     </div>
     <div class="mt-4 flex items-center gap-3">
-      ${renderButton({ variant: "secondary", icon: "wifi", label: "Test Connection", id: "btn-test-ssh", onclick: "testSSHConnection()" })}
+      ${renderButton({ variant: "secondary", icon: "wifi", label: t("config.ssh_test"), id: "btn-test-ssh", onclick: "testSSHConnection()" })}
       <span id="ssh-test-badge"></span>
     </div>`;
 
-  return `<div id="ssh-section">${renderSectionPanel({ icon: "terminal", iconColor: "text-[#8b5cf6]", title: "SSH Connection", description: "Connect to your remote server via SSH", children: formGrid })}</div>`;
+  return `<div id="ssh-section">${renderSectionPanel({ icon: "terminal", iconColor: "text-[#8b5cf6]", title: t("config.ssh_title"), description: t("config.ssh_desc"), children: formGrid })}</div>`;
 }
 
 function renderGatewaySection() {
@@ -178,48 +180,48 @@ function renderGatewaySection() {
 
   const mainGrid = `
     <div class="grid grid-cols-2 gap-4">
-      ${renderInput({ id: "input-config-dir", label: "Config Directory", icon: "folder", placeholder: "~/.openclaw", value: v("config_dir") })}
-      ${renderInput({ id: "input-workspace-dir", label: "Workspace Directory", icon: "folder", placeholder: "~/.openclaw/workspace", value: v("workspace_dir") })}
-      ${renderInput({ id: "input-gateway-bind", label: "Gateway Bind Host", placeholder: "lan", value: v("gateway_bind") })}
-      ${renderInput({ id: "input-gateway-port", label: "Gateway Port", type: "number", placeholder: "18789", value: v("gateway_port") })}
+      ${renderInput({ id: "input-config-dir", label: t("config.config_dir"), icon: "folder", placeholder: "~/.openclaw", value: v("config_dir") })}
+      ${renderInput({ id: "input-workspace-dir", label: t("config.workspace_dir"), icon: "folder", placeholder: "~/.openclaw/workspace", value: v("workspace_dir") })}
+      ${renderInput({ id: "input-gateway-bind", label: t("config.gateway_bind"), placeholder: "lan", value: v("gateway_bind") })}
+      ${renderInput({ id: "input-gateway-port", label: t("config.gateway_port"), type: "number", placeholder: "18789", value: v("gateway_port") })}
     </div>
     <div class="grid grid-cols-2 gap-4 mt-4">
-      ${renderInput({ id: "input-bridge-port", label: "Bridge Port", type: "number", placeholder: "18790", value: v("bridge_port") })}
+      ${renderInput({ id: "input-bridge-port", label: t("config.bridge_port"), type: "number", placeholder: "18790", value: v("bridge_port") })}
     </div>`;
 
   const sandboxChecked = configState.formValues.sandbox !== undefined ? configState.formValues.sandbox : true;
   const advancedContent = `
     <div id="advanced-settings" class="collapsible-content mt-4">
       <div class="grid grid-cols-2 gap-4">
-        ${renderInput({ id: "input-timezone", label: "Timezone", placeholder: "Asia/Taipei", value: v("timezone") })}
-        ${renderInput({ id: "input-docker-image", label: "Docker Image", placeholder: "openclaw:local", value: v("docker_image") })}
+        ${renderInput({ id: "input-timezone", label: t("config.timezone"), placeholder: "Asia/Taipei", value: v("timezone") })}
+        ${renderInput({ id: "input-docker-image", label: t("config.docker_image"), placeholder: "openclaw:local", value: v("docker_image") })}
       </div>
       <div class="flex items-center gap-2 mt-4">
         <input type="checkbox" id="toggle-sandbox" class="checkbox-custom" ${sandboxChecked ? "checked" : ""} />
-        <label for="toggle-sandbox" class="text-sm text-text-secondary cursor-pointer">Enable Sandbox</label>
+        <label for="toggle-sandbox" class="text-sm text-text-secondary cursor-pointer">${t("config.enable_sandbox")}</label>
       </div>
     </div>`;
 
   const advancedToggle = `
     <button type="button" class="flex items-center gap-1.5 mt-4 text-xs text-text-muted hover:text-text-secondary cursor-pointer bg-transparent border-0 p-0" onclick="toggleAdvancedSettings()">
       <i data-lucide="chevron-right" class="w-3.5 h-3.5 collapsible-chevron" id="advanced-chevron"></i>
-      <span>Advanced Settings</span>
+      <span>${t("config.advanced")}</span>
     </button>`;
 
-  return renderSectionPanel({ icon: "globe", iconColor: "text-accent-secondary", title: "Gateway & Directory", children: mainGrid + advancedToggle + advancedContent });
+  return renderSectionPanel({ icon: "globe", iconColor: "text-accent-secondary", title: t("config.gateway_dir_title"), children: mainGrid + advancedToggle + advancedContent });
 }
 
 function renderConfigActionBar() {
   const nextDisabled = configState.selectedMode === "remote-ssh" && !configState.sshTestPassed;
   const html = `<div class="flex items-center justify-end gap-3">
-    <span class="text-sm text-text-muted font-medium">Step ${configState.step} of 3</span>
-    ${renderButton({ variant: "primary", icon: "arrow-right", label: "Next", id: "btn-next-step", disabled: nextDisabled, onclick: "configNextStep()" })}
+    <span class="text-sm text-text-muted font-medium">${t("common.step_x_of_y", { step: configState.step, total: 3 })}</span>
+    ${renderButton({ variant: "primary", icon: "arrow-right", label: t("common.next"), id: "btn-next-step", disabled: nextDisabled, onclick: "configNextStep()" })}
   </div>`;
   renderInto("config-action-bar", html);
 }
 
 function renderConfigStep1() {
-  const stepIndicator = renderStepIndicator({ steps: ["Environment", "API Keys", "Initialize"], currentStep: configState.step, completedSteps: [] });
+  const stepIndicator = renderStepIndicator({ steps: [t("config.step_environment"), t("config.step_api_keys"), t("config.step_initialize")], currentStep: configState.step, completedSteps: [] });
   const sshSection = configState.selectedMode === "remote-ssh" ? renderSSHSection() : `<div id="ssh-section" class="hidden"></div>`;
   renderInto("config-content", [stepIndicator, renderDeploymentModeSection(), sshSection, renderGatewaySection()].join(""));
   renderConfigActionBar();
@@ -240,7 +242,7 @@ function selectDeploymentMode(mode) {
   // 更新卡片視覺
   document.querySelectorAll(".radio-card").forEach(card => {
     const cardMode = card.dataset.mode;
-    const def = DEPLOY_MODES.find(m => m.id === cardMode);
+    const def = getDeployModes().find(m => m.id === cardMode);
     if (!def) return;
 
     const isSelected = cardMode === mode;
@@ -300,7 +302,7 @@ function toggleSSHAuthMethod() {
   if (keyRow) keyRow.classList.toggle("hidden", configState.sshAuthMethod === "password");
   if (pwdRow) pwdRow.classList.toggle("hidden", configState.sshAuthMethod === "key");
   const toggleBtn = document.getElementById("btn-toggle-ssh-auth");
-  if (toggleBtn) toggleBtn.textContent = configState.sshAuthMethod === "key" ? "Use password instead" : "Use SSH key instead";
+  if (toggleBtn) toggleBtn.textContent = configState.sshAuthMethod === "key" ? t("config.ssh_use_password") : t("config.ssh_use_key");
 }
 
 /** 切換進階設定 */
@@ -334,7 +336,7 @@ async function testSSHConnection() {
   const badge = document.getElementById("ssh-test-badge");
 
   if (!params.host || !params.username) {
-    if (badge) badge.innerHTML = renderStatusBadge({ status: "error", text: "Host and Username are required" });
+    if (badge) badge.innerHTML = renderStatusBadge({ status: "error", text: t("config.ssh_host_required") });
     refreshIcons();
     return;
   }
@@ -342,7 +344,7 @@ async function testSSHConnection() {
   // 顯示連線中狀態
   if (badge) {
     badge.innerHTML = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#14b8a618] text-accent-secondary text-xs font-medium">
-      <i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i> Connecting...</span>`;
+      <i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i> ${t("status.connecting")}</span>`;
     refreshIcons();
   }
 
@@ -355,11 +357,11 @@ async function testSSHConnection() {
       const info = result.data?.server_info || {};
       configState.sshTestPassed = true;
       configState.sshTestResult = info;
-      if (badge) badge.innerHTML = renderStatusBadge({ status: "success", text: `Connected — ${info.os || "?"}, ${info.cpu_cores || "?"} cores, ${info.memory_gb || "?"}GB` });
+      if (badge) badge.innerHTML = renderStatusBadge({ status: "success", text: t("config.ssh_connected", { os: info.os || "?", cpu_cores: info.cpu_cores || "?", memory_gb: info.memory_gb || "?" }) });
     } else {
       configState.sshTestPassed = false;
       configState.sshTestResult = null;
-      if (badge) badge.innerHTML = renderStatusBadge({ status: "error", text: result?.error?.message || "Connection failed" });
+      if (badge) badge.innerHTML = renderStatusBadge({ status: "error", text: result?.error?.message || t("config.ssh_failed") });
     }
   } catch (err) {
     configState.sshTestPassed = false;
@@ -386,7 +388,7 @@ async function configNextStep() {
       const connResult = await window.pywebview.api.connect_remote(params);
       if (!connResult?.success) {
         const badge = document.getElementById("ssh-test-badge");
-        if (badge) badge.innerHTML = renderStatusBadge({ status: "error", text: connResult?.error?.message || "Connection failed" });
+        if (badge) badge.innerHTML = renderStatusBadge({ status: "error", text: connResult?.error?.message || t("config.ssh_failed") });
         refreshIcons();
         updateConnectionStatus("error");
         return;
@@ -443,7 +445,7 @@ function renderProviderCard(provider, checked) {
   if (provider.dynamic) {
     modelSection = `<div class="mt-3 flex items-center gap-1.5 text-xs text-text-muted italic">
       <i data-lucide="info" class="w-3.5 h-3.5 flex-shrink-0"></i>
-      <span>Models are discovered at runtime</span>
+      <span>${t("config.models_runtime")}</span>
     </div>`;
   } else if (models && models.length > 0) {
     const checkedSet = step2State.checkedModels[provider.name] || new Set();
@@ -456,7 +458,7 @@ function renderProviderCard(provider, checked) {
       </label>`;
     }).join("");
     modelSection = `<div class="mt-3">
-      <div class="text-xs font-medium text-text-muted mb-2">Available Models</div>
+      <div class="text-xs font-medium text-text-muted mb-2">${t("config.available_models")}</div>
       <div class="flex flex-wrap gap-1.5">${pills}</div>
     </div>`;
   }
@@ -469,7 +471,7 @@ function renderProviderCard(provider, checked) {
         ${modelSection}
       </div>`
     : `<div id="provider-fields-${provider.name}" class="collapsible-content ${checked ? "expanded" : ""}">
-        <div class="mt-2 text-xs text-text-muted">No API key required — configure URL in settings</div>
+        <div class="mt-2 text-xs text-text-muted">${t("config.no_key_required")}</div>
         ${modelSection}
       </div>`;
 
@@ -509,7 +511,7 @@ function renderPrimaryModelDropdown() {
     `<option value="${esc(o.value)}" ${o.value === current ? "selected" : ""}>${esc(o.label)}</option>`
   ).join("");
   return `<div id="primary-model-container" class="border-t border-border-default mt-4 pt-4">
-    <div class="text-xs font-medium text-text-muted mb-2">Primary Model</div>
+    <div class="text-xs font-medium text-text-muted mb-2">${t("config.primary_model")}</div>
     <select id="primary-model-select" class="w-full bg-bg-input border border-border-default rounded-md px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-primary cursor-pointer"
       onchange="onPrimaryModelChange(this.value)">
       ${optionsHtml}
@@ -553,7 +555,7 @@ function renderGroupedSection({ icon, iconColor, title, description, items, chec
   const moreSection = secondary.length > 0
     ? `<button type="button" class="flex items-center gap-1.5 mt-3 text-xs text-text-muted hover:text-text-secondary cursor-pointer bg-transparent border-0 p-0" onclick="toggleStep2More('${sectionKey}')">
         <i data-lucide="chevron-right" class="w-3.5 h-3.5 collapsible-chevron" id="${sectionKey}-more-chevron"></i>
-        <span>More ${sectionKey}...</span>
+        <span>${t("config.more_section", { section: sectionKey })}</span>
       </button>
       <div id="${sectionKey}-more" class="collapsible-content">
         <div class="mt-2 grid gap-1">${secondaryCards}</div>
@@ -565,10 +567,10 @@ function renderGroupedSection({ icon, iconColor, title, description, items, chec
 
 function renderConfigStep2ActionBar() {
   const html = `<div class="flex items-center justify-between">
-    <div>${renderButton({ variant: "secondary", icon: "arrow-left", label: "Back", onclick: "configPrevStep()" })}</div>
+    <div>${renderButton({ variant: "secondary", icon: "arrow-left", label: t("common.back"), onclick: "configPrevStep()" })}</div>
     <div class="flex items-center gap-3">
-      <span class="text-sm text-text-muted font-medium">Step ${configState.step} of 3</span>
-      ${renderButton({ variant: "primary", icon: "arrow-right", label: "Next", id: "btn-next-step2", onclick: "configNextStep2()" })}
+      <span class="text-sm text-text-muted font-medium">${t("common.step_x_of_y", { step: configState.step, total: 3 })}</span>
+      ${renderButton({ variant: "primary", icon: "arrow-right", label: t("common.next"), id: "btn-next-step2", onclick: "configNextStep2()" })}
     </div>
   </div>`;
   renderInto("config-action-bar", html);
@@ -619,17 +621,17 @@ async function renderConfigStep2() {
   }
 
   const html = [
-    renderStepIndicator({ steps: ["Environment", "API Keys", "Initialize"], currentStep: 2, completedSteps: [1] }),
+    renderStepIndicator({ steps: [t("config.step_environment"), t("config.step_api_keys"), t("config.step_initialize")], currentStep: 2, completedSteps: [1] }),
     renderGroupedSection({
       icon: "cpu", iconColor: "text-accent-primary",
-      title: "Model Providers", description: "Select providers and enter API keys \u2014 stored in .env with restricted permissions",
+      title: t("config.model_providers"), description: t("config.model_providers_desc"),
       items: step2State.cachedProviders, checkedSet: step2State.checkedProviders,
       renderCard: renderProviderCard, sectionKey: "providers",
       footer: renderPrimaryModelDropdown(),
     }),
     `<div class="flex items-start gap-3 px-2 py-3">
       <i data-lucide="shield-check" class="w-5 h-5 text-accent-primary flex-shrink-0 mt-0.5"></i>
-      <p class="text-xs text-text-secondary leading-relaxed">All keys are stored in .env with restricted file permissions (owner-only access). Each server maintains its own independent .env configuration.</p>
+      <p class="text-xs text-text-secondary leading-relaxed">${t("config.security_note")}</p>
     </div>`,
   ].join("");
 
@@ -739,32 +741,36 @@ async function configNextStep2() {
 
 /* ---------- 9.6 第三步 — 初始化 ---------- */
 
-const INIT_STEPS_DOCKER = [
-  { id: 1,  label: "Validate environment",      desc: "Checking Docker and Docker Compose availability" },
-  { id: 2,  label: "Validate parameters",        desc: "Checking required configuration values" },
-  { id: 3,  label: "Create directory structure", desc: "~/.openclaw/identity/, agents/main/agent/, sessions/" },
-  { id: 4,  label: "Generate gateway token",     desc: "Reading from config or generating new token" },
-  { id: 5,  label: "Write environment file",     desc: ".env with 16 variables (ports, paths, token, timezone)" },
-  { id: 6,  label: "Build/Pull Docker image",    desc: "Building openclaw:local or pulling image" },
-  { id: 7,  label: "Fix directory permissions",   desc: "Setting ownership for container user" },
-  { id: 8,  label: "Configure gateway",          desc: "Set mode=local, bind, controlUi.allowedOrigins" },
-  { id: 9,  label: "Start gateway",              desc: "docker compose up -d openclaw-gateway" },
-  { id: 10, label: "Verify health",              desc: "Health check on http://127.0.0.1:{port}/healthz" },
-];
+function getInitStepsDocker() {
+  return [
+    { id: 1,  label: t("config.init_docker_1"),  desc: t("config.init_docker_1_desc") },
+    { id: 2,  label: t("config.init_docker_2"),  desc: t("config.init_docker_2_desc") },
+    { id: 3,  label: t("config.init_docker_3"),  desc: t("config.init_docker_3_desc") },
+    { id: 4,  label: t("config.init_docker_4"),  desc: t("config.init_docker_4_desc") },
+    { id: 5,  label: t("config.init_docker_5"),  desc: t("config.init_docker_5_desc") },
+    { id: 6,  label: t("config.init_docker_6"),  desc: t("config.init_docker_6_desc") },
+    { id: 7,  label: t("config.init_docker_7"),  desc: t("config.init_docker_7_desc") },
+    { id: 8,  label: t("config.init_docker_8"),  desc: t("config.init_docker_8_desc") },
+    { id: 9,  label: t("config.init_docker_9"),  desc: t("config.init_docker_9_desc") },
+    { id: 10, label: t("config.init_docker_10"), desc: t("config.init_docker_10_desc") },
+  ];
+}
 
-const INIT_STEPS_NATIVE = [
-  { id: 1, label: "Validate environment",      desc: "Checking Node.js, OpenClaw CLI, systemd availability" },
-  { id: 2, label: "Validate parameters",        desc: "Checking required configuration values" },
-  { id: 3, label: "Create directory structure", desc: "~/.openclaw/identity/, agents/main/agent/, sessions/" },
-  { id: 4, label: "Generate gateway token",     desc: "Reading from config or generating new token" },
-  { id: 5, label: "Write environment file",     desc: ".env with environment variables" },
-  { id: 6, label: "Configure gateway",          desc: "Set mode=local, bind, controlUi.allowedOrigins" },
-  { id: 7, label: "Start gateway",              desc: "systemctl start openclaw-gateway" },
-  { id: 8, label: "Verify health",              desc: "Health check on http://127.0.0.1:{port}/healthz" },
-];
+function getInitStepsNative() {
+  return [
+    { id: 1, label: t("config.init_native_1"), desc: t("config.init_native_1_desc") },
+    { id: 2, label: t("config.init_native_2"), desc: t("config.init_native_2_desc") },
+    { id: 3, label: t("config.init_native_3"), desc: t("config.init_native_3_desc") },
+    { id: 4, label: t("config.init_native_4"), desc: t("config.init_native_4_desc") },
+    { id: 5, label: t("config.init_native_5"), desc: t("config.init_native_5_desc") },
+    { id: 6, label: t("config.init_native_6"), desc: t("config.init_native_6_desc") },
+    { id: 7, label: t("config.init_native_7"), desc: t("config.init_native_7_desc") },
+    { id: 8, label: t("config.init_native_8"), desc: t("config.init_native_8_desc") },
+  ];
+}
 
 function getInitSteps() {
-  return configState.selectedMode === "native-linux" ? INIT_STEPS_NATIVE : INIT_STEPS_DOCKER;
+  return configState.selectedMode === "native-linux" ? getInitStepsNative() : getInitStepsDocker();
 }
 
 function renderProgressPanel(steps) {
@@ -773,7 +779,7 @@ function renderProgressPanel(steps) {
   ).join("");
   return renderSectionPanel({
     icon: "loader", iconColor: "text-accent-primary",
-    title: "Initialization Progress", description: `Running ${steps.length} steps to set up your environment`,
+    title: t("config.init_progress"), description: t("config.init_progress_desc", { count: steps.length }),
     children: items, id: "init-progress-panel",
   });
 }
@@ -784,16 +790,16 @@ function renderDashboardInfoPanel() {
 
   return renderSectionPanel({
     icon: "layout-dashboard", iconColor: "text-accent-secondary",
-    title: "Dashboard Info", description: "Available after Gateway is ready",
+    title: t("config.dashboard_info"), description: t("config.dashboard_info_desc"),
     children: `
       <div id="dashboard-info-fields" class="opacity-50 pointer-events-none">
         <div class="grid gap-3">
-          ${renderInput({ id: "input-dash-url", label: "Dashboard URL", icon: "globe", value: dashUrl, type: "text" })}
+          ${renderInput({ id: "input-dash-url", label: t("config.dashboard_url"), icon: "globe", value: dashUrl, type: "text" })}
           <div class="flex flex-col gap-1.5">
-            <label class="text-xs font-medium text-text-secondary">Access Token</label>
+            <label class="text-xs font-medium text-text-secondary">${t("config.access_token")}</label>
             <div class="relative">
               <i data-lucide="lock" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted"></i>
-              <input id="input-dash-token" type="text" value="" readonly placeholder="Generated after init"
+              <input id="input-dash-token" type="text" value="" readonly placeholder="${t("config.generated_after_init")}"
                 class="w-full bg-bg-input border border-border-default rounded-sm text-sm text-text-primary placeholder:text-text-muted pl-10 pr-16 py-2.5 outline-none font-mono" />
               <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                 <button type="button" class="p-1 text-text-muted hover:text-text-secondary transition-colors" onclick="toggleInitToken()" title="Show / Hide">
@@ -805,8 +811,8 @@ function renderDashboardInfoPanel() {
           </div>
         </div>
         <div class="mt-4 pt-4 border-t border-border-default">
-          <p class="text-xs text-text-secondary mb-3">Open the Dashboard URL in your browser, then approve the pending device request.</p>
-          ${renderButton({ variant: "secondary", icon: "smartphone", label: "Approve Pending Device", onclick: "approvePendingDevice()" })}
+          <p class="text-xs text-text-secondary mb-3">${t("config.approve_instructions")}</p>
+          ${renderButton({ variant: "secondary", icon: "smartphone", label: t("config.approve_pending"), onclick: "approvePendingDevice()" })}
           <div id="device-pairing-result" class="mt-3"></div>
         </div>
       </div>`,
@@ -816,13 +822,13 @@ function renderDashboardInfoPanel() {
 
 function renderConfigStep3ActionBar() {
   const html = `<div class="flex items-center justify-between">
-    <div>${renderButton({ variant: "secondary", icon: "arrow-left", label: "Back", disabled: initState.running, onclick: "configPrevStep()" })}</div>
+    <div>${renderButton({ variant: "secondary", icon: "arrow-left", label: t("common.back"), disabled: initState.running, onclick: "configPrevStep()" })}</div>
     <div class="flex items-center gap-3">
-      <span class="text-sm text-text-muted font-medium">Step 3 of 3</span>
+      <span class="text-sm text-text-muted font-medium">${t("common.step_x_of_y", { step: 3, total: 3 })}</span>
       ${renderButton({
         variant: "primary",
         icon: initState.running ? "loader" : "play",
-        label: initState.running ? "Initializing..." : "Initialize",
+        label: initState.running ? t("config.initializing") : t("config.initialize"),
         id: "btn-initialize", disabled: initState.running,
         loading: initState.running, onclick: "startInitialization()",
       })}
@@ -833,7 +839,7 @@ function renderConfigStep3ActionBar() {
 
 function renderConfigStep3() {
   const steps = getInitSteps();
-  const stepIndicator = renderStepIndicator({ steps: ["Environment", "API Keys", "Initialize"], currentStep: 3, completedSteps: [1, 2] });
+  const stepIndicator = renderStepIndicator({ steps: [t("config.step_environment"), t("config.step_api_keys"), t("config.step_initialize")], currentStep: 3, completedSteps: [1, 2] });
   const html = `${stepIndicator}
     <div class="flex gap-5 flex-1 min-h-0">
       <div class="flex-1 min-w-0 overflow-y-auto">${renderProgressPanel(steps)}</div>
@@ -905,7 +911,7 @@ async function startInitialization() {
     } else {
       const btn = document.getElementById("btn-initialize");
       if (btn) {
-        btn.innerHTML = `<i data-lucide="refresh-cw" class="w-4 h-4"></i><span>Retry</span>`;
+        btn.innerHTML = `<i data-lucide="refresh-cw" class="w-4 h-4"></i><span>${t("common.retry")}</span>`;
         btn.disabled = false;
         btn.classList.remove("opacity-50", "pointer-events-none");
         refreshIcons();
@@ -979,7 +985,7 @@ function renderDevicePairingResult(resultState, message, devices) {
             <div class="text-xs font-medium text-text-primary truncate">${name}</div>
             ${ip ? `<div class="text-[11px] text-text-muted">${ip}</div>` : ""}
           </div>
-          ${renderButton({ variant: "primary", label: "Approve", size: "sm", onclick: `approveDevice('${rid}')` })}
+          ${renderButton({ variant: "primary", label: t("gateway.approve"), size: "sm", onclick: `approveDevice('${rid}')` })}
         </div>`;
       }).join("");
       return `<div class="flex flex-col gap-2"><span class="text-xs text-text-secondary">${message}</span>${rows}</div>`;
@@ -997,7 +1003,7 @@ function renderDevicePairingResult(resultState, message, devices) {
 async function approvePendingDevice() {
   if (initState.deviceApprovalLoading) return;
   initState.deviceApprovalLoading = true;
-  renderDevicePairingResult("loading", "Fetching pending devices...");
+  renderDevicePairingResult("loading", t("config.fetching_devices"));
 
   try {
     const result = await window.pywebview.api.list_pending_devices();
@@ -1006,9 +1012,9 @@ async function approvePendingDevice() {
       return;
     }
     const devices = result.data?.devices || [];
-    if (devices.length === 0) renderDevicePairingResult("empty", "No pending devices found");
-    else renderDevicePairingResult("list", `${devices.length} pending device(s) found`, devices);
-  } catch { renderDevicePairingResult("error", "Connection error"); }
+    if (devices.length === 0) renderDevicePairingResult("empty", t("config.no_pending_devices"));
+    else renderDevicePairingResult("list", t("config.pending_devices_found", { count: devices.length }), devices);
+  } catch { renderDevicePairingResult("error", t("config.connection_error")); }
   finally { initState.deviceApprovalLoading = false; }
 }
 
@@ -1017,8 +1023,8 @@ async function approveDevice(requestId) {
   if (row) { const btn = row.querySelector("button"); if (btn) { btn.disabled = true; btn.classList.add("opacity-50"); } }
   try {
     const result = await window.pywebview.api.approve_device({ request_id: requestId });
-    renderDevicePairingResult(result?.success ? "success" : "error", result?.success ? "Device approved successfully" : (result?.error?.message || "Approval failed"));
-  } catch { renderDevicePairingResult("error", "Connection error during approval"); }
+    renderDevicePairingResult(result?.success ? "success" : "error", result?.success ? t("config.device_approved") : (result?.error?.message || "Approval failed"));
+  } catch { renderDevicePairingResult("error", t("config.connection_error_approval")); }
 }
 
 /* ---------- 9.7 設定頁面生命週期 ---------- */

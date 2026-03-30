@@ -17,6 +17,18 @@ async function initApp() {
   try {
     const result = await window.pywebview.api.ping();
     if (result?.success) {
+      // ── i18n: 載入語系偏好 ──
+      let locale = "zh-TW";
+      try {
+        const lr = await window.pywebview.api.get_locale();
+        if (lr?.success && lr.data?.locale) locale = lr.data.locale;
+        else if (navigator.language?.startsWith("en")) locale = "en";
+      } catch { if (navigator.language?.startsWith("en")) locale = "en"; }
+      __i18n = (locale === "en" ? window.__locale_en : window.__locale_zhTW) || {};
+      __i18nLocale = locale;
+      document.documentElement.lang = locale;
+      _i18nScanDOM();
+
       document.getElementById("app-loading").classList.add("hidden");
       document.getElementById("app-main").classList.remove("hidden");
       refreshIcons();
@@ -33,7 +45,7 @@ async function initApp() {
     }
   } catch {
     if (loadingDot) loadingDot.className = "w-2.5 h-2.5 rounded-full bg-status-error";
-    if (loadingText) loadingText.textContent = "Bridge Unavailable";
+    if (loadingText) loadingText.textContent = t("loading.bridge_unavailable");
   }
 }
 

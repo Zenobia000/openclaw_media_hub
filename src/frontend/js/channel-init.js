@@ -61,7 +61,7 @@ window.channelInitNav = function (direction) {
       const val = (channelInitState.fieldValues[field.id] || "").trim();
       const existing = channelInitState.existingCredentials[field.id];
       if (!val && !(existing && existing.has_value)) {
-        showToast(`${field.label} is required`, "error");
+        showToast(t("channel.field_required", { label: field.label }), "error");
         return;
       }
     }
@@ -121,14 +121,14 @@ window.saveChannelInit = async function () {
     );
 
     if (result?.success) {
-      showToast(`${reg.label} channel configured successfully`, "success");
+      showToast(t("channel.success", { label: reg.label }), "success");
       closeChannelInitWizard();
       pluginsPage.reload();
     } else {
-      showToast(result?.error?.message || "Failed to save configuration", "error");
+      showToast(result?.error?.message || t("channel.save_failed"), "error");
     }
   } catch (e) {
-    showToast("Failed to save configuration", "error");
+    showToast(t("channel.save_failed"), "error");
   } finally {
     channelInitState.saving = false;
   }
@@ -183,18 +183,18 @@ function renderChannelInitModal() {
 
   // Footer buttons
   const backBtn = step > 1
-    ? renderButton({ variant: "ghost", icon: "arrow-left", label: "Back", onclick: "channelInitNav(-1)" })
+    ? renderButton({ variant: "ghost", icon: "arrow-left", label: t("common.back"), onclick: "channelInitNav(-1)" })
     : "";
   const isLastStep = step === totalSteps;
   const nextBtn = isLastStep
     ? renderButton({
         variant: "primary",
         icon: channelInitState.saving ? "loader" : "check",
-        label: channelInitState.saving ? "Saving..." : "Save & Complete",
+        label: channelInitState.saving ? t("channel.saving") : t("channel.save_complete"),
         onclick: "saveChannelInit()",
         disabled: channelInitState.saving,
       })
-    : renderButton({ variant: "primary", icon: "arrow-right", label: "Next", onclick: "channelInitNav(1)" });
+    : renderButton({ variant: "primary", icon: "arrow-right", label: t("common.next"), onclick: "channelInitNav(1)" });
 
   modal.innerHTML = `<div class="fixed inset-0 z-[9998] flex items-center justify-center bg-black/50" onclick="if(event.target===this)closeChannelInitWizard()">
     <div class="bg-bg-primary rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
@@ -202,10 +202,10 @@ function renderChannelInitModal() {
       <div class="flex items-center justify-between px-6 pt-6 pb-2">
         <div class="flex items-center gap-3">
           <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white" style="background:${reg.iconColor}">${reg.icon}</div>
-          <span class="text-lg font-bold text-text-primary">${esc(reg.label)} Channel Setup</span>
+          <span class="text-lg font-bold text-text-primary">${t("channel.setup_title", { label: reg.label })}</span>
         </div>
         <div class="flex items-center gap-3">
-          <span class="text-sm text-text-muted">Step ${step} of ${totalSteps}</span>
+          <span class="text-sm text-text-muted">${t("common.step_x_of_y", { step, total: totalSteps })}</span>
           <button onclick="closeChannelInitWizard()" class="p-1 rounded hover:bg-bg-secondary text-text-muted hover:text-text-primary transition-colors">
             <i data-lucide="x" class="w-5 h-5"></i>
           </button>
@@ -237,10 +237,10 @@ function renderChannelInitStep1(reg) {
     const isVisible = channelInitState.fieldVisible[field.id];
     const inputType = isVisible ? "text" : "password";
     const placeholder = hasExisting
-      ? "Leave blank to keep current value"
-      : `Enter ${field.label}`;
+      ? t("channel.leave_blank")
+      : t("channel.enter_field", { label: field.label });
     const preview = hasExisting && !currentVal
-      ? `<div class="text-xs text-text-muted mt-1">Current value: <span class="font-mono">${esc(existing.preview)}</span></div>`
+      ? `<div class="text-xs text-text-muted mt-1">${t("channel.current_value")} <span class="font-mono">${esc(existing.preview)}</span></div>`
       : "";
 
     return `<div>
@@ -263,7 +263,7 @@ function renderChannelInitStep1(reg) {
   const helpHtml = reg.helpSteps ? `<div class="mt-4">
     <button onclick="toggleChannelInitHelp()" class="flex items-center gap-1 text-sm text-accent-secondary hover:underline">
       <i data-lucide="chevron-down" id="channel-init-help-icon" class="w-4 h-4 transition-transform"></i>
-      How to get these credentials?
+      ${t("channel.how_to_get")}
     </button>
     <div id="channel-init-help-content" class="hidden mt-3 pl-2 border-l-2 border-border-default">
       <ol class="list-decimal list-inside space-y-2 text-sm text-text-secondary">
@@ -276,9 +276,9 @@ function renderChannelInitStep1(reg) {
     <div class="flex items-start gap-3 p-4 rounded-md border" style="background:#3b82f610;border-color:#3b82f630">
       <i data-lucide="info" class="w-5 h-5 text-status-info flex-shrink-0 mt-0.5"></i>
       <div>
-        <div class="text-sm font-semibold text-status-info">${esc(reg.label)} Messaging API Credentials</div>
-        <div class="text-xs text-text-secondary mt-0.5">You'll need credentials from the ${esc(reg.label)} Developers Console.
-          ${reg.consoleUrl ? `<a href="#" onclick="event.preventDefault()" class="text-accent-secondary hover:underline ml-1">Open Console</a>` : ""}
+        <div class="text-sm font-semibold text-status-info">${t("channel.api_credentials", { label: reg.label })}</div>
+        <div class="text-xs text-text-secondary mt-0.5">${t("channel.credentials_note", { label: reg.label })}
+          ${reg.consoleUrl ? `<a href="#" onclick="event.preventDefault()" class="text-accent-secondary hover:underline ml-1">${t("channel.open_console")}</a>` : ""}
         </div>
       </div>
     </div>
@@ -303,20 +303,20 @@ function renderChannelInitStep2(reg) {
     <div class="p-4 rounded-md border" style="background:#4CAF5015;border-color:#4CAF5040">
       <div class="flex items-center gap-2 mb-3">
         <i data-lucide="link" class="w-5 h-5 text-status-success"></i>
-        <span class="text-sm font-semibold text-status-success">Your Webhook URL</span>
+        <span class="text-sm font-semibold text-status-success">${t("channel.webhook_url")}</span>
       </div>
       <div class="flex items-center gap-2">
         <code class="flex-1 bg-bg-tertiary rounded-lg p-3 text-sm font-mono text-text-primary break-all">${esc(templateUrl)}</code>
-        <button onclick="clipboardWrite('${_jsEscapeForOnclick(templateUrl)}'); showToast('Copied!', 'success', 2000)"
+        <button onclick="clipboardWrite('${_jsEscapeForOnclick(templateUrl)}'); showToast(t('common.copied'), 'success', 2000)"
           class="flex-shrink-0 p-2 rounded-lg hover:bg-bg-secondary text-text-muted hover:text-text-primary transition-colors" title="Copy">
           <i data-lucide="copy" class="w-4 h-4"></i>
         </button>
       </div>
-      <div class="text-xs text-text-muted mt-2">Replace &lt;your-domain&gt; with your public HTTPS domain or ngrok URL</div>
-      ${localUrl ? `<div class="text-xs text-text-muted mt-1">Local URL (for testing):
+      <div class="text-xs text-text-muted mt-2">${t("channel.replace_domain")}</div>
+      ${localUrl ? `<div class="text-xs text-text-muted mt-1">${t("channel.local_url")}
         <code class="font-mono bg-bg-tertiary px-1.5 py-0.5 rounded">${esc(localUrl)}</code>
-        <button onclick="clipboardWrite('${_jsEscapeForOnclick(localUrl)}'); showToast('Copied!', 'success', 2000)"
-          class="ml-1 text-accent-secondary hover:underline text-xs">copy</button>
+        <button onclick="clipboardWrite('${_jsEscapeForOnclick(localUrl)}'); showToast(t('common.copied'), 'success', 2000)"
+          class="ml-1 text-accent-secondary hover:underline text-xs">${t("channel.copy_link")}</button>
       </div>` : ""}
     </div>
 
@@ -324,7 +324,7 @@ function renderChannelInitStep2(reg) {
     <div class="rounded-lg border border-border-default bg-bg-primary p-4">
       <div class="flex items-center gap-2 mb-3">
         <i data-lucide="clipboard-list" class="w-5 h-5 text-accent-secondary"></i>
-        <span class="text-sm font-semibold text-text-primary">Setup Steps in ${esc(reg.label)} Console</span>
+        <span class="text-sm font-semibold text-text-primary">${t("channel.setup_steps", { label: reg.label })}</span>
       </div>
       <ol class="list-decimal list-inside text-sm text-text-secondary space-y-0">
         ${instructionsHtml}
@@ -354,10 +354,10 @@ function renderChannelInitStep3(reg) {
   const webhookPath = channelInitState.webhookData?.path || `/${channelInitState.channelName}/webhook`;
 
   const summaryItems = [
-    { label: "Channel", value: reg.label },
-    { label: "Credentials", value: `${reg.fields.map(f => f.label).join(" + ")} → .env` },
-    { label: "DM Policy", value: selectedPolicy ? selectedPolicy.label : channelInitState.dmPolicy },
-    { label: "Webhook", value: `${webhookPath} → configure in ${reg.label} Console` },
+    { label: t("channel.summary_channel"), value: reg.label },
+    { label: t("channel.summary_credentials"), value: `${reg.fields.map(f => f.label).join(" + ")} → .env` },
+    { label: t("channel.step_dm_policy"), value: selectedPolicy ? selectedPolicy.label : channelInitState.dmPolicy },
+    { label: t("channel.summary_webhook"), value: `${webhookPath} → ${reg.label} Console` },
   ];
 
   return `<div class="space-y-4">
@@ -365,15 +365,15 @@ function renderChannelInitStep3(reg) {
     <div>
       <div class="flex items-center gap-2 mb-2">
         <i data-lucide="shield" class="w-5 h-5 text-accent-secondary"></i>
-        <span class="text-sm font-semibold text-text-primary">Direct Message Policy</span>
+        <span class="text-sm font-semibold text-text-primary">${t("channel.dm_policy_title")}</span>
       </div>
-      <div class="text-xs text-text-secondary mb-3">Control who can send direct messages to your ${esc(reg.label)} bot</div>
+      <div class="text-xs text-text-secondary mb-3">${t("channel.dm_policy_desc", { label: reg.label })}</div>
       <div class="space-y-2">${policyHtml}</div>
     </div>
 
     <!-- Summary -->
     <div class="bg-bg-secondary rounded-lg p-4">
-      <div class="text-sm font-semibold text-text-primary mb-2">Configuration Summary</div>
+      <div class="text-sm font-semibold text-text-primary mb-2">${t("channel.config_summary")}</div>
       <div class="space-y-1.5">
         ${summaryItems.map(item => `<div class="flex items-start gap-2 text-xs text-text-secondary">
           <i data-lucide="check-circle" class="w-3.5 h-3.5 text-status-success flex-shrink-0 mt-0.5"></i>
