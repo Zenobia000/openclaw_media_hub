@@ -62,7 +62,7 @@ Root (SPA - Single Page Application)
 | **Configuration** | `view-configuration` | Configuration | 3 步驟初始化精靈 | US-002 |
 | **Environment** | `view-environment` | Environment | 系統依賴檢查 | US-001 |
 | **Gateway** | `view-gateway` | Gateway | Origin 存取控制、裝置配對管理 | ADR-006 |
-| **Deploy Skills** | `view-deploy-skills` | Deploy Skills | 技能模組勾選部署 | US-005 |
+| **Deploy Skills** | `view-deploy-skills` | Deploy Skills | 技能模組逐項部署/移除 | US-005 |
 | **Install Plugins** | `view-install-plugins` | Install Plugins | 外掛模組逐項安裝/移除 | US-006 |
 | **Fix Plugins** | `view-fix-plugins` | Fix Plugins | 外掛診斷與修復 | — |
 
@@ -94,7 +94,7 @@ Root (SPA - Single Page Application)
     main-content (flex: 1, vertical, overflow: hidden)
     ├── Header
     ├── Summary Banner
-    ├── Checklist Panel (flex: 1, overflow-y: auto ← 僅此區域可捲動)
+    ├── List Panel (flex: 1, overflow-y: auto ← 僅此區域可捲動)
     └── Action Bar (固定底部, border-top: 1px)
     ```
 
@@ -719,57 +719,50 @@ function stopPolling() {
 **User Story (US-005)**:
 > 身為使用者，我想要透過介面一鍵部署技能模組，以便不需手動在命令列操作。
 
+**互動模式**: 逐項操作（VS Code Extensions 風格）— 每個技能列有獨立的 Deploy / Remove 按鈕，無 checkbox 批次選取。
+
 **UI 區域 (UI Zones)**:
 
 1. **Header**
    - 標題: "Deploy Skills"（24px, 700）
-   - 副標題: "Select and deploy skill modules to your OpenClaw instance"（14px, 400）
+   - 副標題: "Manage skill modules for your OpenClaw instance"（14px, 400）
    - 右側: 已部署數量 badge — "X deployed" StatusBadge（`status-success` 色調）
 
 2. **Summary Banner**
    - 有已部署技能時: 綠色底 (`#4CAF5015`)，綠色邊框 (`#4CAF5040`)，`check-circle` icon
      - 標題: "X of Y skills deployed"
-     - 描述: "Select skills below to deploy or remove"
+     - 描述: "Click Deploy or Remove on each skill to manage"
    - 無已部署技能時: 藍色底 (`#3b82f610`)，藍色邊框 (`#3b82f630`)，`info` icon
      - 標題: "No skills deployed yet"
-     - 描述: "Select skills below and click Deploy to get started"
+     - 描述: "Click Deploy on a skill to get started"
 
-3. **Skills Checklist 區塊** (SectionPanel) — `flex: 1; overflow-y: auto`（頁面內唯一可捲動區域）
+3. **Skills List 區塊** (SectionPanel) — `flex: 1; overflow-y: auto`（頁面內唯一可捲動區域）
    - Icon: `zap`（`accent-primary`）, 標題: "Available Skills"
    - 描述: "Scanned from module_pack/ (custom modules) and openclaw/skills/ (community skills)"
    - **Tab 切換列**: 頂部，2 個 Tab:
      - "Custom Modules"（來自 `module_pack/`，自訂業務模組）
      - "Community Skills"（來自 `openclaw/skills/`，52 社群技能）
    - 當前 Tab 以 `accent-primary` 底線高亮
-   - **Select All 列**: 頂部，checkbox + "Select All" 文字 + 底部 `1px` 分隔線
    - **技能列表**: 垂直排列，每項以 `1px` 分隔線間隔，padding `14px 16px`
      - 每行結構（水平 Flexbox, align-items: center）:
-       - **Checkbox**: 16px 方框，勾選時紅底白勾（`accent-primary`），未勾選時 `border-default` 邊框
-       - **Emoji**: 技能 emoji（16px），margin-left `12px`
+       - **Emoji**: 技能 emoji（16px）
        - **Info 區塊**（flex: 1, margin-left `12px`）:
          - 技能名稱（14px, 600, `text-primary`）
          - 技能描述（12px, 400, `text-secondary`），單行截斷 `text-overflow: ellipsis`
-       - **Status Badge**:
-         - 已部署: 綠底 "Deployed" badge（`status-success`）
-         - 未部署: 灰底 "Available" badge（`text-muted`）
+       - **Action 區塊**（flex-shrink: 0, 水平排列, gap: `8px`, align-items: center）:
+         - **未部署時**:
+           - Button/Primary "Deploy"（`upload` icon, size `sm`）— 點擊觸發部署
+         - **已部署時**:
+           - "Deployed" badge（綠底 `#4CAF5015`，綠框 `#4CAF5040`，`status-success` 文字）
+           - Button/Ghost `trash-2` icon（28px 高，`text-muted`，hover 時 `text-status-error`）— 點擊觸發移除確認
+         - **操作進行中時**（該列 busy）:
+           - 按鈕替換為 spinner（`loader` icon, 16px, `animate-spin`, `text-accent-primary`）+ 狀態文字（12px, `text-secondary`）："Deploying..." / "Removing..."
      - **Hover 效果**: 行背景變 `bg-input`
-     - 已部署技能預設勾選
+     - **操作鎖定**: 任一技能操作進行中時，其他技能的 Deploy / Remove 按鈕 disabled（防止併發）
 
-4. **Progress Overlay** — 條件顯示（部署/移除進行中時覆蓋技能列表）
-   - 半透明背景覆蓋清單區域
-   - 垂直排列 ProgressItem（結構同 Configuration Step 3）:
-     - 每項: 技能 emoji + 技能名稱 + 狀態描述 + 狀態圖示
-     - Done: 綠底白勾 + "Deployed" / "Removed" 綠字
-     - Running: 紅底白 loader + "Deploying..." / "Removing..." 紅字
-     - Pending: 灰色邊框 + "Pending" 灰字
-     - Failed: 紅底白 `x` + "Failed: [error message]" 紅字
-
-5. **Action Bar** — 底部固定，上方 `1px` 分隔線
-   - 左側: 已選數量文字 "X skills selected"（14px, `text-secondary`）
-   - 右側（水平排列, gap: 12px）:
-     - Button/Danger "Remove Selected"（`trash-2` icon）— 僅當已勾選的項目中有「已部署」的技能時 enabled
-     - Button/Primary "Deploy Selected"（`upload` icon）— 僅當已勾選的項目中有「未部署」的技能時 enabled
-   - 操作進行中時: 兩個按鈕均 disabled
+4. **Remove 確認** — 點擊 `trash-2` 按鈕時顯示行內確認（inline confirm）:
+   - 該列展開確認區: "Remove `<skill_name>`?" + Button/Danger "Confirm"（size `xs`）+ Button/Ghost "Cancel"（size `xs`）
+   - 確認後執行移除，Cancel 恢復原狀
 
 **Bridge API 呼叫**:
 
@@ -785,25 +778,24 @@ const skills = await window.pywebview.api.list_skills();
 // source: "module_pack" = 自訂業務模組, "community" = openclaw/skills/ 社群技能
 // SKILL.md YAML frontmatter 提供 name, description, metadata.openclaw.emoji
 
-// 部署選取的技能（非同步，透過回呼更新進度）
-const result = await window.pywebview.api.deploy_skills(["weather", "calculator"]);
+// 部署單一技能（逐項操作，非同步）
+const result = await window.pywebview.api.deploy_skills(["weather"]);
 // 進度回呼: window.updateDeployProgress(skillName, status, message)
-// 最終回傳: { success: true, deployed: ["weather", "calculator"], failed: [] }
+// 最終回傳: { success: true, deployed: ["weather"], failed: [] }
 
-// 移除選取的技能
+// 移除單一技能（逐項操作，需使用者確認後呼叫）
 const result = await window.pywebview.api.remove_skills(["google-search"]);
 // 進度回呼: window.updateDeployProgress(skillName, status, message)
 // 最終回傳: { success: true, removed: ["google-search"], failed: [] }
 ```
 
 **驗收標準**:
-- [ ] 進入頁面時自動載入技能清單，已部署的預設勾選並顯示 "Deployed" badge
-- [ ] "Select All" checkbox 正確切換全選/全不選
-- [ ] 勾選後 Action Bar 即時更新已選數量與按鈕啟用狀態
-- [ ] 點擊 "Deploy Selected" 顯示 Progress Overlay，逐項更新部署狀態
-- [ ] 點擊 "Remove Selected" 顯示確認提示後執行移除
+- [ ] 進入頁面時自動載入技能清單，已部署顯示 "Deployed" badge + Remove 按鈕，未部署顯示 Deploy 按鈕
+- [ ] 點擊 Deploy 按鈕後，該列顯示 spinner + "Deploying..."，完成後刷新為 Deployed 狀態
+- [ ] 點擊 Remove（trash-2）按鈕後，顯示行內確認，確認後執行移除
+- [ ] 操作進行中時，其他技能的操作按鈕 disabled
 - [ ] 部署/移除完成後自動刷新技能清單狀態
-- [ ] 任一技能部署失敗時顯示錯誤訊息，其餘技能繼續執行
+- [ ] 部署失敗時該列顯示錯誤訊息，其餘技能不受影響
 
 ---
 

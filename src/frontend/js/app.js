@@ -553,361 +553,52 @@ const channelInitState = {
   fieldVisible: {},
 };
 
-/**
- * 建立勾選清單頁面（技能部署 / 外掛安裝共用工廠）
- *
- * 回傳的函式須綁定至 window，供 HTML onclick 使用。
- */
-function createChecklistPage(cfg) {
-  const ps = { data: [], selected: new Set(), tab: "", busy: false, progressMap: {}, rendered: false };
+/* ---------- 技能部署頁面實例（逐項操作模式） ---------- */
 
-  const getId = (item) => item[cfg.idField];
-
-  // 渲染頁面
-  function renderPage() {
-    const activeCount = ps.data.filter(d => d[cfg.installedField]).length;
-
-    renderInto(cfg.badgeId,
-      activeCount > 0
-        ? renderStatusBadge({ status: "success", text: `${activeCount} ${cfg.activeCountLabel}` })
-        : renderStatusBadge({ status: "info", text: `0 ${cfg.activeCountLabel}` })
-    );
-
-    const bannerHtml = renderCountBanner({
-      current: activeCount,
-      total: ps.data.length,
-      entityName: `${cfg.entityNamePlural} ${cfg.activeCountLabel}`,
-      activeSubtitle: cfg.activeSubtitle,
-      emptySubtitle: cfg.emptySubtitle,
-    });
-
-    const checklistHtml = renderSectionPanel({
-      icon: cfg.icon,
-      iconColor: cfg.iconColor,
-      title: cfg.panelTitle,
-      description: cfg.panelDescription,
-      id: cfg.panelId,
-      flexFill: true,
-      children: renderTabs() + renderList(),
-    });
-
-    renderInto(cfg.contentId, `<div class="flex-shrink-0">${bannerHtml}</div>` + checklistHtml);
-    renderActionBar();
-  }
-
-  // 渲染頁籤
-  function renderTabs() {
-    const tabCls = (active) => active
-      ? `px-4 py-2 text-sm font-semibold text-${cfg.tabAccentColor} border-b-2 border-${cfg.tabAccentColor} cursor-pointer`
-      : "px-4 py-2 text-sm font-medium text-text-muted hover:text-text-primary cursor-pointer";
-
-    const tabs = cfg.tabs.map(t => {
-      const count = ps.data.filter(t.filterFn).length;
-      return `<div class="${tabCls(ps.tab === t.key)}" onclick="${cfg.switchTabFn}('${t.key}')">${t.label} (${count})</div>`;
-    }).join("");
-
-    return `<div class="flex border-b border-border-default mb-3 flex-shrink-0">${tabs}</div>`;
-  }
-
-  // 渲染清單
-  function renderList() {
-    const tabDef = cfg.tabs.find(t => t.key === ps.tab);
-    const filtered = tabDef ? ps.data.filter(tabDef.filterFn) : [];
-
-    if (filtered.length === 0) {
-      return `<div class="py-8 text-center text-sm text-text-muted">No items found in this category.</div>`;
-    }
-
-    const allIds = filtered.map(getId);
-    const allSelected = allIds.length > 0 && allIds.every(id => ps.selected.has(id));
-
-    const selectAllHtml = `<div class="flex items-center gap-3 px-4 py-2.5 border-b border-border-default flex-shrink-0">
-      <input type="checkbox" ${allSelected ? "checked" : ""}
-        class="w-4 h-4 rounded accent-accent-primary cursor-pointer"
-        onchange="${cfg.toggleAllFn}()" id="${cfg.panelId}-select-all" />
-      <label for="${cfg.panelId}-select-all" class="text-sm font-medium text-text-secondary cursor-pointer select-none">Select All</label>
-    </div>`;
-
-    const rowsHtml = filtered.map(item => renderRow(item)).join("");
-    return selectAllHtml + `<div class="flex-1 min-h-0 overflow-y-auto">${rowsHtml}</div>`;
-  }
-
-  // 渲染單列
-  function renderRow(item) {
-    const itemId = getId(item);
-    const checked = ps.selected.has(itemId) ? "checked" : "";
-    const isActive = item[cfg.installedField];
-    const badge = isActive
-      ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-xs font-medium bg-[#4CAF5015] text-status-success border border-[#4CAF5040]">${cfg.activeLabel}</span>`
-      : `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-xs font-medium bg-bg-input text-text-muted border border-border-default">${cfg.inactiveLabel}</span>`;
-
-    const iconHtml = cfg.renderRowIcon(item);
-    const displayName = cfg.getDisplayName(item);
-    const rawDesc = cfg.getDescription(item);
-    const desc = rawDesc && rawDesc.length > 80 ? rawDesc.slice(0, 80) + "..." : (rawDesc || "");
-
-    const configAction = (cfg.renderConfigAction && cfg.renderConfigAction(item)) || "";
-
-    return `<div class="flex items-center gap-3 px-4 py-3.5 border-b border-border-default last:border-b-0 hover:bg-bg-input transition-colors cursor-pointer"
-      onclick="${cfg.toggleFn}('${esc(itemId)}')">
-      <input type="checkbox" ${checked}
-        class="w-4 h-4 rounded accent-accent-primary cursor-pointer flex-shrink-0"
-        onclick="event.stopPropagation(); ${cfg.toggleFn}('${esc(itemId)}')" />
-      ${iconHtml}
-      <div class="flex-1 min-w-0">
-        <div class="text-sm font-semibold text-text-primary">${esc(displayName)}</div>
-        <div class="text-xs text-text-secondary mt-0.5 truncate">${esc(desc)}</div>
-      </div>
-      <div class="flex items-center gap-2 flex-shrink-0">${badge}${configAction}</div>
-    </div>`;
-  }
-
-  // 渲染動作列
-  function renderActionBar() {
-    const bar = document.getElementById(cfg.actionBarId);
-    if (!bar) return;
-
-    const count = ps.selected.size;
-    const hasUnactive = ps.data.some(d => ps.selected.has(getId(d)) && !d[cfg.installedField]);
-    const hasActive = ps.data.some(d => ps.selected.has(getId(d)) && d[cfg.installedField]);
-
-    if (count === 0 && !ps.busy) { bar.classList.add("hidden"); return; }
-    bar.classList.remove("hidden");
-
-    bar.innerHTML = `<div class="flex items-center justify-between">
-      <span class="text-sm text-text-secondary">${count} ${cfg.entityName}${count !== 1 ? "s" : ""} selected</span>
-      <div class="flex items-center gap-3">
-        ${renderButton({ variant: "danger", icon: cfg.removeIcon, label: cfg.removeLabel, disabled: !hasActive || ps.busy, onclick: cfg.handleRemoveFn + "()", size: "sm" })}
-        ${renderButton({ variant: "primary", icon: cfg.deployIcon, label: cfg.deployLabel, disabled: !hasUnactive || ps.busy, onclick: cfg.handleDeployFn + "()", size: "sm" })}
-      </div>
-    </div>`;
-    refreshIcons();
-  }
-
-  // 渲染進度覆蓋
-  function renderProgressOverlay() {
-    const names = Object.keys(ps.progressMap);
-    const allDone = names.length > 0 && names.every(n => {
-      const s = ps.progressMap[n].status;
-      return s === "done" || s === "failed";
-    });
-
-    let itemsHtml = names.map(name => {
-      const p = ps.progressMap[name];
-      const item = ps.data.find(d => getId(d) === name);
-      return renderProgressItem({
-        name: name,
-        description: p.message,
-        status: p.status,
-        icon: item ? cfg.getProgressIcon(item) : "?",
-      });
-    }).join("");
-
-    if (allDone) {
-      // 檢測已安裝的 Channel 外掛，顯示 Configure CTA
-      let configCtas = "";
-      if (cfg.renderConfigAction) {
-        const channelNames = names.filter(n => {
-          const item = ps.data.find(d => getId(d) === n);
-          return item && item.category === "channels" && CHANNEL_INIT_REGISTRY[item.id]
-            && ps.progressMap[n]?.status === "done";
-        });
-        configCtas = channelNames.map(n => {
-          const item = ps.data.find(d => getId(d) === n);
-          const reg = CHANNEL_INIT_REGISTRY[item.id];
-          return renderButton({ variant: "primary", icon: "settings", label: `Configure ${reg.label}`, onclick: `openChannelInitWizard('${item.id}')` });
-        }).join(" ");
-      }
-      itemsHtml += `<div class="mt-4 flex justify-end gap-3">
-        ${configCtas}
-        ${renderButton({ variant: "secondary", icon: "refresh-cw", label: "Done", onclick: cfg.reloadFn + "()" })}
-      </div>`;
-    }
-
-    updatePanelContent(cfg.panelId, itemsHtml);
-  }
-
-  // 取得清單滾動容器與位置
-  function getListScrollState() {
-    const panel = document.getElementById(cfg.panelId);
-    if (!panel) return null;
-    const scrollable = panel.querySelector(".overflow-y-auto");
-    return scrollable ? { el: scrollable, top: scrollable.scrollTop } : null;
-  }
-
-  // 更新面板內容並保留滾動位置
-  function updatePanelPreserveScroll() {
-    const scroll = getListScrollState();
-    updatePanelContent(cfg.panelId, renderTabs() + renderList());
-    if (scroll) {
-      const newScrollable = document.getElementById(cfg.panelId)?.querySelector(".overflow-y-auto");
-      if (newScrollable) newScrollable.scrollTop = scroll.top;
-    }
-  }
-
-  // 切換選取
-  function toggle(id) {
-    if (ps.busy) return;
-    ps.selected.has(id) ? ps.selected.delete(id) : ps.selected.add(id);
-    updatePanelPreserveScroll();
-    renderActionBar();
-  }
-
-  // 全選 / 全不選
-  function toggleAll() {
-    if (ps.busy) return;
-    const tabDef = cfg.tabs.find(t => t.key === ps.tab);
-    const filtered = tabDef ? ps.data.filter(tabDef.filterFn) : [];
-    const allIds = filtered.map(getId);
-    const allSelected = allIds.every(id => ps.selected.has(id));
-
-    if (allSelected) allIds.forEach(id => ps.selected.delete(id));
-    else allIds.forEach(id => ps.selected.add(id));
-
-    updatePanelPreserveScroll();
-    renderActionBar();
-  }
-
-  // 切換頁籤
-  function switchTab(tab) {
-    ps.tab = tab;
-    updatePanelContent(cfg.panelId, renderTabs() + renderList());
-  }
-
-  // 部署/安裝
-  async function handleDeploy() {
-    const toDeploy = ps.data.filter(d => ps.selected.has(getId(d)) && !d[cfg.installedField]).map(getId);
-    if (toDeploy.length === 0) return;
-
-    ps.busy = true;
-    ps.progressMap = {};
-    toDeploy.forEach(id => { ps.progressMap[id] = { status: "pending", message: "Waiting..." }; });
-    renderProgressOverlay();
-    renderActionBar();
-
-    try { await window.pywebview.api[cfg.deployApi](toDeploy); } catch { /* 進度覆蓋已顯示個別狀態 */ }
-
-    ps.busy = false;
-    renderProgressOverlay();
-    renderActionBar();
-  }
-
-  // 移除/解除安裝
-  async function handleRemove() {
-    const toRemove = ps.data.filter(d => ps.selected.has(getId(d)) && d[cfg.installedField]).map(getId);
-    if (toRemove.length === 0) return;
-    if (!confirm(cfg.confirmRemoveMessage(toRemove.length))) return;
-
-    ps.busy = true;
-    ps.progressMap = {};
-    toRemove.forEach(id => { ps.progressMap[id] = { status: "pending", message: "Waiting..." }; });
-    renderProgressOverlay();
-    renderActionBar();
-
-    try { await window.pywebview.api[cfg.removeApi](toRemove); } catch { /* 進度覆蓋已顯示個別狀態 */ }
-
-    ps.busy = false;
-    renderProgressOverlay();
-    renderActionBar();
-  }
-
-  // 重新載入資料
-  async function reload() {
-    ps.progressMap = {};
-    ps.busy = false;
-    try {
-      const result = await window.pywebview.api[cfg.listApi]();
-      if (result?.success && result.data) {
-        ps.data = result.data;
-        ps.selected = new Set(ps.data.filter(d => d[cfg.installedField]).map(getId));
-      }
-    } catch { /* 保留現有資料 */ }
-    renderPage();
-  }
-
-  // 進度回呼
-  window[cfg.progressCallback] = function (id, status, message) {
-    ps.progressMap[id] = { status, message };
-    renderProgressOverlay();
-  };
-
-  // 頁面生命週期
-  registerPage(cfg.pageId, {
-    onEnter: async () => {
-      if (ps.rendered && !ps.busy) { await reload(); return; }
-
-      if (!ps.rendered) renderInto(cfg.contentId, renderLoading(`Loading ${cfg.entityNamePlural}...`));
-
-      try {
-        const result = await window.pywebview.api[cfg.listApi]();
-        if (result?.success && result.data) {
-          ps.data = result.data;
-          ps.selected = new Set(ps.data.filter(d => d[cfg.installedField]).map(getId));
-          ps.tab = cfg.defaultTab(ps.data);
-          renderPage();
-          ps.rendered = true;
-        } else {
-          renderInto(cfg.contentId, `<div class="text-center py-16">
-            ${renderErrorBlock({ message: result?.error?.message || "Unknown error", retryAction: cfg.reloadFn + "()" })}
-          </div>`);
-        }
-      } catch {
-        renderInto(cfg.contentId, `<div class="text-center py-16">
-          ${renderErrorBlock({ message: "Failed to load data", retryAction: cfg.reloadFn + "()" })}
-        </div>`);
-      }
-    },
-    onLeave: () => { ps.busy = false; },
-  });
-
-  return { toggle, toggleAll, switchTab, handleDeploy, handleRemove, reload, state: ps };
-}
-
-/* ---------- 技能部署頁面實例 ---------- */
-
-const skillsPage = createChecklistPage({
+const skillsPage = createItemListPage({
   pageId: "deploy-skills", contentId: "deploy-skills-content", badgeId: "deploy-skills-badge",
-  panelId: "skills-checklist-panel", actionBarId: "deploy-skills-action-bar",
+  panelId: "skills-checklist-panel",
   entityName: "skill", entityNamePlural: "skills", activeCountLabel: "deployed",
   icon: "zap", iconColor: "text-accent-primary",
   panelTitle: "Available Skills",
   panelDescription: "Scanned from module_pack/ (custom modules) and openclaw/skills/ (community skills)",
-  listApi: "list_skills", deployApi: "deploy_skills", removeApi: "remove_skills",
+  listApi: "list_skills", installApi: "deploy_skills", uninstallApi: "remove_skills",
   progressCallback: "updateDeployProgress",
   tabs: [
     { key: "custom", label: "Custom Modules", filterFn: s => s.source === "module_pack" },
     { key: "community", label: "Community Skills", filterFn: s => s.source === "community" },
   ],
   idField: "name", installedField: "installed",
-  activeLabel: "Deployed", inactiveLabel: "Available",
-  deployLabel: "Deploy Selected", removeLabel: "Remove Selected",
-  deployIcon: "upload", removeIcon: "trash-2",
-  activeSubtitle: "Select skills below to deploy or remove",
-  emptySubtitle: "Select skills below and click Deploy to get started",
+  tabAccentColor: "accent-primary",
+  activeSubtitle: "Click Deploy or Remove on each skill to manage",
+  emptySubtitle: "Click Deploy on a skill to get started",
+  activeLabel: "Deployed",
+  installLabel: "Deploy", installIcon: "upload",
+  busyInstallLabel: "Deploying...", busyRemoveLabel: "Removing...",
+  confirmRemoveMessage: name => `Remove ${name}?`,
+  removeKeyword: "remov",
+  installFn: "deploySkill", confirmRemoveFn: "confirmRemoveSkill",
+  cancelRemoveFn: "cancelRemoveSkill", removeFn: "removeSkill",
+  switchTabFn: "switchSkillsTab", reloadFn: "reloadSkillsPage",
   renderRowIcon: s => `<span class="text-base flex-shrink-0">${s.emoji}</span>`,
   getDisplayName: s => s.name,
   getDescription: s => s.description,
-  getProgressIcon: s => s.emoji || "\u{1F4E6}",
-  confirmRemoveMessage: n => `Remove ${n} skill(s)? This will delete the deployed files.`,
   defaultTab: data => data.some(s => s.source === "module_pack") ? "custom" : "community",
-  tabAccentColor: "accent-primary",
-  // onclick 全域函式名
-  toggleFn: "toggleSkill", toggleAllFn: "toggleAllSkills", switchTabFn: "switchSkillsTab",
-  handleDeployFn: "handleDeploySkills", handleRemoveFn: "handleRemoveSkills", reloadFn: "reloadSkillsPage",
 });
 
-window.toggleSkill = skillsPage.toggle;
-window.toggleAllSkills = skillsPage.toggleAll;
 window.switchSkillsTab = skillsPage.switchTab;
-window.handleDeploySkills = skillsPage.handleDeploy;
-window.handleRemoveSkills = skillsPage.handleRemove;
+window.deploySkill = skillsPage.handleInstall;
+window.confirmRemoveSkill = skillsPage.confirmUninstall;
+window.cancelRemoveSkill = skillsPage.cancelUninstall;
+window.removeSkill = skillsPage.handleUninstall;
 window.reloadSkillsPage = skillsPage.reload;
 
 /* =================================================================
- * 5b. Plugin List Page — 逐項操作模式（VS Code Extensions 風格）
+ * 5b. Item List Page — 逐項操作模式（VS Code Extensions 風格）
+ *     Skills 與 Plugins 共用
  * ================================================================= */
 
-function createPluginListPage(cfg) {
+function createItemListPage(cfg) {
   const ps = { data: [], tab: "", busyId: null, busyAction: null, confirmingId: null, rendered: false };
 
   const getId = (item) => item[cfg.idField];
@@ -981,37 +672,30 @@ function createPluginListPage(cfg) {
 
     let actionHtml = "";
     if (isBusy) {
-      const actionLabel = ps.busyAction === "install" ? "Installing..." : "Uninstalling...";
+      const actionLabel = ps.busyAction === "install" ? cfg.busyInstallLabel : cfg.busyRemoveLabel;
       actionHtml = `<div class="flex items-center gap-2 flex-shrink-0">
         <i data-lucide="loader" class="w-4 h-4 animate-spin text-accent-primary"></i>
         <span class="text-xs text-text-secondary">${actionLabel}</span>
       </div>`;
     } else if (isConfirming) {
       actionHtml = `<div class="flex items-center gap-2 flex-shrink-0">
-        <span class="text-xs text-text-secondary">Uninstall ${esc(displayName)}?</span>
-        ${renderButton({ variant: "danger", label: "Confirm", onclick: `uninstallPlugin('${esc(itemId)}')`, size: "sm" })}
-        ${renderButton({ variant: "secondary", label: "Cancel", onclick: "cancelUninstallPlugin()", size: "sm" })}
+        <span class="text-xs text-text-secondary">${esc(cfg.confirmRemoveMessage(displayName))}</span>
+        ${renderButton({ variant: "danger", label: "Confirm", onclick: `${cfg.removeFn}('${esc(itemId)}')`, size: "sm" })}
+        ${renderButton({ variant: "secondary", label: "Cancel", onclick: `${cfg.cancelRemoveFn}()`, size: "sm" })}
       </div>`;
     } else if (isInstalled) {
-      const badge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-xs font-medium bg-[#4CAF5015] text-status-success border border-[#4CAF5040]">Installed</span>`;
-      let settingsBtn = "";
-      if (item.category === "channels" && CHANNEL_INIT_REGISTRY[itemId]) {
-        settingsBtn = `<button onclick="event.stopPropagation(); openChannelInitWizard('${esc(itemId)}')"
-          class="inline-flex items-center justify-center w-7 h-7 rounded text-text-muted hover:text-text-primary hover:bg-bg-secondary transition-colors"
-          title="Configure ${esc(CHANNEL_INIT_REGISTRY[itemId].label)} channel">
-          <i data-lucide="settings" class="w-3.5 h-3.5"></i>
-        </button>`;
-      }
-      const uninstallBtn = `<button onclick="event.stopPropagation(); confirmUninstallPlugin('${esc(itemId)}')"
+      const badge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-xs font-medium bg-[#4CAF5015] text-status-success border border-[#4CAF5040]">${cfg.activeLabel}</span>`;
+      const extraActions = cfg.renderExtraActions ? cfg.renderExtraActions(item) : "";
+      const removeBtn = `<button onclick="event.stopPropagation(); ${cfg.confirmRemoveFn}('${esc(itemId)}')"
         class="inline-flex items-center justify-center w-7 h-7 rounded text-text-muted hover:text-status-error hover:bg-[#ef444418] transition-colors${otherBusy ? " opacity-40 pointer-events-none" : ""}"
         ${otherBusy ? "disabled" : ""}
-        title="Uninstall ${esc(displayName)}">
+        title="${esc(cfg.confirmRemoveMessage(displayName))}">
         <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
       </button>`;
-      actionHtml = `<div class="flex items-center gap-2 flex-shrink-0">${badge}${settingsBtn}${uninstallBtn}</div>`;
+      actionHtml = `<div class="flex items-center gap-2 flex-shrink-0">${badge}${extraActions}${removeBtn}</div>`;
     } else {
       actionHtml = `<div class="flex-shrink-0">
-        ${renderButton({ variant: "primary", icon: "download", label: "Install", onclick: `installPlugin('${esc(itemId)}')`, size: "sm", disabled: otherBusy })}
+        ${renderButton({ variant: "primary", icon: cfg.installIcon, label: cfg.installLabel, onclick: `${cfg.installFn}('${esc(itemId)}')`, size: "sm", disabled: otherBusy })}
       </div>`;
     }
 
@@ -1062,9 +746,7 @@ function createPluginListPage(cfg) {
     ps.busyAction = null;
     await reload();
 
-    if (item && item.category === "channels" && CHANNEL_INIT_REGISTRY[id]) {
-      openChannelInitWizard(id);
-    }
+    if (cfg.onInstalled) cfg.onInstalled(id, item);
   }
 
   function confirmUninstall(id) {
@@ -1093,6 +775,7 @@ function createPluginListPage(cfg) {
   }
 
   async function reload() {
+    const scroll = getListScrollState();
     ps.busyId = null;
     ps.busyAction = null;
     ps.confirmingId = null;
@@ -1103,12 +786,16 @@ function createPluginListPage(cfg) {
       }
     } catch { /* 保留現有資料 */ }
     renderPage();
+    if (scroll) {
+      const el = document.getElementById(cfg.panelId)?.querySelector(".overflow-y-auto");
+      if (el) el.scrollTop = scroll.top;
+    }
   }
 
   window[cfg.progressCallback] = function (id, status, message) {
     if (ps.busyId === id) {
       ps.busyAction = status === "running"
-        ? (message?.toLowerCase().includes("uninstall") ? "uninstall" : "install")
+        ? (message?.toLowerCase().includes(cfg.removeKeyword) ? "uninstall" : "install")
         : ps.busyAction;
       rerender();
     }
@@ -1146,7 +833,7 @@ function createPluginListPage(cfg) {
 
 /* ---------- 外掛安裝頁面實例（逐項操作模式） ---------- */
 
-const pluginsPage = createPluginListPage({
+const pluginsPage = createItemListPage({
   pageId: "install-plugins", contentId: "install-plugins-content", badgeId: "install-plugins-badge",
   panelId: "plugins-checklist-panel",
   entityName: "plugin", entityNamePlural: "plugins", activeCountLabel: "installed",
@@ -1162,6 +849,14 @@ const pluginsPage = createPluginListPage({
   tabAccentColor: "accent-secondary",
   activeSubtitle: "Click Install or Uninstall on each plugin to manage",
   emptySubtitle: "Click Install on a plugin to get started",
+  activeLabel: "Installed",
+  installLabel: "Install", installIcon: "download",
+  busyInstallLabel: "Installing...", busyRemoveLabel: "Uninstalling...",
+  confirmRemoveMessage: name => `Uninstall ${name}?`,
+  removeKeyword: "uninstall",
+  installFn: "installPlugin", confirmRemoveFn: "confirmUninstallPlugin",
+  cancelRemoveFn: "cancelUninstallPlugin", removeFn: "uninstallPlugin",
+  switchTabFn: "switchPluginsTab", reloadFn: "reloadPluginsPage",
   renderRowIcon: p => {
     const color = PLUGIN_COLORS[p.category] || "#6B7280";
     const letter = p.id.charAt(0).toUpperCase();
@@ -1170,8 +865,21 @@ const pluginsPage = createPluginListPage({
   getDisplayName: p => (p.category === "channels" && p.channel_label) ? p.channel_label : p.id,
   getDescription: p => (p.category === "channels" && p.channel_blurb) ? p.channel_blurb : p.description,
   defaultTab: data => PLUGIN_CATEGORIES.map(c => c.key).find(k => data.some(p => p.category === k)) || "providers",
-  switchTabFn: "switchPluginsTab",
-  reloadFn: "reloadPluginsPage",
+  renderExtraActions: p => {
+    if (p.category === "channels" && p.installed && CHANNEL_INIT_REGISTRY[p.id]) {
+      return `<button onclick="event.stopPropagation(); openChannelInitWizard('${esc(p.id)}')"
+        class="inline-flex items-center justify-center w-7 h-7 rounded text-text-muted hover:text-text-primary hover:bg-bg-secondary transition-colors"
+        title="Configure ${esc(CHANNEL_INIT_REGISTRY[p.id].label)} channel">
+        <i data-lucide="settings" class="w-3.5 h-3.5"></i>
+      </button>`;
+    }
+    return "";
+  },
+  onInstalled: (id, item) => {
+    if (item && item.category === "channels" && CHANNEL_INIT_REGISTRY[id]) {
+      openChannelInitWizard(id);
+    }
+  },
 });
 
 window.switchPluginsTab = pluginsPage.switchTab;
