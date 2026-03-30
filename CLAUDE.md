@@ -152,7 +152,13 @@ openclaw/                            # 專案根目錄
 │       ├── css/
 │       │   └── styles.css           # Tailwind CSS 編譯產出
 │       └── js/
-│           └── app.js               # 前端互動邏輯 (結構化 UI，無 terminal)
+│           ├── core.js              # 工具函式、共用全域狀態
+│           ├── router.js            # SPA 路由、頁面生命週期、側邊欄
+│           ├── components.js        # 共用 UI 元件
+│           ├── item-list.js         # 勾選清單頁面工廠（Skills / Plugins 共用）
+│           ├── channel-init.js      # Channel 初始化 Modal 精靈
+│           ├── page-*.js            # 各頁面邏輯（fix, dashboard, environment, config, gateway）
+│           └── bootstrap.js         # Bridge 整合與啟動（必須最後載入）
 ├── scripts/                         # [DEPRECATED] 舊版 Shell 腳本 (僅供參考，不再使用)
 ├── build.py                         # PyInstaller 打包腳本
 ├── pyproject.toml                   # Python 專案設定與依賴宣告 (PEP 621)

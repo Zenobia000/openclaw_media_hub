@@ -20,7 +20,33 @@
 - **Font**: Inter（Google Fonts CDN，權重 400/500/600/700/800）
 - **Deploy**: PyInstaller 打包為單一執行檔，前端靜態資源嵌入
 
-### 1.2 核心依賴 (Key Dependencies)
+### 1.2 JavaScript 模組結構 (JS Module Structure)
+
+前端 JavaScript 拆分為 11 個檔案，透過多個 `<script>` 標籤依序載入（不使用 ES Modules，因 PyWebView `file://` 協議受 CORS 限制）。
+
+**載入順序**（依賴方向：上層依賴下層）：
+
+| # | 檔案 | 職責 |
+| :--- | :--- | :--- |
+| 1 | `core.js` | DevTools 保護、工具函式（`esc`, `showToast`, `renderInto` 等）、共用全域狀態（`state`, `pageHooks`） |
+| 2 | `router.js` | SPA 路由（`navigateTo`, `registerPage`）、側邊欄模式/連線狀態 |
+| 3 | `components.js` | 共用 UI 元件（按鈕、輸入框、狀態標籤、卡片、面板、步驟指示器、進度項目） |
+| 4 | `item-list.js` | 勾選清單頁面工廠 `createItemListPage()`、Skills / Plugins 頁面實例 |
+| 5 | `channel-init.js` | Channel 初始化 Modal 精靈（LINE 等 Channel 設定） |
+| 6 | `page-fix.js` | Fix Plugins 頁面（診斷報告、修復流程） |
+| 7 | `page-dashboard.js` | Dashboard 頁面（服務狀態、控制、快速操作） |
+| 8 | `page-environment.js` | Environment 檢查頁面（軟體偵測、.env 驗證） |
+| 9 | `page-config.js` | Configuration 設定精靈（3 步驟：模式選擇、API Keys、初始化） |
+| 10 | `page-gateway.js` | Gateway 管理頁面（連線資訊、Origin 控制、裝置管理） |
+| 11 | `bootstrap.js` | Bridge 整合、`initApp()`、`pywebviewready` 事件監聽（**必須最後載入**） |
+
+**設計原則**：
+- 所有檔案共享同一全域作用域（`function` 宣告自動提升為全域可用）
+- 頁面專屬狀態（如 `configState`, `dashboardState`）定義在對應的 `page-*.js` 中
+- Bridge 回呼（`window.updateInitProgress` 等）在各自的頁面檔案中註冊
+- 各 `page-*.js` 結尾透過 `registerPage()` 註冊生命週期鉤子
+
+### 1.3 核心依賴 (Key Dependencies)
 
 | 依賴 | 引入方式 | 用途 |
 | :--- | :--- | :--- |
