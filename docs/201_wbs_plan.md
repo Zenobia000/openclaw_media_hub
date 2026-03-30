@@ -2,8 +2,8 @@
 
 ---
 
-**版本:** `v3.2`
-**更新:** `2026-03-26`
+**版本:** `v3.4`
+**更新:** `2026-03-30`
 **作者:** `[專案經理 / 開發人員]`
 **審核:** `[TL / 審核人員]`
 **狀態:** `規劃中`
@@ -138,10 +138,19 @@
 │   ├── 3.14.6 跨頁面整合測試
 │   └── 3.14.7 US-007 SSH 遠端管理端到端驗證
 ├── [3.16 已拆散合併: 3.16.1→3.6.3, 3.16.2→3.2.3, 3.16.3→3.6]
-└── 3.17 SSH 整合測試
-    ├── 3.17.1 Mock Executor 單元測試
-    ├── 3.17.2 SSH 連線整合測試
-    └── 3.17.3 端到端遠端操作驗證
+├── 3.17 SSH 整合測試
+│   ├── 3.17.1 Mock Executor 單元測試
+│   ├── 3.17.2 SSH 連線整合測試
+│   └── 3.17.3 端到端遠端操作驗證
+└── 3.18 多國語言支援 — ADR-007 (US-008)
+    ├── 3.18.1 語系檔建立（zh-TW.js + en.js）
+    ├── 3.18.2 core.js i18n 函式（t() + setLocale()）
+    ├── 3.18.3 Bridge API（get_locale / save_locale）
+    ├── 3.18.4 bootstrap.js 語系初始化流程
+    ├── 3.18.5 Sidebar 語言切換元件
+    ├── 3.18.6 字串遷移 — 共用模組（core/router/components/item-list）
+    ├── 3.18.7 字串遷移 — 頁面模組（page-*.js + channel-init + bootstrap）
+    └── 3.18.8 i18n 驗證測試
 
 4.0 發佈上線 (Release)
 ├── 4.1 封閉測試與回饋收集
@@ -154,8 +163,8 @@
 
 | 週次 | 日期 | 主要工作 |
 | :--- | :--- | :--- |
-| Week 1 | 03/22 - 03/28 | Phase 1 ✅ + Phase 2 設計🔄 + **3.1~3.8 全部提前完成✅** + **3.9 Dashboard✅ + 3.10 Deploy Skills✅ + 3.11 Install Plugins✅ + 3.12a Gateway✅ + 3.12 Fix Plugins✅**（225 tests） |
-| Week 2 | 03/29 - 04/04 | 3.13 PyInstaller 打包 + Phase 2 收尾（API Spec、QA 計劃） |
+| Week 1 | 03/22 - 03/28 | Phase 1 ✅ + Phase 2 設計🔄 + **3.1~3.8 全部提前完成✅** + **3.9 Dashboard✅ + 3.10 Deploy Skills✅ + 3.11 Install Plugins✅ + 3.12a Gateway✅ + 3.12 Fix Plugins✅**（213 tests） |
+| Week 2 | 03/29 - 04/04 | **3.2.7 JS 模組化✅ + 3.2.8 Toast 通知✅ + 3.7.8 Channel Init Wizard✅ + 3.7.9 Model Registry✅ + per-item 操作模式重構✅** + **3.18 i18n 多國語言 (ADR-007)** + 3.13 PyInstaller 打包 + Phase 2 收尾（API Spec、QA 計劃） |
 | Week 3 | 04/05 - 04/11 | 3.17 SSH 整合測試 + 3.14 QA 功能驗證 |
 | Week 4 | 04/12 - 04/18 | Phase 4 發佈上線（封閉測試 + Bug 修復 + 文件 + 正式發佈） |
 | ~~Week 5~~ | ~~04/19 - 04/25~~ | ~~已無排程~~ |
@@ -179,16 +188,21 @@
 | 3.7 Config Step 2  | 10h      | 2026-04-16 | 2026-03-25 | ✅ 完成   | registries.py + 前端 + 19 項測試 |
 | 3.8 Initializer    | 16h      | 2026-04-19 | 2026-03-25 | ✅ 完成   | 11 步 + Bridge + 前端 + 30 項測試 |
 | 3.9 Dashboard      | 12h      | 2026-03-25 | 2026-03-26 | ✅ 完成   | 提前完成，28 項測試 |
-| 3.10 技能部署      | 10h      | 2026-03-25 | 2026-03-25 | ✅ 完成   | 提前完成，21 項測試 |
-| 3.11 外掛安裝      | 10h      | 2026-03-25 | 2026-03-26 | ✅ 完成   | 提前完成，21 項測試 |
+| 3.10 技能部署      | 10h      | 2026-03-25 | 2026-03-25 | ✅ 完成   | 提前完成，21 項測試；03/30 重構為 per-item 操作模式 + item-list 共用工廠 |
+| 3.11 外掛安裝      | 10h      | 2026-03-25 | 2026-03-26 | ✅ 完成   | 提前完成，21 項測試；03/30 重構為 per-item 操作模式 + 捲動位置保留 |
 | 3.12 外掛修復      | 6h       | 2026-03-26 | 2026-03-26 | ✅ 完成   | 提前完成，14 項測試 |
-| 3.12a Gateway 控制  | 8h       | 2026-03-25 | 2026-03-25 | ✅ 完成   | 提前完成，Origin + Device + Info |
+| 3.12a Gateway 控制  | 8h       | 2026-03-25 | 2026-03-25 | ✅ 完成   | 提前完成；03/30 補充 toast feedback、origin access toggle 細化 |
+| 3.2.7 JS 模組化    | 3h       | 2026-03-30 | 2026-03-30 | ✅ 完成   | app.js 拆分為 11 個聚焦模組（commit 6d652f3） |
+| 3.2.8 Toast 通知   | 1h       | 2026-03-30 | 2026-03-30 | ✅ 完成   | 全域 toast 系統 + Gateway 設定回饋（commit 88c42b2） |
+| 3.7.8 Channel Init Wizard | 3h | 2026-03-30 | 2026-03-30 | ✅ 完成 | channel 初始化精靈 Modal（commit a34d2cf） |
+| 3.7.9 Model Registry | 2h     | 2026-03-30 | 2026-03-30 | ✅ 完成   | model registry + 前端 selection 基礎架構（commit 595d002） |
+| 3.18 i18n 多國語言  | 10h      | 2026-03-31 | 2026-04-02 | ⬜ 未開始 | ADR-007, US-008 繁中/英雙語 |
 | 3.13 PyInstaller   | 8h       | 2026-04-30 | 2026-05-03 | ⬜ 未開始 | |
 | 3.14 QA 驗證       | 10h      | 2026-05-03 | 2026-05-06 | ⬜ 未開始 | |
 | 3.17 SSH 整合測試  | 6h       | 2026-05-02 | 2026-05-04 | ⬜ 未開始 | |
 | 3.16 SSH 前端整合  | ~~4h~~   | —          | —          | 已合併    | 拆入 3.2.3, 3.6.3, 3.16.3 |
 | 4.0 發佈上線       | 16h      | 2026-05-05 | 2026-05-08 | ⬜ 未開始 | |
-| **總計**           | **190h** | **2026-03-22** | **2026-05-08** | **🔄 進行中** | +8h Gateway (ADR-006) |
+| **總計**           | **209h** | **2026-03-22** | **2026-05-08** | **🔄 進行中** | +8h Gateway (ADR-006) +9h 新功能（JS 模組化/Toast/Channel Init Wizard/Model Registry） +10h i18n (ADR-007) |
 
 **狀態:** ✅ 完成 | 🔄 進行中 | ⏳ 計劃中 | ⬜ 未開始
 
@@ -208,7 +222,7 @@
 | ID  | 任務                                                     | 負責人 | 工時 | 狀態      | 開始日 | 完成日 | 備註                                     |
 | :-- | :------------------------------------------------------- | :----- | :--- | :-------- | :----- | :----- | :--------------------------------------- |
 | 2.1 | 建立架構設計與 ADR (ADR-001/002/003)                     | DEV    | 6h   | ✅ 完成   | 03/22  | 03/23  | 產出 202_architecture_design.md          |
-| 2.2 | 設計 UI Mockup (Wireframes)                              | DEV/PM | 6h   | 🔄 進行中 | 03/23  | 03/27  | pencil-new.pen 設計中                    |
+| 2.2 | 設計 UI Mockup (Wireframes)                              | DEV/PM | 6h   | ✅ 完成   | 03/23  | 03/30  | pencil-new.pen 設計完成                  |
 | 2.3 | 撰寫前端規格書                                           | DEV    | 4h   | ✅ 完成   | 03/24  | 03/24  | 產出 208_frontend_specification.md       |
 | 2.4 | Bridge API Spec（17+ API 方法、回傳格式、錯誤類型定義）  | DEV    | 4h   | ⬜ 未開始 | 03/27  | 03/28  | 基於 208 前端規格 §5.4 API 清單整理      |
 | 2.5 | QA 測試計劃與案例撰寫                                    | QA     | 4h   | ⬜ 未開始 | 03/27  | 03/28  | 依 US-001~006 + Fix Plugins 撰寫測試案例 |
@@ -234,6 +248,8 @@
 | 3.2.4 | SPA 路由機制：6 個 View ID 切換 (dashboard/configuration/environment/deploy-skills/install-plugins/fix-plugins) + NavItem 導航綁定 | DEV | 1h | ✅ 完成 | 03/25 | 03/25 | navigateTo() + onEnter/onLeave hooks |
 | 3.2.5 | 共用元件：Button (Primary/Secondary/Danger + icon + disabled + loading)、Input (label + icon + placeholder + password toggle)、StatusBadge (4 狀態)、StatCard | DEV | 2h | ✅ 完成 | 03/25 | 03/25 | 4 個 render 函式 + togglePassword |
 | 3.2.6 | 共用元件：SectionPanel (icon + 標題 + 描述 + children)、StepIndicator (3 步驟)、ProgressItem (done/running/pending/failed)、CheckCard | DEV | 1h | ✅ 完成 | 03/25 | 03/25 | 4 個 render 函式 + tab/checkbox CSS |
+| 3.2.7 | JS 模組化重構：拆分 app.js 為 11 個聚焦模組（`core.js` 工具/全域狀態、`router.js` SPA 路由、`components.js` 共用元件、`item-list.js` 清單頁面工廠、`channel-init.js` Channel 精靈、`page-dashboard/environment/config/fix/gateway.js` 各頁面邏輯（deploy-skills/install-plugins 由 `item-list.js` 工廠統一處理）、`bootstrap.js` 啟動整合）| DEV | 3h | ✅ 完成 | 03/30 | 03/30 | commit `6d652f3`，提升可維護性 |
+| 3.2.8 | Toast 通知系統：全域 toast 機制（success/error/info 三種類型 + 自動淡出消失 + CSS 動畫）+ 整合至 Gateway 設定儲存回饋 | DEV | 1h | ✅ 完成 | 03/30 | 03/30 | commit `88c42b2` |
 
 #### 3.3 後端基礎模組 (7h)
 
@@ -298,6 +314,8 @@
 | 3.7.5 | 前端 Tools 區塊（預設收合）：Brave/Perplexity/Firecrawl/ElevenLabs/Deepgram 金鑰輸入                         | DEV    | 1h    | ✅ 完成 | 03/25  | 03/25  |                                               |
 | 3.7.6 | 前端 Security Note (shield-check icon + 加密說明) + Action Bar (Back/Next) + `save_keys()` 至 keyring 流程   | DEV    | 1h    | ✅ 完成 | 03/25  | 03/25  |                                               |
 | 3.7.7 | 步驟間資料保留：Step 1↔2↔3 切換時保留已填資料（前端記憶體快取機制）                                           | DEV    | 1h    | ✅ 完成 | 03/25  | 03/25  | saveStep2FormState/restoreStep2FormState       |
+| 3.7.8 | Channel Init Wizard：Channel 外掛初始化精靈 Modal（步驟式設定流程：channel 類型選擇 → 必填欄位表單 → 儲存至 .env + openclaw.json）+ Bridge API 整合 | DEV | 3h | ✅ 完成 | 03/30 | 03/30 | commit `a34d2cf`；channel-init.js 獨立模組 |
+| 3.7.9 | Model Registry + 選擇邏輯：registries.py model registry 基礎架構（provider → 可用模型清單）+ 前端 model selection UI（provider 勾選後展開模型下拉）+ Bridge API `get_available_models()` | DEV | 2h | ✅ 完成 | 03/30 | 03/30 | commit `595d002`，建立 model selection 基礎 |
 
 #### 3.8 Configuration Step 3 — 初始化執行與結果 (16h)
 
@@ -386,12 +404,27 @@
 | 3.12.3 | 前端 Fix Plugins：Header (Run Diagnostics 按鈕) + Summary Banner (健康綠/有問題紅/診斷中藍/無安裝藍 四種狀態 + Last checked) + Diagnostic Report 區塊（SectionPanel stethoscope + 外掛列表 + Issues 清單 + Healthy/Broken badge + 個別 Fix 按鈕） | DEV | 2h | ✅ 完成 | 03/26 | 03/26 | 208 §4.8 |
 | 3.12.4 | 前端 Fix Plugins：Fix Progress Overlay (renderProgressItem + Done → finishFixAndRediagnose) + Action Bar (Fix All 按鈕) + 修復完成後自動重新診斷 | DEV | 0.5h | ✅ 完成 | 03/26 | 03/26 | |
 
+#### 3.18 多國語言支援 — ADR-007 / US-008 (10h)
+
+> 前端 UI 支援繁體中文（`zh-TW`，預設）與英文（`en`）。自建輕量 `t()` 翻譯函式 + JSON 語系檔，零外部依賴。所有 11 個 JS 檔案中的 121+ 個硬編碼字串遷移至 `t()` 呼叫。
+
+| ID     | 任務                                                                                                          | 負責人 | 工時  | 狀態      | 開始日 | 完成日 | 備註                                   |
+| :----- | :------------------------------------------------------------------------------------------------------------ | :----- | :---- | :-------- | :----- | :----- | :------------------------------------- |
+| 3.18.1 | 語系檔建立：`locales/en.js`（以現有英文字串為基底，建立完整 key-value 映射）+ `locales/zh-TW.js`（翻譯所有 key） | DEV | 2h | ⬜ 未開始 | 03/31 | 03/31 | flat dot-notation key（nav.*/btn.*/status.*/page.*） |
+| 3.18.2 | core.js i18n 基礎設施：`t(key, params)` 翻譯函式（含插值）+ `setLocale(localeId)` 語系切換 + 全域變數 `currentLocale` | DEV | 1h | ⬜ 未開始 | 03/31 | 03/31 | 語系檔以 `<script>` 載入為 `window.__locale_*` |
+| 3.18.3 | Bridge API：`get_locale()` / `save_locale({locale})` — 讀寫 `gui-settings.json` 的 `locale` 欄位 | DEV | 0.5h | ⬜ 未開始 | 03/31 | 03/31 | config_manager.py 擴充 |
+| 3.18.4 | bootstrap.js 語系初始化流程：`initApp()` 中依優先順序決定語系（gui-settings > navigator.language > zh-TW）→ `setLocale()` | DEV | 0.5h | ⬜ 未開始 | 03/31 | 03/31 | 208 §3.5 初始化流程 |
+| 3.18.5 | Sidebar 語言切換元件：`globe` icon + 語言名稱 + 下拉選單（繁體中文 / English）→ `save_locale()` + `setLocale()` + 重新渲染 | DEV | 1h | ⬜ 未開始 | 04/01 | 04/01 | 位於 Sidebar 底部，版本資訊上方 |
+| 3.18.6 | 字串遷移 — 共用模組：`core.js`, `router.js`, `components.js`, `item-list.js` 中的硬編碼字串替換為 `t()` 呼叫 | DEV | 2h | ⬜ 未開始 | 04/01 | 04/01 | ~49 個字串（components 最多） |
+| 3.18.7 | 字串遷移 — 頁面模組：`page-dashboard.js`, `page-environment.js`, `page-config.js`, `page-gateway.js`, `page-fix.js`, `channel-init.js`, `bootstrap.js` 中的硬編碼字串替換為 `t()` 呼叫 | DEV | 2h | ⬜ 未開始 | 04/01 | 04/02 | ~72 個字串（page-config 最多 49 個） |
+| 3.18.8 | i18n 驗證測試：語系切換即時重渲染 + key 缺失 fallback（顯示 key 本身）+ 插值正確性 + 語言偏好持久化 + `index.html` 新增語系檔 `<script>` 引入 | DEV | 1h | ⬜ 未開始 | 04/02 | 04/02 | 手動 + 自動化驗證 |
+
 #### 3.13 PyInstaller 打包 — US-004 (8h)
 
 | ID     | 任務                                                                                                          | 負責人 | 工時 | 狀態      | 開始日 | 完成日 | 備註                       |
 | :----- | :------------------------------------------------------------------------------------------------------------ | :----- | :--- | :-------- | :----- | :----- | :------------------------- |
 | 3.13.1 | build.py：PyInstaller spec 配置（frontend/ 靜態資源嵌入、data files 設定、icon 設定）                          | DEV    | 2h   | ⬜ 未開始 | 04/30  | 04/30  | Week 6，與 3.12 並行       |
-| 3.13.2 | CDN 資源離線化：下載 Tailwind CSS + Lucide Icons + Inter Font 至 frontend/（確保無網路環境可用）               | DEV    | 1h   | ⬜ 未開始 | 04/30  | 05/01  | 208 §1.2 注意事項           |
+| 3.13.2 | CDN 資源離線化：下載 Tailwind CSS + Lucide Icons + Inter Font 至 frontend/（確保無網路環境可用）+ 語系檔 `locales/*.js` 嵌入 | DEV | 1h | ⬜ 未開始 | 04/30 | 05/01 | 208 §1.2，語系檔為本機靜態資源 |
 | 3.13.3 | Windows 打包測試：單一 .exe 產出 + 啟動驗證 + 功能冒煙測試                                                     | DEV    | 2h   | ⬜ 未開始 | 05/02  | 05/02  | Week 7                     |
 | 3.13.4 | Linux 打包測試：單一可執行檔產出 + 啟動驗證                                                                     | DEV    | 2h   | ⬜ 未開始 | 05/02  | 05/03  |                            |
 | 3.13.5 | 打包問題修復（hidden imports、路徑修正、資源定位、keyring backend 打包）                                        | DEV    | 1h   | ⬜ 未開始 | 05/03  | 05/03  |                            |
@@ -407,6 +440,7 @@
 | 3.14.5 | US-006 驗證：外掛安裝/解除安裝端到端測試（4 分類 Tab + 安裝/解除 + Progress + openclaw.json 驗證） | QA  | 1h    | ⬜ 未開始 | 05/05  | 05/05  |                       |
 | 3.14.6 | Fix Plugins 驗證 + 跨頁面整合測試（Sidebar 導航正確、模式切換影響各頁面行為、步驟間資料保留）   | QA     | 1.5h  | ⬜ 未開始 | 05/05  | 05/05  |                       |
 | 3.14.7 | US-007 驗證：SSH 遠端管理端到端測試（Remote Server 模式選擇 → SSH 連線 → 遠端環境檢查 → 遠端初始化 → 技能跨機器部署） | QA | 2h | ⬜ 未開始 | 05/05 | 05/06 | ADR-004 |
+| 3.14.8 | US-008 驗證：i18n 多國語言端到端測試（首次啟動 OS 語系偵測 → 繁中/英切換即時重渲染 → 偏好持久化 → 所有頁面字串完整翻譯 → key 缺失 fallback → 插值正確性） | QA | 1h | ⬜ 未開始 | 05/05 | 05/05 | ADR-007 |
 
 #### 3.15 Transport Layer — ADR-004 (17h) ★ 基礎層，最先開發
 
@@ -456,9 +490,9 @@
 
 ### 整體進度
 
-階段 1 (Inception & Planning) 已完成。階段 2 (Design & Architecture) 進行中（UI Mockup 設計中）。階段 3 (Construction) **大幅提前**：3.1~3.8（基礎設施 + Configuration 3 步驟）於 03/25 完成，3.9~3.11 + 3.12a（Dashboard + 技能部署 + 外掛安裝 + Gateway 控制）於 03/25~03/26 完成。**累計 213 項測試全數通過，零回歸**。
+階段 1 (Inception & Planning) 已完成。階段 2 (Design & Architecture) 進行中（UI Mockup 設計中、2.4 API Spec 待開始）。階段 3 (Construction) **大幅提前**：3.1~3.8（基礎設施 + Configuration 3 步驟）於 03/25 完成，3.9~3.11 + 3.12a（Dashboard + 技能部署 + 外掛安裝 + Gateway 控制）於 03/25~03/26 完成，3.12 外掛修復於 03/26 完成。**累計 213 項測試全數通過，零回歸**。
 
-**v3.2 進度摘要**：原定 Week 5~6 的核心功能（3.9 Dashboard、3.10 Deploy Skills、3.11 Install Plugins、3.12a Gateway）全部提前至 Week 1 完成。3.6 Config Step 1（含 SSH 表單）與 3.16.3 SSH Bridge API 整合亦已於 03/25 提前完成（WBS 狀態補正）。剩餘工作：3.12 外掛修復（6h）、3.13 PyInstaller 打包（8h）、3.14 QA 驗證（10h）、3.17 SSH 整合測試（6h）、4.0 發佈上線（16h），合計約 54h（含 2.4/2.5 設計收尾 8h）。
+**v3.4 進度摘要 (03/30 更新)**：Week 2（03/29~03/30）新增完成：**3.2.7 JS 模組化重構**（app.js 拆分為 11 個聚焦模組）、**3.2.8 Toast 通知系統**、**3.7.8 Channel Init Wizard**（channel 外掛初始化精靈）、**3.7.9 Model Registry + 選擇邏輯**，並完成 3.10/3.11 per-item 操作模式重構、Gateway 頁面細化、Dashboard 邏輯補強、初始化錯誤處理優化。新增 **ADR-007 i18n 多國語言支援**（US-008，繁體中文 + 英文，10h），排入 Week 2 後段～Week 3 前段。剩餘工作：**3.18 i18n（10h）** + 3.13 PyInstaller 打包（8h）+ 3.14 QA 驗證（11h）+ 3.17 SSH 整合測試（6h）+ 4.0 發佈上線（16h），合計約 59h（含 2.4/2.5 設計收尾 8h）。
 
 ### 週度進度
 
@@ -500,6 +534,26 @@
   - Bridge API Spec 設計 (2.4)。
   - QA 測試案例撰寫 (2.5)。
 
+#### Week 2 (03/29 ～ 04/04) - 功能補強與重構
+
+- **已完成 (03/30 — JS 模組化 + Channel Init Wizard + Model Registry)**:
+  - `3.2.7` JS 模組化重構：app.js 拆分為 11 個聚焦模組（core/router/components/item-list/channel-init/page-*.js/bootstrap），大幅提升可維護性（commit `6d652f3`）。
+  - `3.2.8` Toast 通知系統：全域 toast（success/error/info）+ Gateway 設定操作回饋整合（commit `88c42b2`）。
+  - `3.7.8` Channel Init Wizard：channel 外掛初始化精靈 Modal，步驟式設定流程，channel-init.js 獨立模組（commit `a34d2cf`）。
+  - `3.7.9` Model Registry + 選擇邏輯：registries.py model registry 基礎架構 + 前端 model selection UI（commit `595d002`）。
+  - `3.10/3.11` per-item 操作模式重構 + item-list 共用頁面工廠（commit `62b581b`, `7d56308`）。
+  - Deploy Skills / Install Plugins 捲動位置保留 + layout 修正（commit `a5d595f`, `7e1b12e`）。
+  - Gateway 頁面 layout 細化 + origin access toggle 優化（commit `c8e4851`）。
+  - Dashboard 邏輯補強（commit `2c71406`）。
+  - 初始化錯誤處理與 UI 細化（commit `5d0200e`）。
+  - 架構文件 + 前端規格書持續更新（commit `712092a`, `05f4494`, `2c71406`）。
+  - 設計系統屬性精化（commit `6a43a31`）。
+- **計劃中**:
+  - 3.18 i18n 多國語言支援（ADR-007 已接受，US-008 已定義，10h）。
+  - 3.13 PyInstaller 打包。
+  - 2.4 Bridge API Spec。
+  - 2.5 QA 測試案例撰寫。
+
 ---
 
 ## 5. 風險與議題
@@ -511,7 +565,7 @@
 | **PyWebView 與結構化 UI 更新的效能瓶頸**             | 中     | 低     | ADR-003 改用結構化 JSON 回傳取代 stdout 串流，DOM 更新頻率大幅降低，風險已緩解。              | DEV    |
 | **PyInstaller 打包跨平台檔案遇到的依賴問題**         | 高     | 高     | 在開發早期建立 CI/CD 或本地打包腳本，隨時驗證打包後的執行檔。                                 | DEV    |
 | **Docker-compose 與 Systemctl 在不同環境的權限問題** | 中     | 高     | 確保 GUI 應用程式執行時會檢查權限，並在 UI 上給予友善的錯誤提示（如「請以系統管理員執行」）。 | DEV    |
-| **金鑰安全儲存的跨平台相容性**                       | 中     | 中     | 使用 Python `keyring` 套件統一介面，開發初期驗證 Windows/Linux 各環境的整合。                 | DEV    |
+| **金鑰安全儲存的跨平台相容性** ~~(已緩解 ADR-005)~~   | ~~中~~ | ~~中~~ | ADR-005 已解決：放棄 keyring，改以目標機器 `.env` 直接儲存 API 金鑰（檔案權限 600），與 Docker/systemd 注入一致，跨平台相容性問題消除。 | DEV    |
 | **openclaw.json 結構複雜性**                         | 高     | 中     | `openclaw.json` 為多層巢狀 JSON 結構（agents, channels, gateway, plugins, tools, commands），GUI 寫入邏輯需確保不破壞既有設定。緩解：讀取後 deep merge，寫入前備份（利用 openclaw 自身 `.bak` 機制）。 | DEV    |
 | **SSH 連線穩定性與網路中斷** (ADR-004)               | 高     | 中     | `ssh_connection.py` 實作自動重連機制（失敗重試 3 次，間隔 2/4/8 秒指數退避）、30 秒心跳 keepalive 偵測中斷、長時間操作透過 `on_output` callback 串流避免 channel 閒置逾時。前端顯示連線狀態指示燈即時回饋。 | DEV    |
 | **SFTP 大檔案傳輸效能** (ADR-004)                    | 中     | 低     | 技能部署上傳可能涉及大量小檔案遞迴傳輸（SFTP 無原生 copytree），效能較本機 shutil 慢。緩解：提供傳輸進度回呼、限制單次上傳檔案數量、未來可考慮 tar + pipe 優化。 | DEV    |

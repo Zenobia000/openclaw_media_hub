@@ -2,10 +2,10 @@
 
 ---
 
-**版本:** `v1.1`
-**日期:** `2026-03-26`
+**版本:** `v1.2`
+**日期:** `2026-03-30`
 **狀態:** `Draft`
-**依據:** `202_architecture_design.md v2.0`, `200_project_brief_prd.md v2.0`, `pencil-new.pen UI Mockup`
+**依據:** `202_architecture_design.md v2.1`, `200_project_brief_prd.md v2.1`, `pencil-new.pen UI Mockup`, `ADR-007` — 前端多國語言支援
 
 ---
 
@@ -18,7 +18,8 @@
 - **State**: 前端完全無狀態，所有資料由 Python Bridge API 即時提供
 - **Icons**: Lucide Icons（SVG icon set，與 Mockup 一致）
 - **Font**: Inter（Google Fonts CDN，權重 400/500/600/700/800）
-- **Deploy**: PyInstaller 打包為單一執行檔，前端靜態資源嵌入
+- **i18n**: 自建輕量 `t(key, params)` 翻譯函式 + JSON 語系檔（`locales/zh-TW.json`, `locales/en.json`）。零外部依賴，語系檔以 `<script>` 標籤載入為全域變數，所有 UI 字串透過 `t()` 取得 (ADR-007)
+- **Deploy**: PyInstaller 打包為單一執行檔，前端靜態資源嵌入（含語系檔）
 
 ### 1.2 JavaScript 模組結構 (JS Module Structure)
 
@@ -28,7 +29,9 @@
 
 | # | 檔案 | 職責 |
 | :--- | :--- | :--- |
-| 1 | `core.js` | DevTools 保護、工具函式（`esc`, `showToast`, `renderInto` 等）、共用全域狀態（`state`, `pageHooks`） |
+| 0a | `locales/zh-TW.js` | 繁體中文語系資料（`window.__locale_zhTW = {...}`，預設語系，同步載入）(ADR-007) |
+| 0b | `locales/en.js` | 英文語系資料（`window.__locale_en = {...}`，同步載入）(ADR-007) |
+| 1 | `core.js` | DevTools 保護、工具函式（`esc`, `showToast`, `renderInto` 等）、共用全域狀態（`state`, `pageHooks`）、i18n 翻譯函式（`t()`, `setLocale()`）(ADR-007) |
 | 2 | `router.js` | SPA 路由（`navigateTo`, `registerPage`）、側邊欄模式/連線狀態 |
 | 3 | `components.js` | 共用 UI 元件（按鈕、輸入框、狀態標籤、卡片、面板、步驟指示器、進度項目） |
 | 4 | `item-list.js` | 勾選清單頁面工廠 `createItemListPage()`、Skills / Plugins 頁面實例 |
@@ -53,8 +56,9 @@
 | Tailwind CSS | CDN `<script>` | 樣式框架，支援 Dark Mode 與自訂 Design Tokens |
 | Lucide Icons | CDN / 本機 bundle | 圖示庫（sidebar nav、狀態 badge、表單 icon） |
 | Inter Font | Google Fonts CDN | 全域字型 |
+| i18n 語系檔 | 本機 `<script>` | `locales/zh-TW.js` + `locales/en.js`，以全域變數載入 (ADR-007) |
 
-> **注意**: 打包為離線版本時，需將 CDN 資源下載至 `frontend/` 目錄，確保無網路環境下可用。
+> **注意**: 打包為離線版本時，需將 CDN 資源下載至 `frontend/` 目錄，確保無網路環境下可用。語系檔為本機靜態資源，無需額外處理。
 
 ---
 
@@ -204,6 +208,7 @@ Root (SPA - Single Page Application)
 ├─────────────────────────┤
 │                         │  ← Spacer (flex: 1)
 ├─────────────────────────┤
+│ [🌐 繁中 ▾]             │  ← 語言切換 (11px, 下拉選單) (ADR-007)
 │ OpenClaw v1.0.0         │  ← 版本資訊 (11px, #838387)
 │ Docker · Windows        │  ← 環境模式 (11px, #838387, 動態)
 └─────────────────────────┘
@@ -216,6 +221,17 @@ Root (SPA - Single Page Application)
   | `docker-linux` | Docker · Linux/WSL2 |
   | `native-linux` | Native · Linux (systemd) |
   | `remote-ssh` | Remote · SSH |
+- **語言切換元件** (ADR-007)（位於版本資訊上方）:
+  - 水平排列：`globe` icon（14px, `text-muted`）+ 語言名稱（11px, 500, `text-muted`）+ `chevron-down` icon（10px, `text-muted`）
+  - Padding：`8px 16px`，gap `6px`
+  - Hover：文字與 icon 變 `text-secondary`
+  - 點擊展開下拉選單：
+    | 選項 | 顯示文字 | `locale` 值 |
+    | :--- | :--- | :--- |
+    | 繁體中文 | 繁體中文 | `zh-TW` |
+    | English | English | `en` |
+  - 選中項帶 `check` icon（`status-success` 色）
+  - 切換後呼叫 `save_locale()` + `setLocale()` + 重新渲染當前頁面
 - **連線狀態指示燈**（僅 `remote-ssh` 模式顯示，位於版本資訊上方）:
   | 狀態 | 圓點色 | 文字 | 說明 |
   | :--- | :--- | :--- | :--- |
@@ -229,6 +245,117 @@ Root (SPA - Single Page Application)
 - **Active 狀態**: 背景 `#1f1318`，邊框 `#ff5c5c30`，icon 變 `accent-primary`，文字變 `text-primary` + `font-weight: 600`
 - **Hover 狀態**: 背景微亮（`bg-card` 色調）
 - **Sidebar 邊框**: 右側 `1px solid border-default`
+
+---
+
+### 3.5 多國語言 (i18n) (ADR-007)
+
+#### 翻譯函式 API
+
+定義於 `core.js`（載入順序 #1），所有後續 JS 檔案皆可直接呼叫：
+
+```javascript
+// 基本翻譯
+t("btn.start")                          // → "啟動服務" (zh-TW) / "Start Services" (en)
+
+// 插值翻譯
+t("toast.deploy_success", { name: "天氣" })  // → "技能「天氣」部署成功"
+
+// 內部實作
+let currentLocale = {};
+function t(key, params) {
+  let text = currentLocale[key] || key;
+  if (params) {
+    Object.entries(params).forEach(([k, v]) => {
+      text = text.replace(`{${k}}`, v);
+    });
+  }
+  return text;
+}
+function setLocale(localeId) { /* 載入對應語系全域變數，重新渲染當前頁面 */ }
+```
+
+#### 語系檔結構
+
+語系檔以 `.js` 格式存放（非 `.json`），透過 `<script>` 標籤載入為全域變數，避免 `file://` 協議下 `fetch()` 的 CORS 限制：
+
+```javascript
+// locales/zh-TW.js
+window.__locale_zhTW = {
+  "nav.dashboard": "儀表板",
+  "nav.configuration": "系統設定",
+  "nav.environment": "環境檢查",
+  "nav.gateway": "閘道器",
+  "nav.deploy_skills": "部署技能",
+  "nav.install_plugins": "安裝外掛",
+  "nav.fix_plugins": "修復外掛",
+  "btn.start": "啟動服務",
+  "btn.stop": "停止服務",
+  "btn.restart": "重啟服務",
+  "status.running": "執行中",
+  "status.stopped": "已停止",
+  // ... 完整 key 清單見語系檔
+};
+```
+
+#### Key 命名慣例
+
+Flat dot-notation，前綴對應模組：
+
+| 前綴 | 範圍 | 範例 |
+|:---|:---|:---|
+| `nav.*` | Sidebar 導航 | `nav.dashboard`, `nav.deploy_skills` |
+| `btn.*` | 按鈕標籤 | `btn.start`, `btn.stop`, `btn.deploy` |
+| `status.*` | 狀態標籤 | `status.running`, `status.stopped` |
+| `dashboard.*` | Dashboard 頁面 | `dashboard.title`, `dashboard.service_control` |
+| `config.*` | Configuration 頁面 | `config.step1_title`, `config.mode_docker` |
+| `env.*` | Environment 頁面 | `env.title`, `env.check_all` |
+| `gateway.*` | Gateway 頁面 | `gateway.title`, `gateway.origin_control` |
+| `skills.*` | Deploy Skills 頁面 | `skills.title`, `skills.deploy_btn` |
+| `plugins.*` | Install/Fix Plugins | `plugins.title`, `plugins.install_btn` |
+| `common.*` | 跨頁面共用 | `common.loading`, `common.error`, `common.retry` |
+| `toast.*` | Toast 通知訊息 | `toast.deploy_success`, `toast.connection_failed` |
+
+#### 語言偵測與切換
+
+| 優先順序 | 來源 | 說明 |
+|:---|:---|:---|
+| 1 | `gui-settings.json` → `locale` | 使用者手動選擇的語言（持久化） |
+| 2 | `navigator.language` | 瀏覽器 / OS 語系偵測 |
+| 3 | `zh-TW` | 預設 fallback（目標受眾為台灣使用者） |
+
+**Sidebar 語言切換元件**:
+- 位置：Sidebar 底部，版本資訊上方
+- 樣式：`globe` icon（12px）+ 語言名稱（11px, `text-muted`）+ `chevron-down`（8px）
+- 下拉選單：`繁體中文` / `English`，選中項帶 `check` icon
+- 切換行為：呼叫 `save_locale()` 持久化 → `setLocale()` 載入新語系 → 重新渲染當前頁面
+
+**Bridge API**:
+
+```javascript
+// 讀取語言偏好（啟動時呼叫）
+const locale = await window.pywebview.api.get_locale();
+// 回傳: { locale: "zh-TW" } 或 { locale: null }（首次使用）
+
+// 儲存語言偏好（切換語言時呼叫）
+await window.pywebview.api.save_locale({ locale: "en" });
+// 寫入 gui-settings.json → locale
+```
+
+**初始化流程**（`bootstrap.js` → `initApp()`）:
+
+```javascript
+async function initApp() {
+  // 1. 讀取語言偏好
+  const { locale } = await window.pywebview.api.get_locale();
+  // 2. 決定語系：gui-settings > navigator.language > zh-TW
+  const resolvedLocale = locale
+    || (navigator.language.startsWith("zh") ? "zh-TW" : "en");
+  // 3. 載入語系資料
+  setLocale(resolvedLocale);
+  // 4. 繼續其他初始化...
+}
+```
 
 ---
 

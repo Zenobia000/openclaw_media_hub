@@ -2,9 +2,9 @@
 
 ---
 
-**版本:** `v2.0`
+**版本:** `v2.1`
 **狀態:** `草案`
-**變更依據:** `ADR-003` — 廢棄 Shell 腳本，改以原生 Python 實作所有操作邏輯; `ADR-004` — SSH 遠端管理 Transport Layer
+**變更依據:** `ADR-003` — 廢棄 Shell 腳本，改以原生 Python 實作所有操作邏輯; `ADR-004` — SSH 遠端管理 Transport Layer; `ADR-007` — 前端多國語言支援（繁體中文與英文）
 
 ---
 
@@ -27,6 +27,7 @@
 | **US-005** | **身為** 使用者, **我想要** 透過介面一鍵部署技能模組 (Skills), **以便** 不需手動在命令列操作。                           | 1. 提供「部署技能 (Deploy Skills)」勾選清單介面，區分兩種來源：`module_pack/`（自訂業務模組）與 `openclaw/skills/`（55+ 社群技能）。<br>2. 以 Python 原生邏輯掃描技能模組、解析 SKILL.md YAML frontmatter（name, description, emoji）、部署至 `~/.openclaw/workspace/skills/` 或移除。<br>3. 於畫面以結構化清單呈現部署進度與結果。 |
 | **US-006** | **身為** 使用者, **我想要** 透過介面安裝外掛模組 (Plugins), **以便** 不需手動在命令列操作。                               | 1. 提供「安裝外掛 (Install Plugins)」分類勾選清單介面，外掛對應 `openclaw/extensions/`（76+ 擴充套件），按類型分組（Model Providers / Channels / Tools / Infrastructure）。<br>2. 以 Python 原生邏輯讀取 `openclaw.plugin.json` 取得外掛資訊，安裝方式為修改 `openclaw.json` 的 `plugins` 區段（config-driven），非檔案複製。<br>3. 於畫面以結構化清單呈現安裝進度與結果。 |
 | **US-007** | **身為** 使用者, **我想要** 從本機 GUI 透過 SSH 連線管理部署於雲端 VM 的 OpenClaw 實例, **以便** 不需要手動 SSH 進入伺服器操作命令列。 | 1. Configuration Step 1 提供第 4 種部署模式「Remote Server (SSH)」。<br>2. 選擇後顯示 SSH 連線表單（host、port、username、key file），點擊「Test Connection」驗證連通性。<br>3. 連線成功後，所有操作頁面（環境檢查、初始化、技能部署、服務控制等）透過 SSH 在遠端執行，UI 體驗與本機模式一致。<br>4. Sidebar 顯示連線狀態指示燈（已連線/未連線/連線中）。<br>5. 金鑰儲存於本機 keyring，初始化時透過 SSH 寫入遠端 `.env` (ADR-004)。 |
+| **US-008** | **身為** 繁體中文使用者, **我想要** 介面能以繁體中文顯示, **以便** 降低操作認知門檻；同時英文使用者也能切換回英文介面。 | 1. 應用程式支援繁體中文（`zh-TW`）與英文（`en`）兩種語言。<br>2. 首次啟動時依 OS 語系自動偵測，fallback 為繁體中文（目標受眾為台灣使用者）。<br>3. 提供語言切換入口（Sidebar 底部），切換後即時重新渲染當前頁面，無需重啟應用程式。<br>4. 語言偏好持久化於 `gui-settings.json`，下次啟動自動套用。<br>5. 所有 UI 字串（導航標籤、按鈕文字、狀態訊息、表單標籤、Toast 通知等）皆透過 `t()` 翻譯函式取得，不存在硬編碼字串 (ADR-007)。 |
 
 ## 3. 專案範圍 (Scope)
 
@@ -37,6 +38,7 @@
   - 動態 API 金鑰表單（根據使用者選擇的供應商與管道顯示對應欄位）。
   - PyInstaller 打包配置支援。
   - SSH 遠端管理：使用者可從本機 GUI 透過 SSH 連線管理部署於雲端 VM 的 OpenClaw 實例。Transport Abstraction Layer（`Executor` Protocol）統一本機與遠端操作介面，非雲端自動部署 (ADR-004)。
+  - 多國語言支援（i18n）：前端 UI 支援繁體中文（`zh-TW`）與英文（`en`），所有 UI 字串透過 `t()` 翻譯函式與 JSON 語系檔管理，支援語言切換與偏好持久化 (ADR-007)。
 - **不包含 (Out of Scope)**:
   - 雲端自動部署（CI/CD pipeline、Terraform/Ansible 自動化佈建）。
   - 多伺服器同時管理（v1.0 僅支援單一遠端連線）。
